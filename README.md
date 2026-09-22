@@ -9,7 +9,7 @@ An intelligent oral examination system that assists instructors in automating qu
 - **State Management:** Zustand (Global State), TanStack Query (Server State)
 - **UI/Styling:** Tailwind CSS + shadcn/ui
 - **Real-time Communication:** WebSockets & MediaRecorder API
-- **Backend Architecture:** Tight integration with a Python-based Backend (FastAPI) to handle audio streaming and AI processing.
+- **Backend Architecture:** Tight integration with a Java-based Backend (Spring Boot) to handle audio streaming and AI processing.
 
 ## 📂 Folder Structure
 
