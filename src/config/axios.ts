@@ -28,7 +28,11 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token')
-      window.location.href = '/login'
+      // Tránh reload trang nếu đang ở trang login hoặc lỗi xuất phát từ API login
+      const isLoginRequest = error.config?.url?.includes('/auth/login')
+      if (!isLoginRequest && window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   },

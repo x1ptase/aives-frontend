@@ -1,10 +1,15 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import axios from 'axios'
 import aivesLogo from '../assets/logo/logo-aives.jpg'
+import { authApi } from '@/services/api'
+import { useAuthStore } from '@/store/useAuthStore'
 
 export const Login: React.FC = () => {
   const navigate = useNavigate()
+  const setUser = useAuthStore((state) => state.setUser)
+
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -16,24 +21,41 @@ export const Login: React.FC = () => {
     setErrorMessage('')
     setIsLoading(true)
 
-    // Giả lập gọi API đăng nhập (mock API delay 500ms)
-    setTimeout(() => {
-      const trimmedUser = username.trim().toLowerCase()
+    try {
+      const response = await authApi.login({
+        email: username.trim(),
+        password,
+      })
 
-      // Kiểm tra thông tin đăng nhập mock
-      // Hỗ trợ các tài khoản mẫu: admin, lecturer, student với mật khẩu bất kỳ (hoặc '123456')
-      if (password && (trimmedUser === 'admin' || trimmedUser.includes('admin'))) {
-        navigate('/admin-dashboard')
-      } else if (password && (trimmedUser === 'lecturer' || trimmedUser === 'giangvien' || trimmedUser.includes('lecturer'))) {
-        navigate('/lecturer-dashboard')
-      } else if (password && (trimmedUser === 'student' || trimmedUser === 'sinhvien' || trimmedUser.includes('student') || trimmedUser.length >= 3)) {
-        navigate('/student-dashboard')
+      const { user, token, accessToken } = response.data
+      const authToken = token || accessToken
+
+      // Lưu thông tin user và token vào Zustand store (tự động đồng bộ localStorage)
+      setUser(user, authToken)
+
+      // Điều hướng tương ứng theo vai trò (role) của tài khoản
+      switch (user.role) {
+        case 'admin':
+          navigate('/admin-dashboard')
+          break
+        case 'instructor':
+          navigate('/lecturer-dashboard')
+          break
+        case 'student':
+          navigate('/student-dashboard')
+          break
+        default:
+          navigate('/admin-dashboard')
+      }
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.data?.message) {
+        setErrorMessage(err.response.data.message)
       } else {
         setErrorMessage('Tên đăng nhập hoặc mật khẩu không chính xác')
       }
-
+    } finally {
       setIsLoading(false)
-    }, 500)
+    }
   }
 
   return (
@@ -128,12 +150,64 @@ export const Login: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
+              className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               {isLoading ? 'Đang xử lý...' : 'Đăng nhập'}
             </button>
           </div>
         </form>
+
+        {/* Hộp gợi ý tài khoản thử nghiệm Mock API */}
+        <div className="mt-6 pt-4 border-t border-gray-100 text-xs text-gray-500">
+          <p className="font-semibold text-gray-600 mb-2">Tài khoản mẫu Mock API (mật khẩu: 123456):</p>
+          <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('admin')
+                setPassword('123456')
+                setErrorMessage('')
+              }}
+              className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+            >
+              Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('instructor')
+                setPassword('123456')
+                setErrorMessage('')
+              }}
+              className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+            >
+              Giảng viên
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('student')
+                setPassword('123456')
+                setErrorMessage('')
+              }}
+              className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+            >
+              Sinh viên
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('student')
+                setPassword('wrong_password')
+                setErrorMessage('')
+              }}
+              className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors"
+            >
+              Test lỗi 401
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )

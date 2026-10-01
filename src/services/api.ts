@@ -1,13 +1,28 @@
 import axiosInstance from '@/config/axios'
+import type { User } from '@/types'
+
+export interface LoginPayload {
+  email: string
+  password: string
+}
+
+export interface AuthResponse {
+  status: number
+  message?: string
+  token: string
+  accessToken: string
+  tokenType: string
+  user: User
+}
 
 // ===== Auth =====
 export const authApi = {
-  login: (credentials: { email: string; password: string }) =>
-    axiosInstance.post('/auth/login', credentials),
+  login: (credentials: LoginPayload) =>
+    axiosInstance.post<AuthResponse>('/auth/login', credentials),
 
-  logout: () => axiosInstance.post('/auth/logout'),
+  logout: () => axiosInstance.post<{ status: number; message: string }>('/auth/logout'),
 
-  getProfile: () => axiosInstance.get('/auth/profile'),
+  getProfile: () => axiosInstance.get<{ status: number; user: User }>('/auth/profile'),
 }
 
 // ===== Exams =====
