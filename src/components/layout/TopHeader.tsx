@@ -17,6 +17,13 @@ const LECTURER_NAV: NavItem[] = [
   { id: 'learning-materials', label: 'Learning Materials', icon: <IconBook />, path: '/lecturer/learning-materials' },
 ]
 
+const STUDENT_NAV: NavItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/student' },
+  { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/student/exams' },
+  { id: 'history', label: 'Exam History', icon: <IconFile />, path: '/student/history' },
+  { id: 'profile', label: 'Profile', icon: <IconUsers />, path: '/student/profile' },
+]
+
 const USER_INFO = {
   admin: {
     initials: 'AD',
@@ -32,15 +39,22 @@ const USER_INFO = {
     subtitle: 'Lecturer Portal',
     gradient: 'linear-gradient(135deg,#0369a1,#2563eb)',
   },
+  student: {
+    initials: 'SV',
+    name: 'Nguyen Van An',
+    role: 'Student',
+    subtitle: 'Student Portal',
+    gradient: 'linear-gradient(135deg,#059669,#10b981)',
+  },
 }
 
 interface TopHeaderProps {
-  role: 'admin' | 'lecturer'
+  role: 'admin' | 'lecturer' | 'student'
 }
 
 export default function TopHeader({ role }: TopHeaderProps) {
   const location = useLocation()
-  const navItems = role === 'admin' ? ADMIN_NAV : LECTURER_NAV
+  const navItems = role === 'admin' ? ADMIN_NAV : role === 'student' ? STUDENT_NAV : LECTURER_NAV
   const user = USER_INFO[role]
 
   const activeId = navItems.reduce<string>((found, item) => {
@@ -65,10 +79,10 @@ export default function TopHeader({ role }: TopHeaderProps) {
 
       {/* Right actions */}
       <div className="flex items-center gap-3">
-        {/* Welcome text — only for lecturer */}
-        {role === 'lecturer' && (
+        {/* Welcome text */}
+        {(role === 'lecturer' || role === 'student') && (
           <span className="text-sm text-slate-500 hidden md:block">
-            Welcome back, <span className="font-semibold text-slate-800">Prof. Nguyen</span> 👋
+            Welcome back, <span className="font-semibold text-slate-800">{user.name}</span> 👋
           </span>
         )}
         {/* Notification bell */}

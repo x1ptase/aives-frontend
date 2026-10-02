@@ -3,7 +3,7 @@ import Sidebar from '@/components/layout/Sidebar'
 import TopHeader from '@/components/layout/TopHeader'
 
 interface DashboardLayoutProps {
-    role: 'admin' | 'lecturer'
+    role: 'admin' | 'lecturer' | 'student'
     children: ReactNode
 }
 
