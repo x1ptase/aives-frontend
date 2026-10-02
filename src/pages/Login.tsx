@@ -23,35 +23,51 @@ export const Login: React.FC = () => {
 
     try {
       const response = await authApi.login({
-        email: username.trim(),
+        username: username.trim(),
         password,
       })
 
-      const { user, token, accessToken } = response.data
-      const authToken = token || accessToken
+      const result = response.data.result
+      const authToken = result.token
+
+      const user = {
+        id: result.username,
+        email: result.username,
+        name: result.fullName,
+        username: result.username,
+        role: result.role as any,
+      }
 
       // Lưu thông tin user và token vào Zustand store (tự động đồng bộ localStorage)
       setUser(user, authToken)
 
       // Điều hướng tương ứng theo vai trò (role) của tài khoản
-      switch (user.role) {
-        case 'admin':
+      switch (result.role) {
+        case 'ADMIN':
           navigate('/admin')
           break
-        case 'instructor':
+        case 'LECTURER':
           navigate('/lecturer')
           break
-        case 'student':
+        case 'STUDENT':
           navigate('/student')
           break
         default:
-          navigate('/admin')
+          setErrorMessage('Invalid user role.')
       }
     } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.data?.message) {
-        setErrorMessage(err.response.data.message)
+      if (axios.isAxiosError(err)) {
+        if (!err.response) {
+          setErrorMessage('Unable to connect to the server. Please make sure the backend is running.')
+        } else if (err.response.status === 401 || err.response.status === 403) {
+          setErrorMessage('Invalid username or password.')
+        } else if (err.response.data && (err.response.data.message || err.response.data.result?.message)) {
+          setErrorMessage(err.response.data.message || err.response.data.result?.message)
+        } else {
+          setErrorMessage('An error occurred during sign in.')
+        }
       } else {
-        setErrorMessage('Invalid username or password')
+        setErrorMessage('Invalid username or password.')
       }
     } finally {
       setIsLoading(false)
@@ -157,57 +173,6 @@ export const Login: React.FC = () => {
             </button>
           </div>
         </form>
-
-        {/* Hộp gợi ý tài khoản thử nghiệm Mock API */}
-        <div className="mt-6 pt-4 border-t border-gray-100 text-xs text-gray-500">
-          <p className="font-semibold text-gray-600 mb-2">Mock API Test Accounts (password: abc123):</p>
-          <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                setUsername('admin')
-                setPassword('123456')
-                setErrorMessage('')
-              }}
-              className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-            >
-              Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setUsername('instructor')
-                setPassword('123456')
-                setErrorMessage('')
-              }}
-              className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-            >
-              Lecturer
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setUsername('student')
-                setPassword('123456')
-                setErrorMessage('')
-              }}
-              className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-            >
-              Student
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setUsername('student')
-                setPassword('wrong_password')
-                setErrorMessage('')
-              }}
-              className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors"
-            >
-              Test 401 Error
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   )

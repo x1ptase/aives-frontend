@@ -2,23 +2,22 @@ import axiosInstance from '@/config/axios'
 import type { User } from '@/types'
 
 export interface LoginPayload {
-  email: string
+  username: string
   password: string
 }
 
 export interface AuthResponse {
-  status: number
-  message?: string
   token: string
-  accessToken: string
-  tokenType: string
-  user: User
+  authenticated: boolean
+  role: string
+  username: string
+  fullName: string
 }
 
 // ===== Auth =====
 export const authApi = {
   login: (credentials: LoginPayload) =>
-    axiosInstance.post<AuthResponse>('/auth/login', credentials),
+    axiosInstance.post<{ result: AuthResponse }>('/auth/signin', credentials),
 
   logout: () => axiosInstance.post<{ status: number; message: string }>('/auth/logout'),
 
