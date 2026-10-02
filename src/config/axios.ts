@@ -28,7 +28,7 @@ axiosInstance.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token')
-      // Tránh reload trang nếu đang ở trang login hoặc lỗi xuất phát từ API login
+      // Avoid page reload if user is already on login page or if error comes from auth login API
       const isLoginRequest = error.config?.url?.includes('/auth/login')
       if (!isLoginRequest && window.location.pathname !== '/login') {
         window.location.href = '/login'

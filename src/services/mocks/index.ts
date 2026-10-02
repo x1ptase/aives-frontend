@@ -5,9 +5,9 @@ import { setupAuthMock } from './authMock'
 let mockInstance: MockAdapter | null = null
 
 /**
- * Khởi tạo Mock API Adapter cho Axios.
- * Cấu hình delayResponse = 800ms để giả lập độ trễ mạng thực tế.
- * onNoMatch: 'passthrough' cho phép các endpoint chưa mock vẫn gọi bình thường.
+ * Initialize Mock API Adapter for Axios.
+ * Configured with delayResponse = 800ms to simulate real network latency.
+ * onNoMatch: 'passthrough' allows unmocked endpoints to pass through normally.
  */
 export const initMockApi = (): MockAdapter => {
   if (mockInstance) {
@@ -19,7 +19,7 @@ export const initMockApi = (): MockAdapter => {
     onNoMatch: 'passthrough',
   })
 
-  // Đăng ký các mock endpoints
+  // Register mock endpoints
   setupAuthMock(mockInstance)
 
   console.info('[Mock API] Mock service initialized with 800ms delay')

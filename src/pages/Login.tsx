@@ -30,17 +30,21 @@ export const Login: React.FC = () => {
       const { user, token, accessToken } = response.data
       const authToken = token || accessToken
 
-      // Lưu thông tin user và token vào Zustand store (tự động đồng bộ localStorage)
+      // Save user profile and auth token into Zustand store (synced to localStorage)
       setUser(user, authToken)
 
-      // Điều hướng tương ứng theo vai trò (role) của tài khoản
+      // Navigate based on user role
       switch (user.role) {
+        case 'ADMIN':
         case 'admin':
           navigate('/admin-dashboard')
           break
+        case 'LECTURER':
+        case 'lecturer':
         case 'instructor':
           navigate('/lecturer-dashboard')
           break
+        case 'STUDENT':
         case 'student':
           navigate('/student-dashboard')
           break
@@ -51,7 +55,7 @@ export const Login: React.FC = () => {
       if (axios.isAxiosError(err) && err.response?.data?.message) {
         setErrorMessage(err.response.data.message)
       } else {
-        setErrorMessage('Tên đăng nhập hoặc mật khẩu không chính xác')
+        setErrorMessage('Invalid username or password')
       }
     } finally {
       setIsLoading(false)
@@ -60,9 +64,9 @@ export const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-blue-900 to-slate-900 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-      {/* Thẻ Card trung tâm */}
+      {/* Central Card */}
       <div className="w-full max-w-md bg-white rounded-xl shadow-2xl p-6 sm:p-8">
-        {/* Header của Card: Logo, Tiêu đề, Phụ đề */}
+        {/* Card Header: Logo, Title, Subtitle */}
         <div className="text-center mb-6">
           <img
             src={aivesLogo}
@@ -70,22 +74,22 @@ export const Login: React.FC = () => {
             className="h-20 mx-auto object-contain mb-3"
           />
           <h1 className="text-lg sm:text-xl font-semibold text-gray-800 leading-snug">
-            Hệ thống thi vấn đáp thông minh có sử dụng AI
+            AI-Powered Viva Examination System
           </h1>
           <p className="mt-1.5 text-sm text-gray-500 font-medium">
-            Đăng nhập
+            Sign In
           </p>
         </div>
 
-        {/* Form đăng nhập */}
+        {/* Login Form */}
         <form onSubmit={handleLogin} className="space-y-4">
-          {/* Trường Tên đăng nhập */}
+          {/* Username Field */}
           <div>
             <label
               htmlFor="username"
               className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5"
             >
-              Tên đăng nhập
+              Username
             </label>
             <input
               id="username"
@@ -95,19 +99,19 @@ export const Login: React.FC = () => {
                 setUsername(e.target.value)
                 if (errorMessage) setErrorMessage('')
               }}
-              placeholder="Nhập tên đăng nhập"
+              placeholder="Enter your username"
               className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
               required
             />
           </div>
 
-          {/* Trường Mật khẩu */}
+          {/* Password Field */}
           <div>
             <label
               htmlFor="password"
               className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5"
             >
-              Mật khẩu
+              Password
             </label>
             <div className="relative">
               <input
@@ -118,16 +122,16 @@ export const Login: React.FC = () => {
                   setPassword(e.target.value)
                   if (errorMessage) setErrorMessage('')
                 }}
-                placeholder="Nhập mật khẩu"
+                placeholder="Enter your password"
                 className="w-full pl-3.5 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                 required
               />
-              {/* Nút toggle hiển thị / ẩn mật khẩu */}
+              {/* Password visibility toggle */}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
                   <EyeOff className="h-5 w-5" />
@@ -138,14 +142,14 @@ export const Login: React.FC = () => {
             </div>
           </div>
 
-          {/* Hiển thị thông báo lỗi khi đăng nhập thất bại */}
+          {/* Error Message Alert */}
           {errorMessage && (
             <div className="text-sm text-red-500 font-medium text-center bg-red-50 py-2 px-3 rounded-lg border border-red-200 animate-fadeIn">
               {errorMessage}
             </div>
           )}
 
-          {/* Nút Submit Đăng nhập */}
+          {/* Submit Button */}
           <div className="pt-2">
             <button
               type="submit"
@@ -153,20 +157,20 @@ export const Login: React.FC = () => {
               className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isLoading ? 'Đang xử lý...' : 'Đăng nhập'}
+              {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
           </div>
         </form>
 
-        {/* Hộp gợi ý tài khoản thử nghiệm Mock API */}
+        {/* Mock API Test Accounts Helper Box */}
         <div className="mt-6 pt-4 border-t border-gray-100 text-xs text-gray-500">
-          <p className="font-semibold text-gray-600 mb-2">Tài khoản mẫu Mock API (mật khẩu: 123456):</p>
+          <p className="font-semibold text-gray-600 mb-2">Mock API Test Accounts (password: abc123):</p>
           <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
               onClick={() => {
-                setUsername('admin')
-                setPassword('123456')
+                setUsername('admin1')
+                setPassword('abc123')
                 setErrorMessage('')
               }}
               className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
@@ -176,35 +180,35 @@ export const Login: React.FC = () => {
             <button
               type="button"
               onClick={() => {
-                setUsername('instructor')
-                setPassword('123456')
+                setUsername('lecturer1')
+                setPassword('abc123')
                 setErrorMessage('')
               }}
               className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
             >
-              Giảng viên
+              Lecturer
             </button>
             <button
               type="button"
               onClick={() => {
-                setUsername('student')
-                setPassword('123456')
+                setUsername('user1')
+                setPassword('abc123')
                 setErrorMessage('')
               }}
               className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
             >
-              Sinh viên
+              Student
             </button>
             <button
               type="button"
               onClick={() => {
-                setUsername('student')
+                setUsername('user1')
                 setPassword('wrong_password')
                 setErrorMessage('')
               }}
               className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded transition-colors"
             >
-              Test lỗi 401
+              Test 401 Error
             </button>
           </div>
         </div>

@@ -13,7 +13,8 @@ export const ROUTES = {
 } as const
 
 export const ROLES = {
-  ADMIN: 'admin',
-  INSTRUCTOR: 'instructor',
-  STUDENT: 'student',
+  ADMIN: 'ADMIN',
+  LECTURER: 'LECTURER',
+  STUDENT: 'STUDENT',
+  INSTRUCTOR: 'LECTURER',
 } as const

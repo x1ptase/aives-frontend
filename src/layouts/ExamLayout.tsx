@@ -5,7 +5,7 @@ export default function ExamLayout() {
     <div className="min-h-screen bg-white">
       {/* Exam header */}
       <header className="bg-blue-600 text-white px-6 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">AIVES - Phòng thi Viva</h1>
+        <h1 className="text-lg font-semibold">AIVES - Viva Exam Room</h1>
         {/* TODO: Add timer, student info */}
       </header>
 

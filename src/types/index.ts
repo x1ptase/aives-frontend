@@ -1,9 +1,11 @@
 // ===== User & Auth =====
+export type Role = 'ADMIN' | 'LECTURER' | 'STUDENT' | 'admin' | 'lecturer' | 'instructor' | 'student'
+
 export interface User {
   id: string
   email: string
   name: string
-  role: 'admin' | 'instructor' | 'student'
+  role: Role
   avatar?: string
 }
 

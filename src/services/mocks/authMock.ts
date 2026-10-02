@@ -1,7 +1,7 @@
 import type MockAdapter from 'axios-mock-adapter'
 import type { User } from '@/types'
 
-// Danh sách tài khoản mẫu chuẩn theo User interface
+// Standard mock accounts matching backend specs
 export const MOCK_USERS: Array<{
   credentials: {
     identifiers: string[]
@@ -12,42 +12,42 @@ export const MOCK_USERS: Array<{
 }> = [
   {
     credentials: {
-      identifiers: ['admin', 'admin@aives.edu.vn'],
-      passwords: ['123456', 'password123', 'admin123'],
+      identifiers: ['admin1', 'admin1@aives.edu.vn'],
+      passwords: ['abc123'],
     },
     user: {
       id: 'u-admin-001',
-      email: 'admin@aives.edu.vn',
-      name: 'Quản trị viên Hệ thống',
-      role: 'admin',
+      email: 'admin1@aives.edu.vn',
+      name: 'System Administrator',
+      role: 'ADMIN',
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
     },
     token: 'mock-jwt-token-admin-aives-2026',
   },
   {
     credentials: {
-      identifiers: ['instructor', 'lecturer', 'giangvien', 'lecturer@aives.edu.vn'],
-      passwords: ['123456', 'password123', 'lecturer123'],
+      identifiers: ['lecturer1', 'lecturer1@aives.edu.vn'],
+      passwords: ['abc123'],
     },
     user: {
-      id: 'u-inst-002',
-      email: 'lecturer@aives.edu.vn',
-      name: 'TS. Nguyễn Văn A',
-      role: 'instructor',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Instructor',
+      id: 'u-lect-002',
+      email: 'lecturer1@aives.edu.vn',
+      name: 'Dr. Lecturer',
+      role: 'LECTURER',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lecturer',
     },
-    token: 'mock-jwt-token-instructor-aives-2026',
+    token: 'mock-jwt-token-lecturer-aives-2026',
   },
   {
     credentials: {
-      identifiers: ['student', 'sinhvien', 'student@aives.edu.vn'],
-      passwords: ['123456', 'password123', 'student123'],
+      identifiers: ['user1', 'user1@aives.edu.vn'],
+      passwords: ['abc123'],
     },
     user: {
       id: 'u-stud-003',
-      email: 'student@aives.edu.vn',
-      name: 'Trần Thị B',
-      role: 'student',
+      email: 'user1@aives.edu.vn',
+      name: 'Student User',
+      role: 'STUDENT',
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Student',
     },
     token: 'mock-jwt-token-student-aives-2026',
@@ -55,7 +55,7 @@ export const MOCK_USERS: Array<{
 ]
 
 export const setupAuthMock = (mock: MockAdapter) => {
-  // POST /auth/login - Xử lý đăng nhập mock
+  // POST /auth/login - Mock login handler
   mock.onPost(/\/auth\/login/).reply((config) => {
     try {
       const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data || {}
@@ -67,23 +67,23 @@ export const setupAuthMock = (mock: MockAdapter) => {
           400,
           {
             status: 400,
-            message: 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu',
+            message: 'Please provide both username/email and password',
           },
         ]
       }
 
-      // Tìm tài khoản phù hợp
+      // Find matching mock account
       const matchedAccount = MOCK_USERS.find((item) =>
         item.credentials.identifiers.includes(rawIdentifier),
       )
 
-      // Kiểm tra mật khẩu
+      // Validate password
       if (matchedAccount && matchedAccount.credentials.passwords.includes(rawPassword)) {
         return [
           200,
           {
             status: 200,
-            message: 'Đăng nhập thành công',
+            message: 'Login successful',
             token: matchedAccount.token,
             accessToken: matchedAccount.token,
             tokenType: 'Bearer',
@@ -92,12 +92,12 @@ export const setupAuthMock = (mock: MockAdapter) => {
         ]
       }
 
-      // Trả về lỗi 401 khi tài khoản không tồn tại hoặc sai mật khẩu
+      // Return 401 error when account is not found or password is incorrect
       return [
         401,
         {
           status: 401,
-          message: 'Tên đăng nhập hoặc mật khẩu không chính xác',
+          message: 'Invalid username or password',
         },
       ]
     } catch {
@@ -105,24 +105,24 @@ export const setupAuthMock = (mock: MockAdapter) => {
         400,
         {
           status: 400,
-          message: 'Dữ liệu yêu cầu không hợp lệ',
+          message: 'Invalid request payload',
         },
       ]
     }
   })
 
-  // POST /auth/logout - Xử lý đăng xuất mock
+  // POST /auth/logout - Mock logout handler
   mock.onPost(/\/auth\/logout/).reply(() => {
     return [
       200,
       {
         status: 200,
-        message: 'Đăng xuất thành công',
+        message: 'Logged out successfully',
       },
     ]
   })
 
-  // GET /auth/profile - Mock lấy thông tin user hiện tại qua header token
+  // GET /auth/profile - Mock current profile by authorization bearer token
   mock.onGet(/\/auth\/profile/).reply((config) => {
     const authHeader = config.headers?.Authorization || config.headers?.authorization
     const token = typeof authHeader === 'string' ? authHeader.replace(/^Bearer\s+/, '') : ''
@@ -142,7 +142,7 @@ export const setupAuthMock = (mock: MockAdapter) => {
       401,
       {
         status: 401,
-        message: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn',
+        message: 'Invalid or expired session token',
       },
     ]
   })
