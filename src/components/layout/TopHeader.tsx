@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
-import { IconBell, IconGrid, IconUsers, IconCpu, IconFile, IconShield, IconBook, IconClipboard, IconBarChart, IconSettings } from '@/components/common/Icons'
+import { IconBell, IconGrid, IconUsers, IconCpu, IconFile, IconBook, IconClipboard } from '@/components/common/Icons'
 
 type NavItem = { id: string; label: string; icon: ReactNode; path: string; badge?: string }
 
@@ -12,11 +12,9 @@ const ADMIN_NAV: NavItem[] = [
 
 const LECTURER_NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/lecturer' },
-  { id: 'grading', label: 'Grading & Review', icon: <IconFile />, path: '/lecturer/grading', badge: '1' },
-  { id: 'question-bank', label: 'Question Bank', icon: <IconBook />, path: '/lecturer/question-bank' },
-  { id: 'exams', label: 'Exams', icon: <IconClipboard />, path: '/lecturer/exams' },
-  { id: 'results', label: 'Results', icon: <IconBarChart />, path: '/lecturer/results' },
-  { id: 'settings', label: 'Settings', icon: <IconSettings />, path: '/lecturer/settings' },
+  { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/lecturer/exams' },
+  { id: 'question-bank', label: 'Question Bank', icon: <IconFile />, path: '/lecturer/question-bank' },
+  { id: 'learning-materials', label: 'Learning Materials', icon: <IconBook />, path: '/lecturer/learning-materials' },
 ]
 
 const USER_INFO = {
