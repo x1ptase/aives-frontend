@@ -20,6 +20,13 @@ const LECTURER_NAV: NavItem[] = [
   { id: 'learning-materials', label: 'Learning Materials', icon: <IconBook />, path: '/lecturer/learning-materials' },
 ]
 
+const STUDENT_NAV: NavItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/student' },
+  { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/student/exams' },
+  { id: 'history', label: 'Exam History', icon: <IconFile />, path: '/student/history' },
+  { id: 'profile', label: 'Profile', icon: <IconUsers />, path: '/student/profile' },
+]
+
 const USER_INFO = {
   admin: {
     initials: 'AD',
@@ -35,17 +42,24 @@ const USER_INFO = {
     subtitle: 'Lecturer Portal',
     gradient: 'linear-gradient(135deg,#0369a1,#2563eb)',
   },
+  student: {
+    initials: 'SV',
+    name: 'Nguyen Van An',
+    role: 'Student',
+    subtitle: 'Student Portal',
+    gradient: 'linear-gradient(135deg,#059669,#10b981)',
+  },
 }
 
 interface SidebarProps {
-  role: 'admin' | 'lecturer'
+  role: 'admin' | 'lecturer' | 'student'
 }
 
 export default function Sidebar({ role }: SidebarProps) {
   const navigate = useNavigate()
   const location = useLocation()
   
-  const navItems = role === 'admin' ? ADMIN_NAV : LECTURER_NAV
+  const navItems = role === 'admin' ? ADMIN_NAV : role === 'student' ? STUDENT_NAV : LECTURER_NAV
   const user = USER_INFO[role]
 
   // Determine active nav item — exact match first, then prefix match
