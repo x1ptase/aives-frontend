@@ -68,3 +68,10 @@ export const gradingApi = {
 
   getResult: (examId: string) => axiosInstance.get(`/grading/result/${examId}`),
 }
+
+// ===== Admin =====
+export const adminApi = {
+  getStats: () => axiosInstance.get('/admin/stats'),
+  getRecentActivity: () => axiosInstance.get('/admin/recent-activity'),
+  getAiConfig: () => axiosInstance.get('/admin/ai-config'),
+}

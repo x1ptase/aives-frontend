@@ -1,6 +1,7 @@
 import MockAdapter from 'axios-mock-adapter'
 import axiosInstance from '@/config/axios'
 import { setupAuthMock } from './authMock'
+import { setupAdminMock } from './adminMock'
 
 let mockInstance: MockAdapter | null = null
 
@@ -21,6 +22,7 @@ export const initMockApi = (): MockAdapter => {
 
   // Đăng ký các mock endpoints
   setupAuthMock(mockInstance)
+  setupAdminMock(mockInstance)
 
   console.info('[Mock API] Mock service initialized with 800ms delay')
 

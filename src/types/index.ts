@@ -1,10 +1,13 @@
 // ===== User & Auth =====
 export interface User {
-  id: string
+  id: string | number
   email: string
   name: string
-  role: 'admin' | 'instructor' | 'student'
+  username?: string
+  password?: string
+  role: 'admin' | 'instructor' | 'student' | 'Admin' | 'Lecturer' | 'Student'
   avatar?: string
+  createdAt?: string
 }
 
 // ===== Student =====
