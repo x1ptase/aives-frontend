@@ -1,7 +1,7 @@
-import { ReactNode } from 'react' 
+import { ReactNode } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { 
-  IconGrid, IconUsers, IconCpu, IconFile, IconBook, IconClipboard, IconChevronRight, IconLogOut 
+import {
+  IconGrid, IconUsers, IconCpu, IconFile, IconBook, IconClipboard, IconChevronRight, IconLogOut
 } from '@/components/common/Icons'
 import aivesLogo from '@/assets/logo/logo-aives.jpg'
 
@@ -36,15 +36,15 @@ const USER_INFO = {
     gradient: 'linear-gradient(135deg,#2563eb,#7c3aed)',
   },
   lecturer: {
-    initials: 'PN',
-    name: 'Prof. Nguyen',
+    initials: 'PA',
+    name: 'Phạm Tuấn Anh',
     role: 'Lecturer',
     subtitle: 'Lecturer Portal',
     gradient: 'linear-gradient(135deg,#0369a1,#2563eb)',
   },
   student: {
-    initials: 'SV',
-    name: 'Nguyen Van An',
+    initials: 'NA',
+    name: 'Nguyễn Văn An',
     role: 'Student',
     subtitle: 'Student Portal',
     gradient: 'linear-gradient(135deg,#059669,#10b981)',
@@ -58,7 +58,7 @@ interface SidebarProps {
 export default function Sidebar({ role }: SidebarProps) {
   const navigate = useNavigate()
   const location = useLocation()
-  
+
   const navItems = role === 'admin' ? ADMIN_NAV : role === 'student' ? STUDENT_NAV : LECTURER_NAV
   const user = USER_INFO[role]
 
@@ -98,11 +98,10 @@ export default function Sidebar({ role }: SidebarProps) {
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 text-left ${
-                active
-                  ? 'bg-[#EFF6FF] text-[#2563EB] font-medium shadow-xs'
-                  : 'text-[#4B5563] hover:text-[#1F2937] hover:bg-[#F3F4F6]'
-              }`}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 text-left ${active
+                ? 'bg-[#EFF6FF] text-[#2563EB] font-medium shadow-xs'
+                : 'text-[#4B5563] hover:text-[#1F2937] hover:bg-[#F3F4F6]'
+                }`}
             >
               <span className={active ? 'text-[#2563EB]' : 'text-[#6B7280]'}>{item.icon}</span>
               <span className="flex-1 truncate">{item.label}</span>

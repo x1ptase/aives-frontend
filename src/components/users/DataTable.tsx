@@ -1,5 +1,5 @@
 import { User, Role } from '@/types'
-import { SearchIcon, ChevronDown, EditIcon, TrashIcon, MoreIcon } from '@/components/common/Icons'
+import { SearchIcon, ChevronDown, TrashIcon, MoreIcon } from '@/components/common/Icons'
 
 interface DataTableProps {
   users: User[]
@@ -10,18 +10,19 @@ interface DataTableProps {
   sortCol: 'name' | 'role' | 'createdAt'
   sortDir: 'asc' | 'desc'
   onSort: (col: 'name' | 'role' | 'createdAt') => void
-  selected: Set<number>
+  selected: Set<string | number>
   onToggleSelectAll: () => void
-  onToggleSelect: (id: number) => void
-  onDeleteRequest: (id: number) => void
-  ROLE_COLORS: Record<Role, { bg: string; text: string; ring: string }>
-  getAvatarColor: (id: number) => string
+  onToggleSelect: (id: string | number) => void
+  onDeleteRequest: (id: string | number) => void
+  onDetailRequest: (id: string | number) => void
+  ROLE_COLORS: Record<string, { bg: string; text: string; ring: string }>
+  getAvatarColor: (id: string | number) => string
   getInitials: (name: string) => string
 }
 
 export default function DataTable({
   users, search, setSearch, roleFilter, setRoleFilter, sortCol, sortDir, onSort,
-  selected, onToggleSelectAll, onToggleSelect, onDeleteRequest,
+  selected, onToggleSelectAll, onToggleSelect, onDeleteRequest, onDetailRequest,
   ROLE_COLORS, getAvatarColor, getInitials
 }: DataTableProps) {
   const allSelected = users.length > 0 && users.every(u => selected.has(u.id))
@@ -86,7 +87,7 @@ export default function DataTable({
       {/* Table */}
       <div className="flex-1 overflow-auto px-8 py-5">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <table className="w-full">
+          <table className="w-full whitespace-nowrap">
             <thead>
               <tr style={{ backgroundColor: '#f8fafc' }} className="border-b border-slate-200">
                 <th className="w-10 px-4 py-3">
@@ -97,7 +98,6 @@ export default function DataTable({
                 </th>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Username</th>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Email</th>
-                <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Password</th>
                 <th className="text-left px-4 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer select-none hover:text-slate-700 transition-colors" onClick={() => onSort('createdAt')}>
                   <span className="flex items-center gap-1">Created At <SortArrow col="createdAt" /></span>
                 </th>
@@ -131,18 +131,18 @@ export default function DataTable({
                     </td>
                     <td className="px-4 py-3.5 text-sm text-slate-600 font-medium">{user.username}</td>
                     <td className="px-4 py-3.5 text-sm text-slate-500">{user.email}</td>
-                    <td className="px-4 py-3.5 text-sm text-slate-500">
-                      <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 tracking-widest">{user.password || '******'}</span>
-                    </td>
                     <td className="px-4 py-3.5 text-sm text-slate-500">{new Date(user.createdAt).toLocaleDateString('vi-VN')}</td>
                     <td className="px-4 py-3.5">
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold" style={{ backgroundColor: rc.bg, color: rc.text, outline: `1px solid ${rc.ring}` }}>{user.role}</span>
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center justify-center gap-1">
-                        <button className="p-1.5 rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Edit user"><EditIcon /></button>
-                        <button className="p-1.5 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all" title="Delete user" onClick={() => onDeleteRequest(user.id)}><TrashIcon /></button>
-                        <button className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all" title="More options"><MoreIcon /></button>
+                        <button className="px-2.5 py-1.5 rounded-md text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all font-medium text-xs flex items-center gap-1.5" title="View Detail" onClick={() => onDetailRequest(user.id)}>
+                          <MoreIcon />
+                        </button>
+                        <button className="px-2.5 py-1.5 rounded-md text-red-500 hover:text-red-700 hover:bg-red-50 transition-all font-medium text-xs flex items-center gap-1.5" title="Delete User" onClick={() => onDeleteRequest(user.id)}>
+                          <TrashIcon />
+                        </button>
                       </div>
                     </td>
                   </tr>

@@ -3,11 +3,8 @@ import { adminApi } from '@/services/api'
 
 type ActivityLog = { id: number, timestamp: string, user: string, role: string, action: string, detail: string, status: string }
 
-function StatusBadge({ status }: { status: 'success' | 'warning' }) {
-  if (status === 'success') {
-    return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Success</span>
-  }
-  return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-100"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Warning</span>
+function StatusBadge({ status }: { status: string }) {
+  return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Success</span>
 }
 
 function RolePill({ role }: { role: string }) {
@@ -82,7 +79,7 @@ export default function RecentActivityTable() {
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
-                    <StatusBadge status={log.status as 'success' | 'warning'} />
+                    <StatusBadge status={log.status} />
                   </td>
                 </tr>
               ))}
@@ -116,7 +113,7 @@ export default function RecentActivityTable() {
                 <div className="text-slate-700">{selectedLog.timestamp}</div>
 
                 <div className="font-medium text-slate-500">Status:</div>
-                <div><StatusBadge status={selectedLog.status as 'success' | 'warning'} /></div>
+                <div><StatusBadge status={selectedLog.status} /></div>
               </div>
 
               <div className="pt-2">

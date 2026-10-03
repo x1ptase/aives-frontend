@@ -3,19 +3,20 @@ import { Role } from '@/types'
 
 interface AddUserModalProps {
   onClose: () => void
-  onAdd: (user: { name: string, email: string, role: Role, password?: string }) => void
+  onAdd: (user: { name: string, username: string, email: string, role: Role, password?: string }) => void
 }
 
 export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState<Role>('Student')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name || !email) return
-    onAdd({ name, email, role, password })
+    if (!name || !email || !username) return
+    onAdd({ name, username, email, role, password })
     onClose()
   }
 
@@ -37,7 +38,18 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
               value={name}
               onChange={e => setName(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              placeholder="e.g. Nguyen Van A"
+              placeholder="e.g. Nguyen Van An"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
+            <input
+              type="text"
+              required
+              value={username}
+              onChange={e => setUsername(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+              placeholder="e.g. annguyenvan2005"
             />
           </div>
           <div>
@@ -48,7 +60,7 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
               value={email}
               onChange={e => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-              placeholder="e.g. user@fpt.edu.vn"
+              placeholder="e.g. annguyenvan2005@gmail.com"
             />
           </div>
           <div>
@@ -71,7 +83,6 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
             >
               <option value="Student">Student</option>
               <option value="Lecturer">Lecturer</option>
-              <option value="Admin">Administrator</option>
             </select>
           </div>
           <div className="pt-4 flex items-center justify-end gap-3">

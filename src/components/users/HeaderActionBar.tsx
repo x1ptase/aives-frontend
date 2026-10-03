@@ -1,4 +1,4 @@
-import { PlusIcon, UploadIcon } from '@/components/common/Icons'
+import { PlusIcon } from '@/components/common/Icons'
 
 interface HeaderActionBarProps {
   counts: { total: number; students: number; lecturers: number; admins: number }
