@@ -10,49 +10,49 @@ export const MOCK_USERS: Array<{
   user: User
   token: string
 }> = [
-  {
-    credentials: {
-      identifiers: ['admin', 'admin@aives.edu.vn'],
-      passwords: ['123456', 'password123', 'admin123'],
+    {
+      credentials: {
+        identifiers: ['admin', 'admin@aives.edu.vn'],
+        passwords: ['123456', 'password123', 'admin123'],
+      },
+      user: {
+        id: 'u-admin-001',
+        email: 'admin@aives.edu.vn',
+        name: 'Quản trị viên Hệ thống',
+        role: 'admin',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
+      },
+      token: 'mock-jwt-token-admin-aives-2026',
     },
-    user: {
-      id: 'u-admin-001',
-      email: 'admin@aives.edu.vn',
-      name: 'Quản trị viên Hệ thống',
-      role: 'admin',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin',
+    {
+      credentials: {
+        identifiers: ['instructor', 'lecturer', 'giangvien', 'lecturer@aives.edu.vn'],
+        passwords: ['123456', 'password123', 'lecturer123'],
+      },
+      user: {
+        id: 'u-inst-002',
+        email: 'lecturer@aives.edu.vn',
+        name: 'TS. Nguyễn Văn A',
+        role: 'instructor',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Instructor',
+      },
+      token: 'mock-jwt-token-instructor-aives-2026',
     },
-    token: 'mock-jwt-token-admin-aives-2026',
-  },
-  {
-    credentials: {
-      identifiers: ['instructor', 'lecturer', 'giangvien', 'lecturer@aives.edu.vn'],
-      passwords: ['123456', 'password123', 'lecturer123'],
+    {
+      credentials: {
+        identifiers: ['student', 'sinhvien', 'student@aives.edu.vn'],
+        passwords: ['123456', 'password123', 'student123'],
+      },
+      user: {
+        id: 'u-stud-003',
+        email: 'student@aives.edu.vn',
+        name: 'Trần Thị B',
+        role: 'student',
+        avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Student',
+      },
+      token: 'mock-jwt-token-student-aives-2026',
     },
-    user: {
-      id: 'u-inst-002',
-      email: 'lecturer@aives.edu.vn',
-      name: 'TS. Nguyễn Văn A',
-      role: 'instructor',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Instructor',
-    },
-    token: 'mock-jwt-token-instructor-aives-2026',
-  },
-  {
-    credentials: {
-      identifiers: ['student', 'sinhvien', 'student@aives.edu.vn'],
-      passwords: ['123456', 'password123', 'student123'],
-    },
-    user: {
-      id: 'u-stud-003',
-      email: 'student@aives.edu.vn',
-      name: 'Trần Thị B',
-      role: 'student',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Student',
-    },
-    token: 'mock-jwt-token-student-aives-2026',
-  },
-]
+  ]
 
 export const setupAuthMock = (mock: MockAdapter) => {
   // POST /auth/login - Xử lý đăng nhập mock

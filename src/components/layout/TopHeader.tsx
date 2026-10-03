@@ -33,15 +33,15 @@ const USER_INFO = {
     gradient: 'linear-gradient(135deg,#2563eb,#7c3aed)',
   },
   lecturer: {
-    initials: 'PN',
-    name: 'Prof. Nguyen',
+    initials: 'PA',
+    name: 'Phạm Tuấn Anh',
     role: 'Lecturer',
     subtitle: 'Lecturer Portal',
     gradient: 'linear-gradient(135deg,#0369a1,#2563eb)',
   },
   student: {
-    initials: 'SV',
-    name: 'Nguyen Van An',
+    initials: 'NA',
+    name: 'Nguyễn Văn An',
     role: 'Student',
     subtitle: 'Student Portal',
     gradient: 'linear-gradient(135deg,#059669,#10b981)',
@@ -79,12 +79,6 @@ export default function TopHeader({ role }: TopHeaderProps) {
 
       {/* Right actions */}
       <div className="flex items-center gap-3">
-        {/* Welcome text */}
-        {(role === 'lecturer' || role === 'student') && (
-          <span className="text-sm text-slate-500 hidden md:block">
-            Welcome back, <span className="font-semibold text-slate-800">{user.name}</span> 👋
-          </span>
-        )}
         {/* Notification bell */}
         <button className="relative p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors">
           <IconBell />

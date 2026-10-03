@@ -4,7 +4,7 @@ import HeaderActionBar from '@/components/users/HeaderActionBar'
 import DataTable from '@/components/users/DataTable'
 import Pagination from '@/components/users/Pagination'
 import AddUserModal from '@/components/users/AddUserModal'
-
+import UserDetailModal from '@/components/users/UserDetailModal'
 
 const ALL_USERS: User[] = [
     { id: 2, name: 'Nguyễn Văn An', username: 'AnNV12', email: 'AnNV12@fpt.edu.vn', role: 'Lecturer', createdAt: '2023-09-01' },
@@ -19,7 +19,7 @@ const ALL_USERS: User[] = [
     { id: 10, name: 'Lý Văn Cường', username: 'CuongLVIA189234', email: 'CuongLVIA189234@fpt.edu.vn', role: 'Student', createdAt: '2024-02-20' },
 ]
 
-const ROLE_COLORS: Record<Role, { bg: string; text: string; ring: string }> = {
+const ROLE_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
     Student: { bg: '#eff6ff', text: '#1d4ed8', ring: '#bfdbfe' },
     Lecturer: { bg: '#f0fdf4', text: '#15803d', ring: '#bbf7d0' },
     Admin: { bg: '#faf5ff', text: '#7c3aed', ring: '#ddd6fe' },
@@ -31,8 +31,9 @@ const AVATAR_COLORS: string[] = [
     '#9333ea', '#dc2626', '#ca8a04',
 ]
 
-function getAvatarColor(id: number): string {
-    return AVATAR_COLORS[id % AVATAR_COLORS.length]
+function getAvatarColor(id: string | number): string {
+    const numId = typeof id === 'string' ? parseInt(id, 10) || 0 : id
+    return AVATAR_COLORS[numId % AVATAR_COLORS.length]
 }
 
 function getInitials(name: string): string {
@@ -48,8 +49,8 @@ export default function UserManagement() {
     const [search, setSearch] = useState('')
     const [roleFilter, setRoleFilter] = useState<'All' | Role>('All')
     const [page, setPage] = useState(1)
-    const [selected, setSelected] = useState<Set<number>>(new Set())
-    const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
+    const [selected, setSelected] = useState<Set<string | number>>(new Set())
+    const [detailTarget, setDetailTarget] = useState<string | number | null>(null)
     const [showAddModal, setShowAddModal] = useState(false)
     const [sortCol, setSortCol] = useState<'name' | 'role' | 'createdAt'>('name')
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -94,7 +95,7 @@ export default function UserManagement() {
         }
     }
 
-    const handleToggleSelect = (id: number) => {
+    const handleToggleSelect = (id: string | number) => {
         setSelected(prev => {
             const s = new Set(prev)
             s.has(id) ? s.delete(id) : s.add(id)
@@ -109,9 +110,8 @@ export default function UserManagement() {
         admins: usersList.filter(u => u.role === 'Admin').length,
     }), [usersList])
 
-    const handleAddUser = (newUser: { name: string, email: string, role: Role, password?: string }) => {
-        const id = Math.max(...usersList.map(u => u.id), 0) + 1
-        const username = newUser.email.split('@')[0]
+    const handleAddUser = (newUser: { name: string, username: string, email: string, role: Role, password?: string }) => {
+        const id = Math.max(...usersList.map(u => typeof u.id === 'number' ? u.id : parseInt(u.id) || 0), 0) + 1
         const createdAt = new Date().toISOString().split('T')[0]
         
         const user: User = {
@@ -119,11 +119,17 @@ export default function UserManagement() {
             name: newUser.name,
             email: newUser.email,
             role: newUser.role,
-            username,
+            username: newUser.username,
             createdAt,
             password: newUser.password || '******'
         }
         setUsersList(prev => [user, ...prev])
+    }
+
+    const handleDeleteUser = (id: string | number) => {
+        if (window.confirm('Are you sure you want to delete this user?')) {
+            setUsersList(prev => prev.filter(u => u.id !== id))
+        }
     }
 
     return (
@@ -145,7 +151,8 @@ export default function UserManagement() {
                 selected={selected}
                 onToggleSelectAll={handleToggleSelectAll}
                 onToggleSelect={handleToggleSelect}
-                onDeleteRequest={setDeleteTarget}
+                onDeleteRequest={handleDeleteUser}
+                onDetailRequest={(id) => setDetailTarget(id)}
                 ROLE_COLORS={ROLE_COLORS}
                 getAvatarColor={getAvatarColor}
                 getInitials={getInitials}
@@ -157,7 +164,6 @@ export default function UserManagement() {
                 totalItems={filtered.length}
                 pageSize={PAGE_SIZE}
                 onPageChange={setPage}
-                onPageChange={setPage}
             />
 
             {showAddModal && (
@@ -166,6 +172,18 @@ export default function UserManagement() {
                     onAdd={handleAddUser}
                 />
             )}
+
+            {detailTarget !== null && (() => {
+                const detailUser = usersList.find(u => u.id === detailTarget)!
+                return (
+                    <UserDetailModal
+                        user={detailUser}
+                        avatarColor={getAvatarColor(detailUser.id)}
+                        initials={getInitials(detailUser.name)}
+                        onClose={() => setDetailTarget(null)}
+                    />
+                )
+            })()}
         </div>
     )
 }

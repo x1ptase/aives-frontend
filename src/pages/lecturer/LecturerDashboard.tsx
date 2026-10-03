@@ -4,18 +4,26 @@ export default function LecturerDashboard() {
             {/* 1. Overview */}
             <div className="grid grid-cols-4 gap-5 mb-7">
                 {[
-                    { label: 'My Exams', value: '12', sub: 'Created by you', accent: '#eff6ff', textColor: 'text-blue-600', icon: (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    )},
-                    { label: 'Active Exams', value: '3', sub: 'Currently ongoing', accent: '#f0fdf4', textColor: 'text-emerald-600', icon: (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    )},
-                    { label: 'Completed Exams', value: '9', sub: 'Completed exams', accent: '#faf5ff', textColor: 'text-purple-600', icon: (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                    )},
-                    { label: 'Student Attempts', value: '142', sub: 'Across your exams', accent: '#fff7ed', textColor: 'text-orange-600', icon: (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    )},
+                    {
+                        label: 'My Exams', value: '12', sub: 'Created by you', accent: '#eff6ff', textColor: 'text-blue-600', icon: (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
+                        )
+                    },
+                    {
+                        label: 'Active Exams', value: '3', sub: 'Currently ongoing', accent: '#f0fdf4', textColor: 'text-emerald-600', icon: (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                        )
+                    },
+                    {
+                        label: 'Completed Exams', value: '9', sub: 'Completed exams', accent: '#faf5ff', textColor: 'text-purple-600', icon: (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                        )
+                    },
+                    {
+                        label: 'Student Attempts', value: '10', sub: 'Across your exams', accent: '#fff7ed', textColor: 'text-orange-600', icon: (
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                        )
+                    },
                 ].map(c => (
                     <div key={c.label} className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
                         <div className="flex items-start justify-between mb-4">
@@ -58,17 +66,17 @@ export default function LecturerDashboard() {
                                         status: 'UPCOMING',
                                     },
                                     {
-                                        title: 'Midterm SE302',
-                                        subjectCode: 'SE302',
-                                        subjectName: 'Software Engineering',
+                                        title: 'Midterm MLN111',
+                                        subjectCode: 'MLN111',
+                                        subjectName: 'Triết học Mác-Lênin',
                                         startAt: '2026-10-02T13:00:00',
                                         endAt: '2026-10-02T14:30:00',
                                         status: 'ONGOING',
                                     },
                                     {
-                                        title: 'Final SE123',
-                                        subjectCode: 'SE123',
-                                        subjectName: 'Database Systems',
+                                        title: 'Final DBI202',
+                                        subjectCode: 'DBI202',
+                                        subjectName: 'Introduction to Databases',
                                         startAt: '2026-09-28T08:00:00',
                                         endAt: '2026-09-28T09:30:00',
                                         status: 'COMPLETED',
@@ -106,8 +114,8 @@ export default function LecturerDashboard() {
                                     const start = fmt(exam.startAt)
                                     const end = fmt(exam.endAt)
                                     const statusStyle = {
-                                        UPCOMING:  'bg-amber-50 text-amber-700 border border-amber-200',
-                                        ONGOING:   'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                                        UPCOMING: 'bg-amber-50 text-amber-700 border border-amber-200',
+                                        ONGOING: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
                                         COMPLETED: 'bg-blue-50 text-blue-700 border border-blue-200',
                                     }[exam.status]
                                     return (
@@ -236,11 +244,11 @@ export default function LecturerDashboard() {
                         </thead>
                         <tbody className="divide-y divide-slate-50 text-sm">
                             {([
-                                { student: 'Nguyễn Văn An',   exam: 'Final Term CSI106',       aiScore: 8.2,  finalScore: 8.5,  status: 'COMPLETED' },
-                                { student: 'Trần Minh Tuấn',  exam: 'Final Term CSI106',       aiScore: 7.4,  finalScore: 7.5,  status: 'COMPLETED' },
-                                { student: 'Phạm Minh Khoa',  exam: 'Midterm SE302',           aiScore: 8.7,  finalScore: 9.0,  status: 'COMPLETED' },
-                                { student: 'Đỗ Thị Lan',      exam: 'Midterm SE302',           aiScore: 6.5,  finalScore: null, status: 'COMPLETED' },
-                                { student: 'Hoàng Văn Minh',  exam: 'Quiz 3 – Data Structures', aiScore: null, finalScore: null, status: 'IN_PROGRESS' },
+                                { student: 'Nguyễn Văn An', exam: 'Final Term CSI106', aiScore: 8.2, finalScore: 8.5, status: 'COMPLETED' },
+                                { student: 'Trần Minh Tuấn', exam: 'Final Term CSI106', aiScore: 7.4, finalScore: 7.5, status: 'COMPLETED' },
+                                { student: 'Phạm Minh Khoa', exam: 'Midterm MLN111', aiScore: 8.7, finalScore: 9.0, status: 'COMPLETED' },
+                                { student: 'Đỗ Thị Lan', exam: 'Midterm MLN111', aiScore: 6.5, finalScore: null, status: 'COMPLETED' },
+                                { student: 'Hoàng Văn Minh', exam: 'Quiz 3 – Data Structures', aiScore: null, finalScore: null, status: 'IN_PROGRESS' },
                             ] as {
                                 student: string
                                 exam: string
@@ -251,9 +259,9 @@ export default function LecturerDashboard() {
                                 const scoreColor = (v: number | null) =>
                                     v === null ? '' : v >= 8 ? 'text-emerald-600' : v >= 5 ? 'text-blue-600' : 'text-red-600'
                                 const statusStyle = {
-                                    ASSIGNED:    'bg-slate-100 text-slate-600 border border-slate-200',
+                                    ASSIGNED: 'bg-slate-100 text-slate-600 border border-slate-200',
                                     IN_PROGRESS: 'bg-amber-50 text-amber-700 border border-amber-200',
-                                    COMPLETED:   'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                                    COMPLETED: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
                                 }[res.status]
                                 return (
                                     <tr key={i} className="hover:bg-slate-50/50 transition-colors">
