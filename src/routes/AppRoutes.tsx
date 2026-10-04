@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import AdminApp from '@/pages/admin/AdminApp'
 import LecturerApp from '@/pages/lecturer/LecturerApp'
 import StudentApp from '@/pages/student/StudentApp'

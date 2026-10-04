@@ -14,14 +14,43 @@ export interface AuthResponse {
   fullName: string
 }
 
+export interface SignUpPayload {
+  username: string
+  email: string
+  password: string
+  fullName: string
+  roleCode?: string
+}
+
+export interface BackendUserResponse {
+  id: number
+  username: string
+  email: string
+  fullName: string
+  role: string
+  createdAt: string
+}
+
 // ===== Auth =====
 export const authApi = {
   login: (credentials: LoginPayload) =>
     axiosInstance.post<{ result: AuthResponse }>('/auth/signin', credentials),
 
+  signup: (data: SignUpPayload) =>
+    axiosInstance.post<{ code: number; result: BackendUserResponse }>('/auth/signup', data),
+
   logout: () => axiosInstance.post<{ status: number; message: string }>('/auth/logout'),
 
   getProfile: () => axiosInstance.get<{ status: number; user: User }>('/auth/profile'),
+}
+
+// ===== Users =====
+export const userApi = {
+  getMyInfo: () =>
+    axiosInstance.get<{ code: number; result: BackendUserResponse }>('/users/my-info'),
+
+  getAll: () =>
+    axiosInstance.get<{ code: number; result: BackendUserResponse[] }>('/users'),
 }
 
 // ===== Exams =====

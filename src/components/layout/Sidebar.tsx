@@ -4,6 +4,7 @@ import {
   IconGrid, IconUsers, IconCpu, IconFile, IconBook, IconClipboard, IconChevronRight, IconLogOut
 } from '@/components/common/Icons'
 import aivesLogo from '@/assets/logo/logo-aives.jpg'
+import { useAuthStore } from '@/store/useAuthStore'
 
 type NavItem = { id: string; label: string; icon: ReactNode; path: string; badge?: string }
 
@@ -61,6 +62,21 @@ export default function Sidebar({ role }: SidebarProps) {
 
   const navItems = role === 'admin' ? ADMIN_NAV : role === 'student' ? STUDENT_NAV : LECTURER_NAV
   const user = USER_INFO[role]
+  const authUser = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
+
+  const displayName = authUser?.name || user.name
+  const initials = displayName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(p => p[0]?.toUpperCase())
+    .join('') || user.initials
+
+  const handleLogout = () => {
+    logout()
+    navigate('/')
+  }
 
   // Determine active nav item — exact match first, then prefix match
   const activeId = navItems.reduce<string>((found, item) => {
@@ -125,14 +141,14 @@ export default function Sidebar({ role }: SidebarProps) {
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-sm"
             style={{ background: user.gradient }}
           >
-            {user.initials}
+            {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-[#1F2937] truncate">{user.name}</div>
-            <div className="text-[11px] text-[#6B7280] truncate">{user.role}</div>
+            <div className="text-sm font-semibold text-[#1F2937] truncate">{displayName}</div>
+            <div className="text-[11px] text-[#6B7280] truncate">{authUser?.role || user.role}</div>
           </div>
           <button
-            onClick={() => navigate('/')}
+            onClick={handleLogout}
             className="p-1.5 rounded-md text-[#9CA3AF] hover:text-[#1F2937] hover:bg-[#F3F4F6] transition-colors flex-shrink-0"
             title="Switch role / Logout"
           >
