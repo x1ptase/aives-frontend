@@ -48,6 +48,9 @@ export const authApi = {
 export const userApi = {
   getMyInfo: () =>
     axiosInstance.get<{ code: number; result: BackendUserResponse }>('/users/my-info'),
+
+  getAll: () =>
+    axiosInstance.get<{ code: number; result: BackendUserResponse[] }>('/users'),
 }
 
 // ===== Exams =====

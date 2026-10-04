@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { User, Role } from '@/types'
-import { authApi } from '@/services/api'
+import { authApi, userApi } from '@/services/api'
 import HeaderActionBar from '@/components/users/HeaderActionBar'
 import DataTable from '@/components/users/DataTable'
 import Pagination from '@/components/users/Pagination'
@@ -55,6 +55,28 @@ export default function UserManagement() {
     const [showAddModal, setShowAddModal] = useState(false)
     const [sortCol, setSortCol] = useState<'name' | 'role' | 'createdAt'>('name')
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const res = await userApi.getAll()
+                if (res.data?.result && Array.isArray(res.data.result) && res.data.result.length > 0) {
+                    const mapped: User[] = res.data.result.map(u => ({
+                        id: u.id,
+                        name: u.fullName || u.username,
+                        username: u.username,
+                        email: u.email,
+                        role: u.role === 'ADMIN' ? 'Admin' : u.role === 'LECTURER' ? 'Lecturer' : 'Student',
+                        createdAt: u.createdAt ? new Date(u.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                    }))
+                    setUsersList(mapped)
+                }
+            } catch (err) {
+                console.warn('Could not load users from backend API, using fallback data:', err)
+            }
+        }
+        fetchUsers()
+    }, [])
 
     const filtered = useMemo(() => {
         let list = [...usersList]
