@@ -1,11 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import type { Role } from '@/types'
 
 interface User {
   id: string
   email: string
   name: string
-  role: 'admin' | 'instructor' | 'student'
+  role: Role | string
+  username?: string
 }
 
 interface AuthState {

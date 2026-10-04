@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 import { IconBell, IconGrid, IconUsers, IconCpu, IconFile, IconBook, IconClipboard } from '@/components/common/Icons'
+import { useAuthStore } from '@/store/useAuthStore'
 
 type NavItem = { id: string; label: string; icon: ReactNode; path: string; badge?: string }
 
@@ -56,6 +57,15 @@ export default function TopHeader({ role }: TopHeaderProps) {
   const location = useLocation()
   const navItems = role === 'admin' ? ADMIN_NAV : role === 'student' ? STUDENT_NAV : LECTURER_NAV
   const user = USER_INFO[role]
+  const authUser = useAuthStore((state) => state.user)
+
+  const displayName = authUser?.name || user.name
+  const initials = displayName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map(p => p[0]?.toUpperCase())
+    .join('') || user.initials
 
   const activeId = navItems.reduce<string>((found, item) => {
     if (location.pathname === item.path) return item.id
@@ -91,11 +101,11 @@ export default function TopHeader({ role }: TopHeaderProps) {
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
             style={{ background: user.gradient }}
           >
-            {user.initials}
+            {initials}
           </div>
           <div>
-            <div className="text-sm font-medium text-slate-800">{user.name}</div>
-            <div className="text-[11px] text-slate-400">{user.role}</div>
+            <div className="text-sm font-medium text-slate-800">{displayName}</div>
+            <div className="text-[11px] text-slate-400">{authUser?.role || user.role}</div>
           </div>
         </div>
       </div>

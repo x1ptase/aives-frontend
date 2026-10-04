@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { User, Role } from '@/types'
+import { authApi } from '@/services/api'
 import HeaderActionBar from '@/components/users/HeaderActionBar'
 import DataTable from '@/components/users/DataTable'
 import Pagination from '@/components/users/Pagination'
@@ -98,7 +99,11 @@ export default function UserManagement() {
     const handleToggleSelect = (id: string | number) => {
         setSelected(prev => {
             const s = new Set(prev)
-            s.has(id) ? s.delete(id) : s.add(id)
+            if (s.has(id)) {
+                s.delete(id)
+            } else {
+                s.add(id)
+            }
             return s
         })
     }
@@ -110,18 +115,25 @@ export default function UserManagement() {
         admins: usersList.filter(u => u.role === 'Admin').length,
     }), [usersList])
 
-    const handleAddUser = (newUser: { name: string, username: string, email: string, role: Role, password?: string }) => {
-        const id = Math.max(...usersList.map(u => typeof u.id === 'number' ? u.id : parseInt(u.id) || 0), 0) + 1
-        const createdAt = new Date().toISOString().split('T')[0]
-        
+    const handleAddUser = async (newUser: { name: string, username: string, email: string, role: Role, password?: string }) => {
+        const roleCode = newUser.role === 'Lecturer' ? 'LECTURER' : 'STUDENT'
+        const response = await authApi.signup({
+            username: newUser.username.trim(),
+            email: newUser.email.trim(),
+            password: newUser.password || '',
+            fullName: newUser.name.trim(),
+            roleCode,
+        })
+
+        const created = response.data.result
         const user: User = {
-            id,
-            name: newUser.name,
-            email: newUser.email,
+            id: created.id,
+            name: created.fullName,
+            email: created.email,
             role: newUser.role,
-            username: newUser.username,
-            createdAt,
-            password: newUser.password || '******'
+            username: created.username,
+            createdAt: created.createdAt ? new Date(created.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            password: '******',
         }
         setUsersList(prev => [user, ...prev])
     }

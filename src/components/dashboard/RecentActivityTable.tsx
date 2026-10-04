@@ -4,7 +4,15 @@ import { adminApi } from '@/services/api'
 type ActivityLog = { id: number, timestamp: string, user: string, role: string, action: string, detail: string, status: string }
 
 function StatusBadge({ status }: { status: string }) {
-  return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Success</span>
+  const isSuccess = status.toLowerCase() === 'success'
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold ${
+      isSuccess ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-50 text-slate-700 border border-slate-100'
+    }`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${isSuccess ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+      {status ? status.charAt(0).toUpperCase() + status.slice(1) : 'Success'}
+    </span>
+  )
 }
 
 function RolePill({ role }: { role: string }) {
