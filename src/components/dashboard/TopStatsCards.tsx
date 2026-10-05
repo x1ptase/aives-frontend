@@ -1,17 +1,49 @@
 import { useState, useEffect } from 'react'
-import { adminApi } from '@/services/api'
+import { userApi, examApi, studentExamApi } from '@/services/api'
 
 export default function TopStatsCards() {
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const { data } = await adminApi.getStats()
-        setStats(data)
+        const [usersRes, examsRes, studentExamsRes] = await Promise.all([
+          userApi.getAll().catch(() => ({ data: { result: [] } })),
+          examApi.getAll().catch(() => ({ data: [] })),
+          studentExamApi.getAll().catch(() => ({ data: [] }))
+        ])
+
+        const users = usersRes.data?.result || []
+        const exams = examsRes.data || []
+        const studentExams = studentExamsRes.data || []
+
+        const totalUsers = users.length
+        
+        let activeExams = 0
+        let completedExams = 0
+        
+        if (Array.isArray(exams)) {
+          activeExams = exams.filter(e => e.status === 'active' || e.status === 'in progress' || e.status === 'IN_PROGRESS').length
+          completedExams = exams.filter(e => e.status === 'completed' || e.status === 'COMPLETED').length
+        }
+        
+        const aiInterviews = Array.isArray(studentExams) ? studentExams.length : 0
+
+        setStats({
+          totalUsers: totalUsers.toString(),
+          usersDetail: 'Registered accounts',
+          activeExams: activeExams.toString(),
+          activeExamsDetail: 'Currently running',
+          completedExams: completedExams.toString(),
+          completedExamsDetail: 'Successfully ended',
+          aiInterviews: aiInterviews.toString(),
+          aiInterviewsDetail: 'Total attempts',
+        })
       } catch (error) {
         console.error('Failed to fetch admin stats', error)
+        setError(true)
       } finally {
         setLoading(false)
       }
@@ -19,10 +51,14 @@ export default function TopStatsCards() {
     fetchStats()
   }, [])
 
-  if (loading || !stats) {
+  if (loading) {
     return <div className="animate-pulse flex gap-5 mb-7">
       {[1, 2, 3, 4].map(i => <div key={i} className="flex-1 h-[120px] bg-slate-200 rounded-xl"></div>)}
     </div>
+  }
+
+  if (error || !stats) {
+    return <div className="mb-7 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium">Failed to load statistics. Please try again later.</div>
   }
 
   return (

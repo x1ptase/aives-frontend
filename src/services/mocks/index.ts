@@ -1,6 +1,5 @@
 import MockAdapter from 'axios-mock-adapter'
 import axiosInstance from '@/config/axios'
-import { setupAdminMock } from './adminMock'
 
 let mockInstance: MockAdapter | null = null
 
@@ -19,8 +18,7 @@ export const initMockApi = (): MockAdapter => {
     onNoMatch: 'passthrough',
   })
 
-  // Đăng ký các mock endpoints
-  setupAdminMock(mockInstance)
+  // Đăng ký các mock endpoints (admin mock has been removed)
 
   console.info('[Mock API] Mock service initialized with 800ms delay')
 

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { adminApi } from '@/services/api'
+import { examSessionApi, studentExamApi, questionApi, learningMaterialApi } from '@/services/api'
 
-type ActivityLog = { id: number, timestamp: string, user: string, role: string, action: string, detail: string, status: string }
+type ActivityLog = { id: string | number, timestamp: string, timeValue: number, user: string, role: string, action: string, detail: string, status: string }
 
 function StatusBadge({ status }: { status: string }) {
-  const isSuccess = status.toLowerCase() === 'success'
+  const isSuccess = status.toLowerCase() === 'success' || status.toLowerCase() === 'completed' || status.toLowerCase() === 'active'
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold ${
       isSuccess ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-50 text-slate-700 border border-slate-100'
@@ -16,23 +16,109 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function RolePill({ role }: { role: string }) {
-  if (role === 'Admin') return <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded leading-none w-fit">ADMIN</span>
-  if (role === 'Lecturer') return <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded leading-none w-fit">LECTURER</span>
+  const r = (role || '').toLowerCase()
+  if (r === 'admin') return <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded leading-none w-fit">ADMIN</span>
+  if (r === 'lecturer') return <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded leading-none w-fit">LECTURER</span>
   return <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded leading-none w-fit">STUDENT</span>
 }
 
 export default function RecentActivityTable() {
   const [logs, setLogs] = useState<ActivityLog[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null)
 
   useEffect(() => {
     const fetchLogs = async () => {
       try {
-        const { data } = await adminApi.getRecentActivity()
-        setLogs(data)
+        const [sessionsRes, studentExamsRes, questionsRes, materialsRes] = await Promise.all([
+          examSessionApi.getAll().catch(() => ({ data: [] })),
+          studentExamApi.getAll().catch(() => ({ data: [] })),
+          questionApi.getAll().catch(() => ({ data: [] })),
+          learningMaterialApi.getAll().catch(() => ({ data: [] }))
+        ])
+
+        const activities: ActivityLog[] = []
+        let idCounter = 1
+
+        // Format helper
+        const formatDate = (dateString: string) => {
+          if (!dateString) return 'Unknown'
+          try {
+            return new Date(dateString).toLocaleString()
+          } catch {
+            return dateString
+          }
+        }
+        const getTime = (dateString: string) => dateString ? new Date(dateString).getTime() : 0
+
+        // Created Exam (exam_sessions)
+        const sessions = Array.isArray(sessionsRes.data) ? sessionsRes.data : []
+        sessions.forEach((s: any) => {
+          activities.push({
+            id: `session-${s.id || idCounter++}`,
+            timestamp: formatDate(s.created_at || s.createdAt),
+            timeValue: getTime(s.created_at || s.createdAt),
+            user: s.creator_name || s.creator || 'Lecturer',
+            role: 'Lecturer',
+            action: 'Created Exam',
+            detail: s.name || s.title || `Exam ID: ${s.id}`,
+            status: 'success'
+          })
+        })
+
+        // Completed Exam (student_exams)
+        const studentExams = Array.isArray(studentExamsRes.data) ? studentExamsRes.data : []
+        studentExams.forEach((se: any) => {
+          activities.push({
+            id: `se-${se.id || idCounter++}`,
+            timestamp: formatDate(se.completed_at || se.completedAt || se.created_at || se.createdAt),
+            timeValue: getTime(se.completed_at || se.completedAt || se.created_at || se.createdAt),
+            user: se.student_name || se.student || 'Student',
+            role: 'Student',
+            action: 'Completed Exam',
+            detail: `Score: ${se.score || 'N/A'}`,
+            status: 'success'
+          })
+        })
+
+        // Created Question (questions)
+        const questions = Array.isArray(questionsRes.data) ? questionsRes.data : []
+        questions.forEach((q: any) => {
+          activities.push({
+            id: `q-${q.id || idCounter++}`,
+            timestamp: formatDate(q.created_at || q.createdAt),
+            timeValue: getTime(q.created_at || q.createdAt),
+            user: q.creator_name || q.creator || 'Lecturer',
+            role: 'Lecturer',
+            action: 'Created Question',
+            detail: q.topic || q.content?.substring(0, 30) + '...' || `Question ID: ${q.id}`,
+            status: 'success'
+          })
+        })
+
+        // Uploaded Learning Material (learning_materials)
+        const materials = Array.isArray(materialsRes.data) ? materialsRes.data : []
+        materials.forEach((m: any) => {
+          activities.push({
+            id: `mat-${m.id || idCounter++}`,
+            timestamp: formatDate(m.created_at || m.createdAt),
+            timeValue: getTime(m.created_at || m.createdAt),
+            user: m.uploader_name || m.uploader || 'Admin',
+            role: 'Admin',
+            action: 'Uploaded Learning Material',
+            detail: m.name || m.title || m.filename || `Material ID: ${m.id}`,
+            status: 'success'
+          })
+        })
+
+        // Sort by time descending and take top 10
+        activities.sort((a, b) => b.timeValue - a.timeValue)
+        setLogs(activities.slice(0, 10))
+
       } catch (error) {
         console.error('Failed to fetch recent activity', error)
+        setError(true)
       } finally {
         setLoading(false)
       }
@@ -42,6 +128,14 @@ export default function RecentActivityTable() {
 
   if (loading) {
     return <div className="bg-white rounded-xl border border-slate-200 shadow-sm h-64 animate-pulse"></div>
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full p-8 items-center justify-center text-red-500">
+        Failed to load recent activities.
+      </div>
+    )
   }
 
   return (
@@ -63,34 +157,42 @@ export default function RecentActivityTable() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {logs.map(log => (
-                <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ fontFamily: 'JetBrains Mono, monospace', color: '#64748b' }}>{log.timestamp}</td>
-                  <td className="px-4 py-3.5">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs font-medium text-slate-700 whitespace-nowrap">{log.user}</span>
-                      <RolePill role={log.role} />
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5 text-xs font-medium text-slate-700 whitespace-nowrap">{log.action}</td>
-                  <td className="px-4 py-3.5 text-xs text-slate-500 max-w-[220px]">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate min-w-0" title={log.detail}>{log.detail}</span>
-                      {log.detail.length > 30 && (
-                        <button
-                          onClick={() => setSelectedLog(log)}
-                          className="text-[11px] font-medium text-blue-600 hover:text-blue-700 whitespace-nowrap flex-shrink-0 transition-colors"
-                        >
-                          View details
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <StatusBadge status={log.status} />
+              {logs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-8 text-center text-slate-500 text-sm">
+                    No recent activities
                   </td>
                 </tr>
-              ))}
+              ) : (
+                logs.map(log => (
+                  <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ fontFamily: 'JetBrains Mono, monospace', color: '#64748b' }}>{log.timestamp}</td>
+                    <td className="px-4 py-3.5">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-xs font-medium text-slate-700 whitespace-nowrap">{log.user}</span>
+                        <RolePill role={log.role} />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5 text-xs font-medium text-slate-700 whitespace-nowrap">{log.action}</td>
+                    <td className="px-4 py-3.5 text-xs text-slate-500 max-w-[220px]">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate min-w-0" title={log.detail}>{log.detail}</span>
+                        {log.detail.length > 30 && (
+                          <button
+                            onClick={() => setSelectedLog(log)}
+                            className="text-[11px] font-medium text-blue-600 hover:text-blue-700 whitespace-nowrap flex-shrink-0 transition-colors"
+                          >
+                            View details
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <StatusBadge status={log.status} />
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
