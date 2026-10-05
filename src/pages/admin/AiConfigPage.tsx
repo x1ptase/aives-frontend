@@ -110,7 +110,7 @@ export default function AiConfigPage() {
   useEffect(() => {
     const role = user?.role?.toLowerCase()
     if (role !== 'admin') {
-      navigate('/login')
+      navigate('/signin')
     }
   }, [user, navigate])
 
