@@ -70,7 +70,16 @@ export const examApi = {
 export const questionApi = {
   getAll: () => axiosInstance.get('/questions'),
 
+  getBySubject: (subjectId: string | number) =>
+    axiosInstance.get('/questions', { params: { subject_id: subjectId } }),
+
   getById: (id: string) => axiosInstance.get(`/questions/${id}`),
+
+  create: (data: any) => axiosInstance.post('/questions', data),
+
+  update: (id: string | number, data: any) => axiosInstance.put(`/questions/${id}`, data),
+
+  delete: (id: string | number) => axiosInstance.delete(`/questions/${id}`),
 
   generate: (data: { topic: string; count: number }) =>
     axiosInstance.post('/questions/generate', data),
@@ -100,16 +109,32 @@ export const gradingApi = {
 // ===== Exam Sessions =====
 export const examSessionApi = {
   getAll: () => axiosInstance.get('/exam-sessions'),
+  getById: (id: string | number) => axiosInstance.get(`/exam-sessions/${id}`),
+  create: (data: any) => axiosInstance.post('/exam-sessions', data),
+  update: (id: string | number, data: any) => axiosInstance.put(`/exam-sessions/${id}`, data),
+  delete: (id: string | number) => axiosInstance.delete(`/exam-sessions/${id}`),
 }
 
 // ===== Student Exams =====
 export const studentExamApi = {
   getAll: () => axiosInstance.get('/student-exams'),
+  assign: (_data: any) => Promise.reject(new Error("Assignment API endpoint is not defined in frontend contract. UI is ready.")),
+  unassign: (_id: string | number) => Promise.reject(new Error("Unassign API endpoint is not defined in frontend contract. UI is ready.")),
 }
 
 // ===== Learning Materials =====
 export const learningMaterialApi = {
   getAll: () => axiosInstance.get('/learning-materials'),
+}
+
+// ===== Subjects =====
+export const subjectApi = {
+  getAll: () => axiosInstance.get('/subjects'),
+  create: (data: { code: string; name: string; description?: string }) =>
+    axiosInstance.post('/subjects', data),
+  update: (id: string | number, data: { code?: string; name?: string; description?: string }) =>
+    axiosInstance.put(`/subjects/${id}`, data),
+  delete: (id: string | number) => axiosInstance.delete(`/subjects/${id}`),
 }
 
 // ===== Admin =====
