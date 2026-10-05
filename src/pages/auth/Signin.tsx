@@ -1,24 +1,35 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import axios from 'axios'
-import aivesLogo from '../assets/logo/logo-aives.jpg'
+import aivesLogo from '../../assets/logo/logo-aives.jpg'
 import { authApi } from '@/services/api'
 import { useAuthStore } from '@/store/useAuthStore'
 
-export const Login: React.FC = () => {
+export const Signin: React.FC = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const setUser = useAuthStore((state) => state.setUser)
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleLogin = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message)
+      // Clean up the location state so the message doesn't persist on refresh
+      window.history.replaceState({}, document.title)
+    }
+  }, [location])
+
+  const handleSignin = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage('')
+    setSuccessMessage('')
     setIsLoading(true)
 
     try {
@@ -94,7 +105,7 @@ export const Login: React.FC = () => {
         </div>
 
         {/* Form đăng nhập */}
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleSignin} className="space-y-4">
           {/* Trường Tên đăng nhập */}
           <div>
             <label
@@ -154,10 +165,15 @@ export const Login: React.FC = () => {
             </div>
           </div>
 
-          {/* Hiển thị thông báo lỗi khi đăng nhập thất bại */}
+          {/* Hiển thị thông báo lỗi/thành công */}
           {errorMessage && (
             <div className="text-sm text-red-500 font-medium text-center bg-red-50 py-2 px-3 rounded-lg border border-red-200 animate-fadeIn">
               {errorMessage}
+            </div>
+          )}
+          {successMessage && (
+            <div className="text-sm text-green-600 font-medium text-center bg-green-50 py-2 px-3 rounded-lg border border-green-200 animate-fadeIn">
+              {successMessage}
             </div>
           )}
 
@@ -172,10 +188,20 @@ export const Login: React.FC = () => {
               {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
           </div>
+          
+          {/* Link sang trang Sign Up */}
+          <div className="text-center mt-4">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <Link to="/signup" className="text-indigo-600 hover:text-indigo-800 font-semibold transition-colors">
+                Sign Up
+              </Link>
+            </p>
+          </div>
         </form>
       </div>
     </div>
   )
 }
 
-export default Login
+export default Signin

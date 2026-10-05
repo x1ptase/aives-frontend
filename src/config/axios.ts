@@ -31,7 +31,7 @@ axiosInstance.interceptors.response.use(
       // Tránh reload trang nếu đang ở trang login hoặc lỗi xuất phát từ API login / signin
       const url = error.config?.url || ''
       const isLoginRequest = url.includes('/auth/login') || url.includes('/auth/signin')
-      if (!isLoginRequest && window.location.pathname !== '/' && window.location.pathname !== '/login') {
+      if (!isLoginRequest && window.location.pathname !== '/' && window.location.pathname !== '/signin') {
         window.location.href = '/'
       }
     }

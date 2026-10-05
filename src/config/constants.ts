@@ -5,7 +5,7 @@ export const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8
 
 export const ROUTES = {
   HOME: '/',
-  LOGIN: '/login',
+  LOGIN: '/signin',
   DASHBOARD: '/dashboard',
   QUESTION_BANK: '/question-bank',
   EXAM_ROOM: '/exam-room',
