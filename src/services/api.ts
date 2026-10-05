@@ -97,9 +97,23 @@ export const gradingApi = {
   getResult: (examId: string) => axiosInstance.get(`/grading/result/${examId}`),
 }
 
+// ===== Exam Sessions =====
+export const examSessionApi = {
+  getAll: () => axiosInstance.get('/exam-sessions'),
+}
+
+// ===== Student Exams =====
+export const studentExamApi = {
+  getAll: () => axiosInstance.get('/student-exams'),
+}
+
+// ===== Learning Materials =====
+export const learningMaterialApi = {
+  getAll: () => axiosInstance.get('/learning-materials'),
+}
+
 // ===== Admin =====
 export const adminApi = {
-  getStats: () => axiosInstance.get('/admin/stats'),
-  getRecentActivity: () => axiosInstance.get('/admin/recent-activity'),
+  // Aggregate stats and activities from existing endpoints since backend might not have dedicated ones
   getAiConfig: () => axiosInstance.get('/admin/ai-config'),
 }
