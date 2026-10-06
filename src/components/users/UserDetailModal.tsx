@@ -6,9 +6,10 @@ interface UserDetailModalProps {
   avatarColor: string
   initials: string
   onClose: () => void
+  onEdit?: () => void
 }
 
-export default function UserDetailModal({ user, avatarColor, initials, onClose }: UserDetailModalProps) {
+export default function UserDetailModal({ user, avatarColor, initials, onClose, onEdit }: UserDetailModalProps) {
   // Safe parsing for date
   let formattedDate = 'N/A'
   if (user.createdAt) {
@@ -67,10 +68,21 @@ export default function UserDetailModal({ user, avatarColor, initials, onClose }
         </div>
 
         {/* Footer */}
-        <div className="px-8 pb-8 pt-2 flex justify-center">
+        <div className="px-8 pb-8 pt-2 flex items-center justify-end gap-3">
+          {onEdit && (
+            <button
+              onClick={() => {
+                onClose()
+                onEdit()
+              }}
+              className="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-semibold rounded-xl transition-colors"
+            >
+              Edit User
+            </button>
+          )}
           <button
             onClick={onClose}
-            className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl shadow-md transition-colors"
+            className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl shadow-md transition-colors"
           >
             Done
           </button>

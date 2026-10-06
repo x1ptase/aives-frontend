@@ -1,5 +1,5 @@
 import { User, Role } from '@/types'
-import { SearchIcon, ChevronDown, TrashIcon, MoreIcon } from '@/components/common/Icons'
+import { SearchIcon, ChevronDown, TrashIcon, MoreIcon, EditIcon } from '@/components/common/Icons'
 
 interface DataTableProps {
   users: User[]
@@ -15,6 +15,7 @@ interface DataTableProps {
   onToggleSelect: (id: string | number) => void
   onDeleteRequest: (id: string | number) => void
   onDetailRequest: (id: string | number) => void
+  onEditRequest?: (user: User) => void
   ROLE_COLORS: Record<string, { bg: string; text: string; ring: string }>
   getAvatarColor: (id: string | number) => string
   getInitials: (name: string) => string
@@ -22,7 +23,7 @@ interface DataTableProps {
 
 export default function DataTable({
   users, search, setSearch, roleFilter, setRoleFilter, sortCol, sortDir, onSort,
-  selected, onToggleSelectAll, onToggleSelect, onDeleteRequest, onDetailRequest,
+  selected, onToggleSelectAll, onToggleSelect, onDeleteRequest, onDetailRequest, onEditRequest,
   ROLE_COLORS, getAvatarColor, getInitials
 }: DataTableProps) {
   const allSelected = users.length > 0 && users.every(u => selected.has(u.id))
@@ -140,6 +141,11 @@ export default function DataTable({
                         <button className="px-2.5 py-1.5 rounded-md text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all font-medium text-xs flex items-center gap-1.5" title="View Detail" onClick={() => onDetailRequest(user.id)}>
                           <MoreIcon />
                         </button>
+                        {onEditRequest && (
+                          <button className="px-2.5 py-1.5 rounded-md text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-all font-medium text-xs flex items-center gap-1.5" title="Edit User" onClick={() => onEditRequest(user)}>
+                            <EditIcon />
+                          </button>
+                        )}
                         <button className="px-2.5 py-1.5 rounded-md text-red-500 hover:text-red-700 hover:bg-red-50 transition-all font-medium text-xs flex items-center gap-1.5" title="Delete User" onClick={() => onDeleteRequest(user.id)}>
                           <TrashIcon />
                         </button>
