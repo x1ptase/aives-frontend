@@ -502,7 +502,10 @@ export default function QuestionBank() {
             setSelectedSubject(null)
             await fetchSubjects()
         } catch (err: any) {
-            const msg = err.response?.data?.message || err.message || 'Failed to delete subject.'
+            let msg = err.response?.data?.message || err.message || 'Failed to delete subject.'
+            if (typeof msg === 'string' && (msg.includes('foreign key constraint') || msg.includes('violates foreign key'))) {
+                msg = 'Cannot delete this subject because it is linked to existing questions, learning materials, or assigned lecturers. Please delete linked items first.'
+            }
             alert(`Error: ${msg}`)
         }
     }

@@ -174,6 +174,9 @@ export default function UserManagement() {
                 const res = (err as { response?: { data?: { message?: string } } }).response
                 msg = res?.data?.message || msg
             }
+            if (typeof msg === 'string' && (msg.includes('foreign key constraint') || msg.includes('violates foreign key'))) {
+                msg = 'Cannot delete this user because they are linked to existing subjects or system records. Please reassign or remove linked data first.'
+            }
             alert(msg)
         }
     }
