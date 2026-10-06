@@ -5,6 +5,7 @@ import HeaderActionBar from '@/components/users/HeaderActionBar'
 import DataTable from '@/components/users/DataTable'
 import Pagination from '@/components/users/Pagination'
 import AddUserModal from '@/components/users/AddUserModal'
+import EditUserModal from '@/components/users/EditUserModal'
 import UserDetailModal from '@/components/users/UserDetailModal'
 
 const ALL_USERS: User[] = [
@@ -52,6 +53,7 @@ export default function UserManagement() {
     const [page, setPage] = useState(1)
     const [selected, setSelected] = useState<Set<string | number>>(new Set())
     const [detailTarget, setDetailTarget] = useState<string | number | null>(null)
+    const [editTarget, setEditTarget] = useState<User | null>(null)
     const [showAddModal, setShowAddModal] = useState(false)
     const [sortCol, setSortCol] = useState<'name' | 'role' | 'createdAt'>('name')
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -160,10 +162,46 @@ export default function UserManagement() {
         setUsersList(prev => [user, ...prev])
     }
 
-    const handleDeleteUser = (id: string | number) => {
-        if (window.confirm('Are you sure you want to delete this user?')) {
+    const handleDeleteUser = async (id: string | number) => {
+        if (!window.confirm('Are you sure you want to delete this user?')) return
+        try {
+            await userApi.delete(id)
             setUsersList(prev => prev.filter(u => u.id !== id))
+            setSelected(prev => { const s = new Set(prev); s.delete(id); return s })
+        } catch (err: unknown) {
+            let msg = 'Failed to delete user.'
+            if (typeof err === 'object' && err !== null && 'response' in err) {
+                const res = (err as { response?: { data?: { message?: string } } }).response
+                msg = res?.data?.message || msg
+            }
+            if (typeof msg === 'string' && (msg.includes('foreign key constraint') || msg.includes('violates foreign key'))) {
+                msg = 'Cannot delete this user because they are linked to existing subjects or system records. Please reassign or remove linked data first.'
+            }
+            alert(msg)
         }
+    }
+
+    const handleUpdateUser = async (id: string | number, updatedData: { name: string; username: string; email: string; role: Role }) => {
+        const roleCode = updatedData.role === 'Admin' ? 'ADMIN' : updatedData.role === 'Lecturer' ? 'LECTURER' : 'STUDENT'
+        const response = await userApi.update(id, {
+            fullName: updatedData.name.trim(),
+            username: updatedData.username.trim(),
+            email: updatedData.email.trim(),
+            roleCode,
+        })
+        const updated = response.data?.result
+        setUsersList(prev => prev.map(u => {
+            if (u.id === id) {
+                return {
+                    ...u,
+                    name: updated?.fullName || updatedData.name,
+                    username: updated?.username || updatedData.username,
+                    email: updated?.email || updatedData.email,
+                    role: updatedData.role,
+                }
+            }
+            return u
+        }))
     }
 
     return (
@@ -187,6 +225,7 @@ export default function UserManagement() {
                 onToggleSelect={handleToggleSelect}
                 onDeleteRequest={handleDeleteUser}
                 onDetailRequest={(id) => setDetailTarget(id)}
+                onEditRequest={(user) => setEditTarget(user)}
                 ROLE_COLORS={ROLE_COLORS}
                 getAvatarColor={getAvatarColor}
                 getInitials={getInitials}
@@ -207,6 +246,14 @@ export default function UserManagement() {
                 />
             )}
 
+            {editTarget !== null && (
+                <EditUserModal
+                    user={editTarget}
+                    onClose={() => setEditTarget(null)}
+                    onUpdate={handleUpdateUser}
+                />
+            )}
+
             {detailTarget !== null && (() => {
                 const detailUser = usersList.find(u => u.id === detailTarget)!
                 return (
@@ -215,6 +262,7 @@ export default function UserManagement() {
                         avatarColor={getAvatarColor(detailUser.id)}
                         initials={getInitials(detailUser.name)}
                         onClose={() => setDetailTarget(null)}
+                        onEdit={() => setEditTarget(detailUser)}
                     />
                 )
             })()}

@@ -157,6 +157,136 @@ function CreateSubjectModal({
     )
 }
 
+// ─── Edit Subject Modal ───────────────────────────────────────────────────────
+function EditSubjectModal({
+    subject,
+    onClose,
+    onUpdated,
+}: {
+    subject: Subject
+    onClose: () => void
+    onUpdated: (subject: Subject) => void
+}) {
+    const [code, setCode] = useState(subject.code || '')
+    const [name, setName] = useState(subject.name || '')
+    const [description, setDescription] = useState(subject.description || '')
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setError('')
+        if (!code.trim()) return setError('Subject Code is required.')
+        if (!name.trim()) return setError('Subject Name is required.')
+
+        try {
+            setLoading(true)
+            const res = await subjectApi.update(subject.id, {
+                code: code.trim(),
+                name: name.trim(),
+                description: description.trim() || undefined,
+            })
+            const updated: Subject = res.data?.result || res.data || { ...subject, code, name, description }
+            onUpdated(updated)
+        } catch (err: any) {
+            const msg = err.response?.data?.message || err.message || 'Failed to update subject.'
+            setError(msg)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                    <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                        Edit Subject
+                    </h2>
+                    <button onClick={onClose} disabled={loading} className="text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-6">
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm font-medium">
+                            {error}
+                        </div>
+                    )}
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Subject Code <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={code}
+                                disabled={loading}
+                                onChange={e => setCode(e.target.value)}
+                                placeholder="e.g. SWD392"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm disabled:bg-slate-50"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Subject Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={name}
+                                disabled={loading}
+                                onChange={e => setName(e.target.value)}
+                                placeholder="e.g. Software Architecture and Design"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm disabled:bg-slate-50"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                                Description <span className="text-slate-400 font-normal">(optional)</span>
+                            </label>
+                            <textarea
+                                value={description}
+                                disabled={loading}
+                                onChange={e => setDescription(e.target.value)}
+                                placeholder="Brief description of this subject"
+                                rows={3}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm resize-none disabled:bg-slate-50"
+                            />
+                        </div>
+                    </div>
+                    <div className="mt-6 flex justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={loading}
+                            className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                            {loading && (
+                                <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                </svg>
+                            )}
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )
+}
+
 // ─── Create Question Modal ────────────────────────────────────────────────────
 function CreateQuestionModal({
     subjectId,
@@ -298,6 +428,7 @@ export default function QuestionBank() {
 
     // Modals
     const [showCreateSubject, setShowCreateSubject] = useState(false)
+    const [showEditSubject, setShowEditSubject] = useState(false)
     const [showCreateQuestion, setShowCreateQuestion] = useState(false)
 
     // ── Fetch subjects ────────────────────────────────────────────────────────
@@ -354,6 +485,28 @@ export default function QuestionBank() {
         // Select the newly created subject
         if (created?.id) {
             setSelectedSubject(created)
+        }
+    }
+
+    const handleSubjectUpdated = async (updated: Subject) => {
+        setShowEditSubject(false)
+        await fetchSubjects()
+        setSelectedSubject(updated)
+    }
+
+    const handleDeleteSubject = async () => {
+        if (!selectedSubject) return
+        if (!window.confirm(`Are you sure you want to delete subject "${selectedSubject.code} - ${selectedSubject.name}"?`)) return
+        try {
+            await subjectApi.delete(selectedSubject.id)
+            setSelectedSubject(null)
+            await fetchSubjects()
+        } catch (err: any) {
+            let msg = err.response?.data?.message || err.message || 'Failed to delete subject.'
+            if (typeof msg === 'string' && (msg.includes('foreign key constraint') || msg.includes('violates foreign key'))) {
+                msg = 'Cannot delete this subject because it is linked to existing questions, learning materials, or assigned lecturers. Please delete linked items first.'
+            }
+            alert(`Error: ${msg}`)
         }
     }
 
@@ -432,6 +585,32 @@ export default function QuestionBank() {
                     >
                         + Create Subject
                     </button>
+
+                    {selectedSubject && (
+                        <>
+                            <button
+                                onClick={() => setShowEditSubject(true)}
+                                className="px-3 py-2 text-sm font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors shrink-0 flex items-center gap-1.5"
+                                title="Edit Subject"
+                            >
+                                <svg className="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                                Edit Subject
+                            </button>
+                            <button
+                                onClick={handleDeleteSubject}
+                                className="px-3 py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors shrink-0 flex items-center gap-1.5"
+                                title="Delete Subject"
+                            >
+                                <svg className="w-3.5 h-3.5 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                </svg>
+                                Delete Subject
+                            </button>
+                        </>
+                    )}
                 </div>
 
                 {/* Selected subject info */}
@@ -560,6 +739,14 @@ export default function QuestionBank() {
                 <CreateSubjectModal
                     onClose={() => setShowCreateSubject(false)}
                     onCreated={handleSubjectCreated}
+                />
+            )}
+
+            {showEditSubject && selectedSubject && (
+                <EditSubjectModal
+                    subject={selectedSubject}
+                    onClose={() => setShowEditSubject(false)}
+                    onUpdated={handleSubjectUpdated}
                 />
             )}
 

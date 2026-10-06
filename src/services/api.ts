@@ -44,6 +44,13 @@ export const authApi = {
   getProfile: () => axiosInstance.get<{ status: number; user: User }>('/auth/profile'),
 }
 
+export interface UserUpdatePayload {
+  username?: string
+  fullName?: string
+  email?: string
+  roleCode?: string
+}
+
 // ===== Users =====
 export const userApi = {
   getMyInfo: () =>
@@ -51,6 +58,12 @@ export const userApi = {
 
   getAll: () =>
     axiosInstance.get<{ code: number; result: BackendUserResponse[] }>('/users'),
+
+  update: (id: string | number, data: UserUpdatePayload) =>
+    axiosInstance.put<{ code: number; result: BackendUserResponse }>(`/users/${id}`, data),
+
+  delete: (id: string | number) =>
+    axiosInstance.delete<{ code: number; result: string }>(`/users/${id}`),
 }
 
 // ===== Exams =====
@@ -130,6 +143,7 @@ export const learningMaterialApi = {
 // ===== Subjects =====
 export const subjectApi = {
   getAll: () => axiosInstance.get('/subjects'),
+  getById: (id: string | number) => axiosInstance.get(`/subjects/${id}`),
   create: (data: { code: string; name: string; description?: string }) =>
     axiosInstance.post('/subjects', data),
   update: (id: string | number, data: { code?: string; name?: string; description?: string }) =>
