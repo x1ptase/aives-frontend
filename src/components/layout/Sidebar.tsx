@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   IconGrid, IconUsers, IconCpu, IconFile, IconBook, IconClipboard, IconChevronRight, IconLogOut
@@ -25,7 +25,6 @@ const STUDENT_NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/student' },
   { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/student/exams' },
   { id: 'history', label: 'Exam History', icon: <IconFile />, path: '/student/history' },
-  { id: 'profile', label: 'Profile', icon: <IconUsers />, path: '/student/profile' },
 ]
 
 const USER_INFO = {
@@ -35,6 +34,7 @@ const USER_INFO = {
     role: 'System Administrator',
     subtitle: 'Admin Portal',
     gradient: 'linear-gradient(135deg,#2563eb,#7c3aed)',
+    profilePath: '/admin/profile',
   },
   lecturer: {
     initials: 'PA',
@@ -42,6 +42,7 @@ const USER_INFO = {
     role: 'Lecturer',
     subtitle: 'Lecturer Portal',
     gradient: 'linear-gradient(135deg,#0369a1,#2563eb)',
+    profilePath: '/lecturer/profile',
   },
   student: {
     initials: 'NA',
@@ -49,6 +50,7 @@ const USER_INFO = {
     role: 'Student',
     subtitle: 'Student Portal',
     gradient: 'linear-gradient(135deg,#059669,#10b981)',
+    profilePath: '/student/profile',
   },
 }
 
@@ -59,6 +61,28 @@ interface SidebarProps {
 export default function Sidebar({ role }: SidebarProps) {
   const navigate = useNavigate()
   const location = useLocation()
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMenuOpen(false)
+    }
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleEsc)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEsc)
+    }
+  }, [isMenuOpen])
 
   const navItems = role === 'admin' ? ADMIN_NAV : role === 'student' ? STUDENT_NAV : LECTURER_NAV
   const user = USER_INFO[role]
@@ -76,6 +100,10 @@ export default function Sidebar({ role }: SidebarProps) {
   const handleLogout = () => {
     logout()
     navigate('/')
+  }
+
+  const handleProfileClick = () => {
+    navigate(user.profilePath)
   }
 
   // Determine active nav item — exact match first, then prefix match
@@ -135,8 +163,27 @@ export default function Sidebar({ role }: SidebarProps) {
       </nav>
 
       {/* User footer */}
-      <div className="px-4 py-4 border-t border-[#E5E7EB]">
-        <div className="flex items-center gap-3">
+      <div className="relative px-4 py-4 border-t border-[#E5E7EB]" ref={menuRef}>
+        {isMenuOpen && (
+          <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+            <button
+              onClick={() => { setIsMenuOpen(false); handleProfileClick() }}
+              className="w-full text-left px-4 py-2 text-sm font-medium text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#1F2937] transition-colors"
+            >
+              Profile
+            </button>
+            <button
+              onClick={() => { setIsMenuOpen(false); handleLogout() }}
+              className="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        )}
+        <button
+          onClick={() => setIsMenuOpen(prev => !prev)}
+          className="w-full flex items-center gap-3 p-1.5 -m-1.5 rounded-lg hover:bg-[#F3F4F6] transition-colors text-left focus:outline-none"
+        >
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-sm"
             style={{ background: user.gradient }}
@@ -147,14 +194,7 @@ export default function Sidebar({ role }: SidebarProps) {
             <div className="text-sm font-semibold text-[#1F2937] truncate">{displayName}</div>
             <div className="text-[11px] text-[#6B7280] truncate">{authUser?.role || user.role}</div>
           </div>
-          <button
-            onClick={handleLogout}
-            className="p-1.5 rounded-md text-[#9CA3AF] hover:text-[#1F2937] hover:bg-[#F3F4F6] transition-colors flex-shrink-0"
-            title="Switch role / Logout"
-          >
-            <IconLogOut />
-          </button>
-        </div>
+        </button>
       </div>
     </aside>
   )

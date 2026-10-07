@@ -1,10 +1,3 @@
-export default function Profile() {
-    return (
-        <div className="flex-1 overflow-y-auto p-8 bg-[#f1f5f9]">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                <h1 className="text-2xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'DM Sans, sans-serif' }}>Profile</h1>
-                <p className="text-slate-500">This module is under construction.</p>
-            </div>
-        </div>
-    )
-}
+// Student profile page — delegates to the shared Profile component
+// The shared Profile page uses userApi.getMyInfo() to load the authenticated user's own data.
+export { default } from '@/pages/profile/Profile'
