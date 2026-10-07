@@ -4,6 +4,7 @@ import LecturerDashboard from './LecturerDashboard'
 import MyExams from './MyExams'
 import QuestionBank from './QuestionBank'
 import LearningMaterials from './LearningMaterials'
+import Profile from '@/pages/profile/Profile'
 
 export default function LecturerApp() {
     return (
@@ -13,6 +14,7 @@ export default function LecturerApp() {
                 <Route path="/exams" element={<MyExams />} />
                 <Route path="/question-bank" element={<QuestionBank />} />
                 <Route path="/learning-materials" element={<LearningMaterials />} />
+                <Route path="/profile" element={<Profile />} />
                 <Route path="*" element={<LecturerDashboard />} />
             </Routes>
         </DashboardLayout>

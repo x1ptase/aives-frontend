@@ -20,7 +20,7 @@ export default function HeaderActionBar({ counts, onAddUser }: HeaderActionBarPr
             style={{ background: 'linear-gradient(135deg,#1d4ed8,#2563eb)', fontFamily: 'DM Sans, sans-serif' }}
           >
             <PlusIcon />
-            Add New User
+            Create Lecturer
           </button>
         </div>
       </div>

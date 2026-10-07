@@ -42,6 +42,12 @@ export const authApi = {
   logout: () => axiosInstance.post<{ status: number; message: string }>('/auth/logout'),
 
   getProfile: () => axiosInstance.get<{ status: number; user: User }>('/auth/profile'),
+
+  googleSignIn: (_token: string) =>
+    Promise.reject(new Error("Google Sign In API endpoint is not yet implemented by the backend contract.")),
+
+  googleSignUp: (_token: string) =>
+    Promise.reject(new Error("Google Sign Up API endpoint is not yet implemented by the backend contract.")),
 }
 
 export interface UserUpdatePayload {
@@ -64,6 +70,12 @@ export const userApi = {
 
   delete: (id: string | number) =>
     axiosInstance.delete<{ code: number; result: string }>(`/users/${id}`),
+
+  changePassword: (_data: any) =>
+    Promise.reject(new Error("Password change API endpoint is not yet implemented by the backend contract. UI is ready.")),
+
+  googleLink: (_token: string) =>
+    Promise.reject(new Error("Google Linking API endpoint is not yet implemented by the backend contract.")),
 }
 
 // ===== Exams =====

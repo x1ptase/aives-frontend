@@ -5,21 +5,7 @@ import HeaderActionBar from '@/components/users/HeaderActionBar'
 import DataTable from '@/components/users/DataTable'
 import Pagination from '@/components/users/Pagination'
 import AddUserModal from '@/components/users/AddUserModal'
-import EditUserModal from '@/components/users/EditUserModal'
 import UserDetailModal from '@/components/users/UserDetailModal'
-
-const ALL_USERS: User[] = [
-    { id: 2, name: 'Nguyễn Văn An', username: 'AnNV12', email: 'AnNV12@fpt.edu.vn', role: 'Lecturer', createdAt: '2023-09-01' },
-    { id: 3, name: 'Trần Thị Bích', username: 'BichTTSE218473', email: 'BichTTSE218473@fpt.edu.vn', role: 'Student', createdAt: '2023-09-05' },
-    { id: 1, name: 'Administrator', username: 'admin', email: 'admin@aives.edu.vn', role: 'Admin', createdAt: '2023-01-15' },
-    { id: 4, name: 'Phạm Minh Khoa', username: 'KhoaPMIA201948', email: 'KhoaPMIA201948@fpt.edu.vn', role: 'Student', createdAt: '2023-10-12' },
-    { id: 5, name: 'Đỗ Thị Lan', username: 'LanDT5', email: 'LanDT5@fpt.edu.vn', role: 'Lecturer', createdAt: '2023-08-22' },
-    { id: 6, name: 'Hoàng Văn Minh', username: 'MinhHVSE185739', email: 'MinhHVSE185739@fpt.edu.vn', role: 'Student', createdAt: '2023-11-01' },
-    { id: 7, name: 'Võ Thị Ngọc', username: 'NgocVTIS192038', email: 'NgocVTIS192038@fpt.edu.vn', role: 'Student', createdAt: '2024-01-10' },
-    { id: 8, name: 'Bùi Quang Hiệu', username: 'HieuBQ77', email: 'HieuBQ77@fpt.edu.vn', role: 'Lecturer', createdAt: '2023-05-18' },
-    { id: 9, name: 'Đinh Thị Thu', username: 'ThuDTGD213948', email: 'ThuDTGD213948@fpt.edu.vn', role: 'Student', createdAt: '2023-12-05' },
-    { id: 10, name: 'Lý Văn Cường', username: 'CuongLVIA189234', email: 'CuongLVIA189234@fpt.edu.vn', role: 'Student', createdAt: '2024-02-20' },
-]
 
 const ROLE_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
     Student: { bg: '#eff6ff', text: '#1d4ed8', ring: '#bfdbfe' },
@@ -47,22 +33,23 @@ function getInitials(name: string): string {
 const PAGE_SIZE = 8
 
 export default function UserManagement() {
-    const [usersList, setUsersList] = useState<User[]>(ALL_USERS)
+    const [usersList, setUsersList] = useState<User[]>([])
     const [search, setSearch] = useState('')
     const [roleFilter, setRoleFilter] = useState<'All' | Role>('All')
     const [page, setPage] = useState(1)
     const [selected, setSelected] = useState<Set<string | number>>(new Set())
     const [detailTarget, setDetailTarget] = useState<string | number | null>(null)
-    const [editTarget, setEditTarget] = useState<User | null>(null)
     const [showAddModal, setShowAddModal] = useState(false)
     const [sortCol, setSortCol] = useState<'name' | 'role' | 'createdAt'>('name')
     const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+    const [loadError, setLoadError] = useState('')
 
     useEffect(() => {
         const fetchUsers = async () => {
+            setLoadError('')
             try {
                 const res = await userApi.getAll()
-                if (res.data?.result && Array.isArray(res.data.result) && res.data.result.length > 0) {
+                if (res.data?.result && Array.isArray(res.data.result)) {
                     const mapped: User[] = res.data.result.map(u => ({
                         id: u.id,
                         name: u.fullName || u.username,
@@ -74,7 +61,8 @@ export default function UserManagement() {
                     setUsersList(mapped)
                 }
             } catch (err) {
-                console.warn('Could not load users from backend API, using fallback data:', err)
+                console.warn('Could not load users from backend API:', err)
+                setLoadError('Could not load users. Please check your connection or try again.')
             }
         }
         fetchUsers()
@@ -139,31 +127,20 @@ export default function UserManagement() {
         admins: usersList.filter(u => u.role === 'Admin').length,
     }), [usersList])
 
-    const handleAddUser = async (newUser: { name: string, username: string, email: string, role: Role, password?: string }) => {
-        const roleCode = newUser.role === 'Lecturer' ? 'LECTURER' : 'STUDENT'
-        const response = await authApi.signup({
-            username: newUser.username.trim(),
-            email: newUser.email.trim(),
-            password: newUser.password || '',
-            fullName: newUser.name.trim(),
-            roleCode,
-        })
-
-        const created = response.data.result
-        const user: User = {
-            id: created.id,
-            name: created.fullName,
-            email: created.email,
-            role: newUser.role,
-            username: created.username,
-            createdAt: created.createdAt ? new Date(created.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            password: '******',
-        }
-        setUsersList(prev => [user, ...prev])
+    /**
+     * Admin can create accounts for Lecturers.
+     * The backend contract currently lacks an API to create a lecturer WITHOUT a password (e.g., via email invitation).
+     * We clearly isolate this missing integration point.
+     */
+    const handleAddUser = async (newUser: { name: string, username: string, email: string, role: Role }) => {
+        return Promise.reject(new Error("Creation of Lecturer accounts via email invitation is not yet supported by the backend API. UI is ready for integration."));
     }
 
+    /**
+     * Admin can delete user accounts — this is a system-level operation supported by the API.
+     */
     const handleDeleteUser = async (id: string | number) => {
-        if (!window.confirm('Are you sure you want to delete this user?')) return
+        if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return
         try {
             await userApi.delete(id)
             setUsersList(prev => prev.filter(u => u.id !== id))
@@ -181,35 +158,18 @@ export default function UserManagement() {
         }
     }
 
-    const handleUpdateUser = async (id: string | number, updatedData: { name: string; username: string; email: string; role: Role }) => {
-        const roleCode = updatedData.role === 'Admin' ? 'ADMIN' : updatedData.role === 'Lecturer' ? 'LECTURER' : 'STUDENT'
-        const response = await userApi.update(id, {
-            fullName: updatedData.name.trim(),
-            username: updatedData.username.trim(),
-            email: updatedData.email.trim(),
-            roleCode,
-        })
-        const updated = response.data?.result
-        setUsersList(prev => prev.map(u => {
-            if (u.id === id) {
-                return {
-                    ...u,
-                    name: updated?.fullName || updatedData.name,
-                    username: updated?.username || updatedData.username,
-                    email: updated?.email || updatedData.email,
-                    role: updatedData.role,
-                }
-            }
-            return u
-        }))
-    }
-
     return (
         <div className="flex flex-col h-full overflow-hidden bg-[#f1f5f9]">
             <HeaderActionBar
                 counts={counts}
                 onAddUser={() => setShowAddModal(true)}
             />
+
+            {loadError && (
+                <div className="mx-8 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 font-medium">
+                    {loadError}
+                </div>
+            )}
 
             <DataTable
                 users={pageUsers}
@@ -225,7 +185,8 @@ export default function UserManagement() {
                 onToggleSelect={handleToggleSelect}
                 onDeleteRequest={handleDeleteUser}
                 onDetailRequest={(id) => setDetailTarget(id)}
-                onEditRequest={(user) => setEditTarget(user)}
+                // onEditRequest is intentionally NOT passed —
+                // Admin must NOT edit another user's personal information.
                 ROLE_COLORS={ROLE_COLORS}
                 getAvatarColor={getAvatarColor}
                 getInitials={getInitials}
@@ -246,14 +207,6 @@ export default function UserManagement() {
                 />
             )}
 
-            {editTarget !== null && (
-                <EditUserModal
-                    user={editTarget}
-                    onClose={() => setEditTarget(null)}
-                    onUpdate={handleUpdateUser}
-                />
-            )}
-
             {detailTarget !== null && (() => {
                 const detailUser = usersList.find(u => u.id === detailTarget)!
                 return (
@@ -262,7 +215,8 @@ export default function UserManagement() {
                         avatarColor={getAvatarColor(detailUser.id)}
                         initials={getInitials(detailUser.name)}
                         onClose={() => setDetailTarget(null)}
-                        onEdit={() => setEditTarget(detailUser)}
+                        // onEdit is intentionally NOT passed —
+                        // Admin must NOT edit another user's personal information.
                     />
                 )
             })()}

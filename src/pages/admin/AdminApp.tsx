@@ -3,6 +3,7 @@ import DashboardLayout from '@/layouts/DashboardLayout'
 import AdminDashboard from '@/pages/admin/AdminDashboard'
 import UserManagement from '@/pages/admin/UserManagement'
 import AiConfigPage from '@/pages/admin/AiConfigPage'
+import Profile from '@/pages/profile/Profile'
 
 export default function AdminApp() {
     const location = useLocation()
@@ -14,6 +15,8 @@ export default function AdminApp() {
         content = <UserManagement />
     } else if (path.startsWith('/admin/ai-config')) {
         content = <AiConfigPage />
+    } else if (path.startsWith('/admin/profile')) {
+        content = <Profile />
     }
 
     return (
