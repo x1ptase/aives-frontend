@@ -3,14 +3,15 @@ import { Role } from '@/types'
 
 interface AddUserModalProps {
   onClose: () => void
-  onAdd: (user: { name: string, username: string, email: string, role: Role }) => Promise<void> | void
+  onAdd: (user: { name: string; username: string; email: string; role: Role; password?: string }) => Promise<void> | void
 }
 
 export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
-  const role: Role = 'Lecturer'
+  const [password, setPassword] = useState('')
+  const [role, setRole] = useState<Role>('Lecturer')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -28,7 +29,13 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
 
     setLoading(true)
     try {
-      await onAdd({ name: name.trim(), username: username.trim(), email: email.trim(), role })
+      await onAdd({
+        name: name.trim(),
+        username: username.trim(),
+        email: email.trim(),
+        role,
+        password: password.trim() || undefined,
+      })
       onClose()
     } catch (err: unknown) {
       let msg = 'Failed to create user.'
@@ -55,7 +62,10 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'DM Sans, sans-serif' }}>Create Lecturer Account</h2>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'DM Sans, sans-serif' }}>Create User Account</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Admin can create Lecturer or Student accounts</p>
+          </div>
           <button onClick={onClose} disabled={loading} className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:opacity-50">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d="M18 6L6 18M6 6l12 12" /></svg>
           </button>
@@ -66,8 +76,11 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
               {error}
             </div>
           )}
+
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Full Name <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               required
@@ -78,8 +91,11 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
               placeholder="e.g. Nguyen Van An"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Username <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               required
@@ -90,8 +106,11 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
               placeholder="e.g. annguyenvan2005"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Email Address <span className="text-red-500">*</span>
+            </label>
             <input
               type="email"
               required
@@ -102,16 +121,40 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
               placeholder="e.g. annguyenvan2005@gmail.com"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-            <input
-              type="text"
-              disabled
-              value="LECTURER"
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-500 text-sm cursor-not-allowed"
-            />
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Role <span className="text-red-500">*</span>
+            </label>
+            <select
+              disabled={loading}
+              value={role}
+              onChange={e => setRole(e.target.value as Role)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50 bg-white"
+            >
+              <option value="Lecturer">Lecturer</option>
+              <option value="Student">Student</option>
+            </select>
           </div>
-          <div className="pt-4 flex items-center justify-end gap-3">
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Password <span className="text-slate-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="password"
+              disabled={loading}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50"
+              placeholder="Leave blank to auto-generate 8-character password"
+            />
+            <p className="mt-1 text-[11px] text-slate-500">
+              ✉️ An email with login credentials will be automatically sent to the user upon creation.
+            </p>
+          </div>
+
+          <div className="pt-3 flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
@@ -123,7 +166,7 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2"
+              className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2 shadow-sm"
             >
               {loading && (
                 <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24" fill="none">
@@ -131,7 +174,7 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               )}
-              {loading ? 'Creating...' : 'Create Lecturer'}
+              {loading ? 'Creating...' : 'Create Account'}
             </button>
           </div>
         </form>

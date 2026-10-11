@@ -57,6 +57,14 @@ export interface UserUpdatePayload {
   roleCode?: string
 }
 
+export interface UserCreatePayload {
+  username: string
+  fullName: string
+  email: string
+  roleCode: 'STUDENT' | 'LECTURER'
+  password?: string
+}
+
 // ===== Users =====
 export const userApi = {
   getMyInfo: () =>
@@ -64,6 +72,9 @@ export const userApi = {
 
   getAll: () =>
     axiosInstance.get<{ code: number; result: BackendUserResponse[] }>('/users'),
+
+  create: (data: UserCreatePayload) =>
+    axiosInstance.post<{ code: number; message?: string; result: BackendUserResponse }>('/users/create', data),
 
   update: (id: string | number, data: UserUpdatePayload) =>
     axiosInstance.put<{ code: number; result: BackendUserResponse }>(`/users/${id}`, data),
@@ -91,14 +102,63 @@ export const examApi = {
   delete: (id: string) => axiosInstance.delete(`/exams/${id}`),
 }
 
-// ===== Questions =====
+// ===== Questions & Rubrics =====
+export type BloomLevel = 'REMEMBER' | 'UNDERSTAND' | 'APPLY' | 'ANALYZE' | 'EVALUATE' | 'CREATE'
+
+export interface QuestionGeneratePayload {
+  subjectId: number | string
+  keyword: string
+  bloomLevel?: BloomLevel | null
+  count?: number
+  materialIds?: (number | string)[]
+}
+
+export interface RubricCriterion {
+  id: number | string
+  criterionText: string
+  pointWeight: number
+  isMandatory: boolean
+  displayOrder: number
+}
+
+export interface Rubric {
+  id: number | string
+  questionId: number | string
+  title: string
+  description?: string
+  createdAt?: string
+  criteria: RubricCriterion[]
+}
+
+export interface QuestionItem {
+  id: number | string
+  subjectId: number | string
+  subjectName?: string
+  content: string
+  referenceAnswer?: string
+  topics?: string[]
+  bloomLevel?: BloomLevel
+  answerTimeLimitSeconds?: number
+  sourceType?: string
+  status?: string
+  createdById?: number | string
+  createdByName?: string
+  updatedById?: number | string
+  createdAt?: string
+  updatedAt?: string
+  archivedAt?: string | null
+  version?: number
+  rubricId?: number | string
+  rubric?: Rubric
+}
+
 export const questionApi = {
   getAll: () => axiosInstance.get('/questions'),
 
   getBySubject: (subjectId: string | number) =>
-    axiosInstance.get('/questions', { params: { subject_id: subjectId } }),
+    axiosInstance.get('/questions', { params: { subjectId, subject_id: subjectId } }),
 
-  getById: (id: string) => axiosInstance.get(`/questions/${id}`),
+  getById: (id: string | number) => axiosInstance.get<{ code: number; result: QuestionItem }>(`/questions/${id}`),
 
   create: (data: any) => axiosInstance.post('/questions', data),
 
@@ -106,8 +166,8 @@ export const questionApi = {
 
   delete: (id: string | number) => axiosInstance.delete(`/questions/${id}`),
 
-  generate: (data: { topic: string; count: number }) =>
-    axiosInstance.post('/questions/generate', data),
+  generate: (data: QuestionGeneratePayload) =>
+    axiosInstance.post<{ code: number; message: string; result: QuestionItem[] }>('/questions/generate', data),
 }
 
 // ===== Students =====

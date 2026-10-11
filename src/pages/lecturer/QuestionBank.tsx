@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import { subjectApi, questionApi } from '@/services/api'
+import { subjectApi, questionApi, QuestionItem } from '@/services/api'
+import GenerateQuestionsModal from '@/components/questions/GenerateQuestionsModal'
+import QuestionDetailModal from '@/components/questions/QuestionDetailModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Subject {
@@ -9,24 +11,28 @@ interface Subject {
     description?: string
 }
 
-interface Question {
-    id: string | number
-    content?: string
-    topic?: string
-    difficulty?: string
-    subject_id?: string | number
-    created_at?: string
-}
+type Question = QuestionItem & { difficulty?: string; topic?: string }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const DifficultyBadge = ({ difficulty }: { difficulty?: string }) => {
-    const d = (difficulty || '').toLowerCase()
-    const style = d === 'hard' ? 'bg-red-50 text-red-700 border-red-200'
-        : d === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200'
+const LevelBadge = ({ level, difficulty }: { level?: string; difficulty?: string }) => {
+    const val = level || difficulty || 'N/A'
+    const l = val.toUpperCase()
+    const isBloom = ['REMEMBER', 'UNDERSTAND', 'APPLY', 'ANALYZE', 'EVALUATE', 'CREATE'].includes(l)
+    const style = isBloom
+        ? l === 'REMEMBER' || l === 'UNDERSTAND'
+            ? 'bg-blue-50 text-blue-700 border-blue-200'
+            : l === 'APPLY' || l === 'ANALYZE'
+            ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+            : 'bg-purple-50 text-purple-700 border-purple-200'
+        : val.toLowerCase() === 'hard'
+        ? 'bg-red-50 text-red-700 border-red-200'
+        : val.toLowerCase() === 'medium'
+        ? 'bg-amber-50 text-amber-700 border-amber-200'
         : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+
     return (
         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${style}`}>
-            {difficulty || 'N/A'}
+            {val}
         </span>
     )
 }
@@ -430,6 +436,9 @@ export default function QuestionBank() {
     const [showCreateSubject, setShowCreateSubject] = useState(false)
     const [showEditSubject, setShowEditSubject] = useState(false)
     const [showCreateQuestion, setShowCreateQuestion] = useState(false)
+    const [showGenerateQuestions, setShowGenerateQuestions] = useState(false)
+    const [detailQuestion, setDetailQuestion] = useState<QuestionItem | null>(null)
+    const [aiSuccessBanner, setAiSuccessBanner] = useState('')
 
     // ── Fetch subjects ────────────────────────────────────────────────────────
     const fetchSubjects = useCallback(async () => {
@@ -461,7 +470,9 @@ export default function QuestionBank() {
             setQuestionsError(false)
             const res = await questionApi.getBySubject(subjectId)
             const list: Question[] = Array.isArray(res.data) ? res.data
-                : Array.isArray(res.data?.result) ? res.data.result : []
+                : Array.isArray(res.data?.result) ? res.data.result
+                : Array.isArray(res.data?.result?.data) ? res.data.result.data
+                : Array.isArray(res.data?.result?.content) ? res.data.result.content : []
             setQuestions(list)
         } catch {
             setQuestionsError(true)
@@ -517,6 +528,32 @@ export default function QuestionBank() {
         }
     }
 
+    const handleQuestionsGenerated = async (generated: QuestionItem[]) => {
+        setShowGenerateQuestions(false)
+        if (selectedSubject?.id) {
+            await fetchQuestions(selectedSubject.id)
+        }
+        setAiSuccessBanner(`Successfully generated ${generated.length} question(s) with 10-point Rubrics via AI!`)
+        setTimeout(() => setAiSuccessBanner(''), 10000)
+        if (generated.length > 0) {
+            setDetailQuestion(generated[0])
+        }
+    }
+
+    const handleViewQuestion = async (q: Question) => {
+        if (q.rubric) {
+            setDetailQuestion(q)
+        } else {
+            try {
+                const res = await questionApi.getById(q.id)
+                const full = res.data?.result || q
+                setDetailQuestion(full)
+            } catch {
+                setDetailQuestion(q)
+            }
+        }
+    }
+
     const handleDeleteQuestion = async (id: string | number) => {
         if (!window.confirm('Are you sure you want to delete this question?')) return
         try {
@@ -532,8 +569,12 @@ export default function QuestionBank() {
     const filteredQuestions = questions.filter(q => {
         if (!search.trim()) return true
         const s = search.toLowerCase()
+        const topicStr = Array.isArray(q.topics) ? q.topics.join(' ') : (q.topic || '')
         return (q.content || '').toLowerCase().includes(s)
-            || (q.topic || '').toLowerCase().includes(s)
+            || topicStr.toLowerCase().includes(s)
+            || (q.bloomLevel || '').toLowerCase().includes(s)
+            || (q.difficulty || '').toLowerCase().includes(s)
+            || (q.status || '').toLowerCase().includes(s)
     })
 
     // ── Render ────────────────────────────────────────────────────────────────
@@ -623,6 +664,19 @@ export default function QuestionBank() {
 
             {/* ── Questions section ───────────────────────────────────────── */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                {/* AI Success Banner */}
+                {aiSuccessBanner && (
+                    <div className="mx-6 mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800 font-medium flex items-center justify-between animate-in fade-in">
+                        <div className="flex items-center gap-2">
+                            <span className="text-base">✨</span>
+                            <span>{aiSuccessBanner}</span>
+                        </div>
+                        <button onClick={() => setAiSuccessBanner('')} className="text-emerald-600 hover:text-emerald-800 text-xs font-semibold ml-4">
+                            ✕
+                        </button>
+                    </div>
+                )}
+
                 {/* Questions toolbar */}
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 flex-1">
@@ -645,12 +699,24 @@ export default function QuestionBank() {
                         )}
                     </div>
                     {selectedSubject && (
-                        <button
-                            onClick={() => setShowCreateQuestion(true)}
-                            className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm shrink-0"
-                        >
-                            + Create Question
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setShowGenerateQuestions(true)}
+                                className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center gap-1.5"
+                                title="Generate Questions & Rubrics from Learning Materials via AI RAG"
+                            >
+                                <svg className="w-4 h-4 text-blue-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+                                </svg>
+                                <span>✨ Generate with AI</span>
+                            </button>
+                            <button
+                                onClick={() => setShowCreateQuestion(true)}
+                                className="px-3.5 py-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 text-sm font-semibold rounded-lg transition-colors shadow-sm"
+                            >
+                                + Create Manually
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -683,13 +749,16 @@ export default function QuestionBank() {
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-100">
                                     <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider w-full">
-                                        Content
+                                        Question & Details
                                     </th>
                                     <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
                                         Topic
                                     </th>
                                     <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                                        Difficulty
+                                        Bloom / Level
+                                    </th>
+                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                        Rubric
                                     </th>
                                     <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-right whitespace-nowrap">
                                         Actions
@@ -699,27 +768,71 @@ export default function QuestionBank() {
                             <tbody className="divide-y divide-slate-100 text-sm">
                                 {filteredQuestions.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
-                                            {search ? 'No questions match your search.' : 'No questions yet. Create one to get started.'}
+                                        <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                                            {search ? 'No questions match your search.' : 'No questions yet. Click "✨ Generate with AI" or "+ Create Manually" to get started.'}
                                         </td>
                                     </tr>
                                 ) : (
                                     filteredQuestions.map(q => (
                                         <tr key={q.id} className="hover:bg-slate-50/50 transition-colors group">
                                             <td className="px-6 py-4 text-slate-700 max-w-lg">
-                                                <p className="line-clamp-2">{q.content || '—'}</p>
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className="text-[11px] font-mono text-slate-400">#{q.id}</span>
+                                                        {q.sourceType === 'AI' && (
+                                                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                                                ✨ AI
+                                                            </span>
+                                                        )}
+                                                        {q.status && (
+                                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                                                q.status === 'ACTIVE'
+                                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                                            }`}>
+                                                                {q.status}
+                                                            </span>
+                                                        )}
+                                                        {q.answerTimeLimitSeconds && (
+                                                            <span className="text-[11px] text-slate-400">
+                                                                ⏱️ {q.answerTimeLimitSeconds}s
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="line-clamp-2 text-slate-800 font-medium">{q.content || '—'}</p>
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4 text-slate-500 text-xs whitespace-nowrap">
-                                                {q.topic || '—'}
+                                            <td className="px-6 py-4 text-slate-600 text-xs whitespace-nowrap">
+                                                {Array.isArray(q.topics) && q.topics.length > 0 ? q.topics.join(', ') : (q.topic || '—')}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <DifficultyBadge difficulty={q.difficulty} />
+                                                <LevelBadge level={q.bloomLevel} difficulty={q.difficulty} />
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {q.rubric ? (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                                        📊 10 pts
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-slate-400 text-xs">—</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <button
+                                                        onClick={() => handleViewQuestion(q)}
+                                                        className="px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors flex items-center gap-1"
+                                                        title="View question details & 10-point Rubric"
+                                                    >
+                                                        <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                        </svg>
+                                                        <span>Rubric</span>
+                                                    </button>
                                                     <button
                                                         onClick={() => handleDeleteQuestion(q.id)}
-                                                        className="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                                                        className="px-2.5 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors"
                                                     >
                                                         Delete
                                                     </button>
@@ -755,6 +868,25 @@ export default function QuestionBank() {
                     subjectId={selectedSubject.id}
                     onClose={() => setShowCreateQuestion(false)}
                     onCreated={handleQuestionCreated}
+                />
+            )}
+
+            {showGenerateQuestions && selectedSubject && (
+                <GenerateQuestionsModal
+                    subject={{
+                        id: selectedSubject.id,
+                        code: selectedSubject.code,
+                        name: selectedSubject.name,
+                    }}
+                    onClose={() => setShowGenerateQuestions(false)}
+                    onGenerated={handleQuestionsGenerated}
+                />
+            )}
+
+            {detailQuestion && (
+                <QuestionDetailModal
+                    question={detailQuestion}
+                    onClose={() => setDetailQuestion(null)}
                 />
             )}
         </div>

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { User, Role } from '@/types'
-import { authApi, userApi } from '@/services/api'
+import { userApi } from '@/services/api'
 import HeaderActionBar from '@/components/users/HeaderActionBar'
 import DataTable from '@/components/users/DataTable'
 import Pagination from '@/components/users/Pagination'
@@ -127,13 +127,35 @@ export default function UserManagement() {
         admins: usersList.filter(u => u.role === 'Admin').length,
     }), [usersList])
 
+    const [successMessage, setSuccessMessage] = useState('')
+
     /**
-     * Admin can create accounts for Lecturers.
-     * The backend contract currently lacks an API to create a lecturer WITHOUT a password (e.g., via email invitation).
-     * We clearly isolate this missing integration point.
+     * Admin can create accounts for Lecturers and Students.
+     * Backend automatically generates/hashes password and sends login credentials via email.
      */
-    const handleAddUser = async (newUser: { name: string, username: string, email: string, role: Role }) => {
-        return Promise.reject(new Error("Creation of Lecturer accounts via email invitation is not yet supported by the backend API. UI is ready for integration."));
+    const handleAddUser = async (newUser: { name: string; username: string; email: string; role: Role; password?: string }) => {
+        const roleCode = newUser.role === 'Lecturer' ? 'LECTURER' : 'STUDENT'
+        const res = await userApi.create({
+            fullName: newUser.name.trim(),
+            username: newUser.username.trim(),
+            email: newUser.email.trim(),
+            roleCode,
+            password: newUser.password?.trim() || undefined,
+        })
+        const created = res.data?.result
+        if (created) {
+            const mapped: User = {
+                id: created.id,
+                name: created.fullName || created.username,
+                username: created.username,
+                email: created.email,
+                role: created.role === 'ADMIN' ? 'Admin' : created.role === 'LECTURER' ? 'Lecturer' : 'Student',
+                createdAt: created.createdAt ? new Date(created.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            }
+            setUsersList(prev => [mapped, ...prev])
+            setSuccessMessage(`Account "${mapped.username}" created successfully! An email with credentials has been sent to ${mapped.email}.`)
+            setTimeout(() => setSuccessMessage(''), 8000)
+        }
     }
 
     /**
@@ -164,6 +186,20 @@ export default function UserManagement() {
                 counts={counts}
                 onAddUser={() => setShowAddModal(true)}
             />
+
+            {successMessage && (
+                <div className="mx-8 mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800 font-medium flex items-center justify-between animate-in fade-in">
+                    <div className="flex items-center gap-2">
+                        <svg className="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>{successMessage}</span>
+                    </div>
+                    <button onClick={() => setSuccessMessage('')} className="text-emerald-600 hover:text-emerald-800 text-sm font-semibold ml-4">
+                        ✕
+                    </button>
+                </div>
+            )}
 
             {loadError && (
                 <div className="mx-8 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 font-medium">
