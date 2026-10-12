@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { BloomLevel, QuestionItem, questionApi } from '@/services/api'
+import { useEffect, useState } from 'react'
+import { BloomLevel, MaterialResponse, QuestionItem, learningMaterialApi, questionApi } from '@/services/api'
 
 interface GenerateQuestionsModalProps {
   subject: {
@@ -30,6 +30,28 @@ export default function GenerateQuestionsModal({
   const [count, setCount] = useState<number>(3)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [materials, setMaterials] = useState<MaterialResponse[]>([])
+  const [materialIds, setMaterialIds] = useState<(number | string)[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    learningMaterialApi
+      .getBySubject(subject.id)
+      .then(res => {
+        const data = res.data as { result?: MaterialResponse[] } | MaterialResponse[]
+        const list = Array.isArray(data) ? data : data?.result
+        if (!cancelled) setMaterials(Array.isArray(list) ? list : [])
+      })
+      .catch(() => {
+        if (!cancelled) setMaterials([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [subject.id])
+
+  const toggleMaterial = (id: number | string) =>
+    setMaterialIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -50,8 +72,9 @@ export default function GenerateQuestionsModal({
       const res = await questionApi.generate({
         subjectId: subject.id,
         keyword: keyword.trim(),
-        bloomLevel: bloomLevel ? bloomLevel : undefined,
+        ...(bloomLevel ? { bloomLevel } : {}),
         count,
+        ...(materialIds.length > 0 ? { materialIds } : {}),
       })
 
       const generated = Array.isArray(res.data?.result)
@@ -81,6 +104,8 @@ export default function GenerateQuestionsModal({
         setError(
           'You are not assigned to this subject. Only assigned lecturers or administrators can generate questions.'
         )
+      } else if (code === 1016 || message.includes('SUBJECT_NOT_FOUND')) {
+        setError('Subject not found. It may have been deleted; please refresh and select another subject.')
       } else if (code === 1025 || message.includes('AI_GENERATION_FAILED')) {
         setError(
           'AI service error while generating questions. Please check your network and try again.'
@@ -217,13 +242,35 @@ export default function GenerateQuestionsModal({
             </div>
           </div>
 
+          {materials.length > 0 && (
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                Learning Materials <span className="text-xs font-normal text-slate-400">(optional — none selected uses all ready materials)</span>
+              </label>
+              <div className="max-h-32 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100">
+                {materials.map(m => (
+                  <label key={m.id} className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 cursor-pointer hover:bg-slate-50">
+                    <input
+                      type="checkbox"
+                      disabled={loading}
+                      checked={materialIds.includes(m.id)}
+                      onChange={() => toggleMaterial(m.id)}
+                    />
+                    <span className="flex-1 truncate">{m.title || m.originalFileName || `Material ${m.id}`}</span>
+                    {m.processingStatus && <span className="text-[10px] text-slate-400">{m.processingStatus}</span>}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-1">
             <div className="font-semibold text-slate-700 flex items-center gap-1.5">
               <span>📋 Output Specification:</span>
             </div>
             <ul className="list-disc pl-4 space-y-0.5 text-slate-500">
               <li>Oral questions with reference answer & time limit</li>
-              <li>10-point Rubric with weighted assessment criteria</li>
+              <li>Rubric with weighted assessment criteria</li>
               <li>Saved as <strong className="text-slate-700">DRAFT</strong> in your question bank for review</li>
             </ul>
           </div>
@@ -236,7 +283,7 @@ export default function GenerateQuestionsModal({
               </svg>
               <div className="text-xs text-blue-800">
                 <p className="font-semibold">AI is analyzing learning materials...</p>
-                <p className="text-blue-600">Generating questions and 10-point rubrics. This may take 5 - 15 seconds.</p>
+                <p className="text-blue-600">Generating questions and rubrics. This may take 5 - 15 seconds.</p>
               </div>
             </div>
           )}

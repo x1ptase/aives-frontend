@@ -89,17 +89,18 @@ export const userApi = {
     Promise.reject(new Error("Google Linking API endpoint is not yet implemented by the backend contract.")),
 }
 
+// Exam, exam-session and student-exam endpoints are not implemented by the backend yet.
+// These reject locally (no network call) so callers fall into their existing error/empty handling.
+const unsupported = (feature: string): Promise<{ data: any }> =>
+  Promise.reject(new Error(`${feature} is not supported by the backend yet.`))
+
 // ===== Exams =====
 export const examApi = {
-  getAll: () => axiosInstance.get('/exams'),
-
-  getById: (id: string) => axiosInstance.get(`/exams/${id}`),
-
-  create: (data: unknown) => axiosInstance.post('/exams', data),
-
-  update: (id: string, data: unknown) => axiosInstance.put(`/exams/${id}`, data),
-
-  delete: (id: string) => axiosInstance.delete(`/exams/${id}`),
+  getAll: () => unsupported('Exams'),
+  getById: (_id: string) => unsupported('Exams'),
+  create: (_data: unknown) => unsupported('Exams'),
+  update: (_id: string, _data: unknown) => unsupported('Exams'),
+  delete: (_id: string) => unsupported('Exams'),
 }
 
 // ===== Questions & Rubrics =====
@@ -152,17 +153,28 @@ export interface QuestionItem {
   rubric?: Rubric
 }
 
+export interface QuestionUpsertPayload {
+  subjectId?: number | string
+  content?: string
+  referenceAnswer?: string
+  topics?: string[]
+  bloomLevel?: BloomLevel
+  answerTimeLimitSeconds?: number
+}
+
 export const questionApi = {
   getAll: () => axiosInstance.get('/questions'),
 
   getBySubject: (subjectId: string | number) =>
-    axiosInstance.get('/questions', { params: { subjectId, subject_id: subjectId } }),
+    axiosInstance.get('/questions', { params: { subjectId } }),
 
   getById: (id: string | number) => axiosInstance.get<{ code: number; result: QuestionItem }>(`/questions/${id}`),
 
-  create: (data: any) => axiosInstance.post('/questions', data),
+  create: (data: QuestionUpsertPayload) =>
+    axiosInstance.post<{ code: number; result: QuestionItem }>('/questions', data),
 
-  update: (id: string | number, data: any) => axiosInstance.put(`/questions/${id}`, data),
+  update: (id: string | number, data: QuestionUpsertPayload) =>
+    axiosInstance.patch<{ code: number; result: QuestionItem }>(`/questions/${id}`, data),
 
   delete: (id: string | number) => axiosInstance.delete(`/questions/${id}`),
 
@@ -193,34 +205,80 @@ export const gradingApi = {
 
 // ===== Exam Sessions =====
 export const examSessionApi = {
-  getAll: () => axiosInstance.get('/exam-sessions'),
-  getById: (id: string | number) => axiosInstance.get(`/exam-sessions/${id}`),
-  create: (data: any) => axiosInstance.post('/exam-sessions', data),
-  update: (id: string | number, data: any) => axiosInstance.put(`/exam-sessions/${id}`, data),
-  delete: (id: string | number) => axiosInstance.delete(`/exam-sessions/${id}`),
+  getAll: () => unsupported('Exam sessions'),
+  getById: (_id: string | number) => unsupported('Exam sessions'),
+  create: (_data: any) => unsupported('Exam sessions'),
+  update: (_id: string | number, _data: any) => unsupported('Exam sessions'),
+  delete: (_id: string | number) => unsupported('Exam sessions'),
 }
 
 // ===== Student Exams =====
 export const studentExamApi = {
-  getAll: () => axiosInstance.get('/student-exams'),
+  getAll: () => unsupported('Student exams'),
   assign: (_data: any) => Promise.reject(new Error("Assignment API endpoint is not defined in frontend contract. UI is ready.")),
   unassign: (_id: string | number) => Promise.reject(new Error("Unassign API endpoint is not defined in frontend contract. UI is ready.")),
 }
 
 // ===== Learning Materials =====
+export interface MaterialResponse {
+  id: number | string
+  subjectId: number | string
+  title?: string
+  originalFileName?: string
+  storagePath?: string
+  processingStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | string
+  createdAt?: string
+  updatedAt?: string
+}
+
 export const learningMaterialApi = {
-  getAll: () => axiosInstance.get('/learning-materials'),
+  getBySubject: (subjectId: string | number) =>
+    axiosInstance.get<{ code?: number; result?: MaterialResponse[] } | MaterialResponse[]>(
+      `/materials/subject/${subjectId}`
+    ),
+  upload: (formData: FormData) =>
+    axiosInstance.post<{ code?: number; result?: MaterialResponse } | MaterialResponse>(
+      '/materials/upload',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    ),
+  updateTitle: (materialId: string | number, title: string) =>
+    axiosInstance.patch<{ code?: number; result?: MaterialResponse } | MaterialResponse>(
+      `/materials/${materialId}/title`,
+      { title }
+    ),
+  delete: (materialId: string | number) =>
+    axiosInstance.delete(`/materials/${materialId}`),
 }
 
 // ===== Subjects =====
+export interface SubjectResponse {
+  id: number | string
+  code: string
+  name: string
+  description?: string
+}
+
+export interface SubjectCreatePayload {
+  code: string
+  name: string
+  description?: string
+}
+
+export interface SubjectUpdatePayload {
+  code?: string
+  name?: string
+  description?: string
+}
+
 export const subjectApi = {
-  getAll: () => axiosInstance.get('/subjects'),
-  getById: (id: string | number) => axiosInstance.get(`/subjects/${id}`),
-  create: (data: { code: string; name: string; description?: string }) =>
-    axiosInstance.post('/subjects', data),
-  update: (id: string | number, data: { code?: string; name?: string; description?: string }) =>
-    axiosInstance.put(`/subjects/${id}`, data),
-  delete: (id: string | number) => axiosInstance.delete(`/subjects/${id}`),
+  getAll: () => axiosInstance.get<{ code?: number; result?: SubjectResponse[] } | SubjectResponse[]>('/subjects'),
+  getById: (id: string | number) => axiosInstance.get<{ code?: number; result?: SubjectResponse } | SubjectResponse>(`/subjects/${id}`),
+  create: (data: SubjectCreatePayload) =>
+    axiosInstance.post<{ code?: number; result?: SubjectResponse } | SubjectResponse>('/subjects', data),
+  update: (id: string | number, data: SubjectUpdatePayload) =>
+    axiosInstance.put<{ code?: number; result?: SubjectResponse } | SubjectResponse>(`/subjects/${id}`, data),
+  delete: (id: string | number) => axiosInstance.delete<{ code?: number; result?: string; message?: string } | string>(`/subjects/${id}`),
 }
 
 // ===== Admin =====
