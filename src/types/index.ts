@@ -11,6 +11,16 @@ export interface User {
   avatar?: string
 }
 
+// ===== Subject =====
+export interface SubjectResponse {
+  id: number | string
+  code: string
+  name: string
+  description?: string
+}
+
+export type Subject = SubjectResponse
+
 // ===== Student =====
 export interface Student {
   id: string

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { examSessionApi, studentExamApi, questionApi, learningMaterialApi } from '@/services/api'
+import { examSessionApi, studentExamApi, questionApi, learningMaterialApi, subjectApi, MaterialResponse } from '@/services/api'
 
 type ActivityLog = { id: string | number, timestamp: string, timeValue: number, user: string, role: string, action: string, detail: string, status: string }
 
@@ -29,13 +29,33 @@ export default function RecentActivityTable() {
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null)
 
   useEffect(() => {
+    // Materials are only listed per subject (GET /materials/subject/{subjectId}).
+    const fetchAllMaterials = async (): Promise<{ data: MaterialResponse[] }> => {
+      try {
+        const subjectsRes = await subjectApi.getAll()
+        const sd = subjectsRes.data
+        const subjects = Array.isArray(sd) ? sd : sd?.result ?? []
+        const lists = await Promise.all(
+          subjects.map(sub =>
+            learningMaterialApi.getBySubject(sub.id).then(r => {
+              const md = r.data
+              return Array.isArray(md) ? md : md?.result ?? []
+            }).catch(() => [] as MaterialResponse[])
+          )
+        )
+        return { data: lists.flat() }
+      } catch {
+        return { data: [] }
+      }
+    }
+
     const fetchLogs = async () => {
       try {
         const [sessionsRes, studentExamsRes, questionsRes, materialsRes] = await Promise.all([
           examSessionApi.getAll().catch(() => ({ data: [] })),
           studentExamApi.getAll().catch(() => ({ data: [] })),
           questionApi.getAll().catch(() => ({ data: [] })),
-          learningMaterialApi.getAll().catch(() => ({ data: [] }))
+          fetchAllMaterials()
         ])
 
         const activities: ActivityLog[] = []

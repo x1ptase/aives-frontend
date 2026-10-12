@@ -103,77 +103,95 @@ export default function QuestionDetailModal({ question, onClose }: QuestionDetai
           )}
 
           {/* Rubric Evaluation */}
-          {rubric && (
-            <div className="pt-2 border-t border-slate-100">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>📊 Rubric Evaluation (10-Point Scale)</span>
+          {!rubric && (
+            <p className="pt-2 border-t border-slate-100 text-xs text-slate-400 italic">
+              No rubric available for this question.
+            </p>
+          )}
+          {rubric && (() => {
+            const criteria = rubric.criteria ?? []
+            const rows = criteria.every(c => c.displayOrder != null)
+              ? [...criteria].sort((x, y) => x.displayOrder - y.displayOrder)
+              : criteria
+            const hasWeight = (w: unknown) => w !== null && w !== undefined && !Number.isNaN(Number(w))
+            const total = Number(
+              rows.reduce((sum, c) => sum + (hasWeight(c.pointWeight) ? Number(c.pointWeight) : 0), 0).toFixed(6)
+            )
+            const missingWeight = rows.some(c => !hasWeight(c.pointWeight))
+            return (
+              <div className="pt-2 border-t border-slate-100">
+                <div className="mb-2">
+                  <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    📊 Rubric Evaluation
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">{rubric.title}</p>
+                  {rubric.title && <p className="text-xs text-slate-500 mt-0.5">{rubric.title}</p>}
+                  {rubric.description && (
+                    <p className="text-[11px] text-slate-400 italic mt-0.5">{rubric.description}</p>
+                  )}
                 </div>
-                {rubric.description && (
-                  <span className="text-[11px] text-slate-400 italic">
-                    {rubric.description}
-                  </span>
+
+                {rows.length > 0 ? (
+                  <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-slate-100 text-slate-600 border-b border-slate-200 font-semibold">
+                        <tr>
+                          <th className="py-2.5 px-3 w-12 text-center">#</th>
+                          <th className="py-2.5 px-3">Assessment Criterion</th>
+                          <th className="py-2.5 px-3 w-28 text-center">Weight</th>
+                          <th className="py-2.5 px-3 w-24 text-center">Mandatory</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
+                        {rows.map((c, i) => (
+                          <tr key={c.id || i} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="py-2.5 px-3 text-center text-slate-400 font-mono">
+                              {c.displayOrder ?? i + 1}
+                            </td>
+                            <td className="py-2.5 px-3 font-medium text-slate-800">
+                              {c.criterionText}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              {hasWeight(c.pointWeight) ? (
+                                <span className="px-2 py-0.5 rounded font-bold text-blue-700 bg-blue-50 border border-blue-100">
+                                  {c.pointWeight} pts
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              {c.isMandatory === true ? (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold text-red-700 bg-red-50">
+                                  Required
+                                </span>
+                              ) : c.isMandatory === false ? (
+                                <span className="text-slate-500 text-[11px]">Optional</span>
+                              ) : (
+                                <span className="text-slate-400 text-[11px]">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-slate-50 font-semibold text-slate-800 border-t border-slate-200">
+                        <tr>
+                          <td colSpan={2} className="py-2.5 px-3 text-right">
+                            Total{missingWeight ? ' (some weights not provided)' : ''}:
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-bold text-blue-700">
+                            {total} pts
+                          </td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">No detailed criteria provided.</p>
                 )}
               </div>
-
-              {rubric.criteria && rubric.criteria.length > 0 ? (
-                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-100 text-slate-600 border-b border-slate-200 font-semibold">
-                      <tr>
-                        <th className="py-2.5 px-3 w-12 text-center">#</th>
-                        <th className="py-2.5 px-3">Assessment Criterion</th>
-                        <th className="py-2.5 px-3 w-28 text-center">Weight</th>
-                        <th className="py-2.5 px-3 w-24 text-center">Mandatory</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
-                      {rubric.criteria.map((c, i) => (
-                        <tr key={c.id || i} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="py-2.5 px-3 text-center text-slate-400 font-mono">
-                            {c.displayOrder || i + 1}
-                          </td>
-                          <td className="py-2.5 px-3 font-medium text-slate-800">
-                            {c.criterionText}
-                          </td>
-                          <td className="py-2.5 px-3 text-center">
-                            <span className="px-2 py-0.5 rounded font-bold text-blue-700 bg-blue-50 border border-blue-100">
-                              {Number(c.pointWeight).toFixed(1)} pts
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3 text-center">
-                            {c.isMandatory ? (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold text-red-700 bg-red-50">
-                                Required
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 text-[11px]">-</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot className="bg-slate-50 font-semibold text-slate-800 border-t border-slate-200">
-                      <tr>
-                        <td colSpan={2} className="py-2.5 px-3 text-right">
-                          Total Score:
-                        </td>
-                        <td className="py-2.5 px-3 text-center font-bold text-blue-700">
-                          {rubric.criteria.reduce((sum, c) => sum + Number(c.pointWeight || 0), 0).toFixed(1)} / 10.0 pts
-                        </td>
-                        <td></td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-xs text-slate-400 italic">No detailed criteria provided.</p>
-              )}
-            </div>
-          )}
+            )
+          })()}
         </div>
 
         {/* Footer */}
