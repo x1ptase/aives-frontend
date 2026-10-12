@@ -1,7 +1,7 @@
 import { ReactNode, useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  IconGrid, IconUsers, IconCpu, IconFile, IconBook, IconClipboard, IconChevronRight, IconLogOut
+  IconGrid, IconUsers, IconCpu, IconFile, IconBook, IconClipboard, IconChevronRight
 } from '@/components/common/Icons'
 import aivesLogo from '@/assets/logo/logo-aives.jpg'
 import { useAuthStore } from '@/store/useAuthStore'
