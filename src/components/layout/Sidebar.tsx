@@ -1,7 +1,7 @@
 import { ReactNode, useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  IconGrid, IconUsers, IconCpu, IconFile, IconBook, IconClipboard, IconChevronRight
+  IconGrid, IconUsers, IconCpu, IconShield, IconFile, IconBook, IconClipboard, IconChevronRight
 } from '@/components/common/Icons'
 import aivesLogo from '@/assets/logo/logo-aives.jpg'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -11,14 +11,18 @@ type NavItem = { id: string; label: string; icon: ReactNode; path: string; badge
 const ADMIN_NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/admin' },
   { id: 'users', label: 'User Management', icon: <IconUsers />, path: '/admin/users' },
+  { id: 'subjects', label: 'Subject Management', icon: <IconBook />, path: '/admin/subjects' },
+  { id: 'subject-assignments', label: 'Subject Assignment', icon: <IconShield />, path: '/admin/subject-assignments' },
+  { id: 'learning-materials', label: 'Learning Materials', icon: <IconBook />, path: '/admin/learning-materials' },
+  { id: 'question-bank', label: 'Question Bank', icon: <IconFile />, path: '/admin/question-bank' },
   { id: 'ai-config', label: 'AI & API Configuration', icon: <IconCpu />, path: '/admin/ai-config' },
 ]
 
 const LECTURER_NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/lecturer' },
-  { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/lecturer/exams' },
-  { id: 'question-bank', label: 'Question Bank', icon: <IconFile />, path: '/lecturer/question-bank' },
   { id: 'learning-materials', label: 'Learning Materials', icon: <IconBook />, path: '/lecturer/learning-materials' },
+  { id: 'question-bank', label: 'Question Bank', icon: <IconFile />, path: '/lecturer/question-bank' },
+  { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/lecturer/exams' },
 ]
 
 const STUDENT_NAV: NavItem[] = [
@@ -102,10 +106,6 @@ export default function Sidebar({ role }: SidebarProps) {
     navigate('/')
   }
 
-  const handleProfileClick = () => {
-    navigate(user.profilePath)
-  }
-
   // Determine active nav item — exact match first, then prefix match
   const activeId = navItems.reduce<string>((found, item) => {
     if (location.pathname === item.path) return item.id
@@ -166,12 +166,6 @@ export default function Sidebar({ role }: SidebarProps) {
       <div className="relative px-4 py-4 border-t border-[#E5E7EB]" ref={menuRef}>
         {isMenuOpen && (
           <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-lg shadow-lg border border-[#E5E7EB] py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
-            <button
-              onClick={() => { setIsMenuOpen(false); handleProfileClick() }}
-              className="w-full text-left px-4 py-2 text-sm font-medium text-[#4B5563] hover:bg-[#F3F4F6] hover:text-[#1F2937] transition-colors"
-            >
-              Profile
-            </button>
             <button
               onClick={() => { setIsMenuOpen(false); handleLogout() }}
               className="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"

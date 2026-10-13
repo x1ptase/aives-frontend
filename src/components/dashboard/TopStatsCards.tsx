@@ -1,49 +1,28 @@
 import { useState, useEffect } from 'react'
-import { userApi, examApi, studentExamApi } from '@/services/api'
+import { userApi, subjectApi } from '@/services/api'
 
 export default function TopStatsCards() {
-  const [stats, setStats] = useState<any>(null)
+  const [stats, setStats] = useState<{ users: number; lecturers: number; students: number; subjects: number } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const [error, setError] = useState('')
 
+  // Only metrics backed by real, typed APIs: GET /users and GET /subjects.
+  // Exam metrics are omitted until the backend exposes exam endpoints.
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [usersRes, examsRes, studentExamsRes] = await Promise.all([
-          userApi.getAll().catch(() => ({ data: { result: [] } })),
-          examApi.getAll().catch(() => ({ data: [] })),
-          studentExamApi.getAll().catch(() => ({ data: [] }))
-        ])
-
-        const users = usersRes.data?.result || []
-        const exams = examsRes.data || []
-        const studentExams = studentExamsRes.data || []
-
-        const totalUsers = users.length
-        
-        let activeExams = 0
-        let completedExams = 0
-        
-        if (Array.isArray(exams)) {
-          activeExams = exams.filter(e => e.status === 'active' || e.status === 'in progress' || e.status === 'IN_PROGRESS').length
-          completedExams = exams.filter(e => e.status === 'completed' || e.status === 'COMPLETED').length
-        }
-        
-        const aiInterviews = Array.isArray(studentExams) ? studentExams.length : 0
-
+        const [usersRes, subjectsRes] = await Promise.all([userApi.getAll(), subjectApi.getAll()])
+        const users = usersRes.data?.result ?? []
+        const sd = subjectsRes.data
+        const subjects = Array.isArray(sd) ? sd : sd?.result ?? []
         setStats({
-          totalUsers: totalUsers.toString(),
-          usersDetail: 'Registered accounts',
-          activeExams: activeExams.toString(),
-          activeExamsDetail: 'Currently running',
-          completedExams: completedExams.toString(),
-          completedExamsDetail: 'Successfully ended',
-          aiInterviews: aiInterviews.toString(),
-          aiInterviewsDetail: 'Total attempts',
+          users: users.length,
+          lecturers: users.filter(u => u.role === 'LECTURER').length,
+          students: users.filter(u => u.role === 'STUDENT').length,
+          subjects: subjects.length,
         })
-      } catch (error) {
-        console.error('Failed to fetch admin stats', error)
-        setError(true)
+      } catch (err: any) {
+        setError(err?.response?.data?.message || err?.message || 'Please try again later.')
       } finally {
         setLoading(false)
       }
@@ -58,7 +37,7 @@ export default function TopStatsCards() {
   }
 
   if (error || !stats) {
-    return <div className="mb-7 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium">Failed to load statistics. Please try again later.</div>
+    return <div className="mb-7 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium">Failed to load statistics. {error}</div>
   }
 
   return (
@@ -66,8 +45,8 @@ export default function TopStatsCards() {
       {[
         {
           label: 'Total Users',
-          value: stats.totalUsers,
-          sub: stats.usersDetail,
+          value: String(stats.users),
+          sub: 'Registered accounts',
           accent: '#eff6ff',
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-blue-600">
@@ -78,9 +57,9 @@ export default function TopStatsCards() {
           ),
         },
         {
-          label: 'Active Exams',
-          value: stats.activeExams,
-          sub: stats.activeExamsDetail,
+          label: 'Lecturers',
+          value: String(stats.lecturers),
+          sub: 'Accounts with Lecturer role',
           accent: '#f0fdf4',
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-emerald-600">
@@ -90,9 +69,9 @@ export default function TopStatsCards() {
           ),
         },
         {
-          label: 'Completed Exams',
-          value: stats.completedExams,
-          sub: stats.completedExamsDetail,
+          label: 'Students',
+          value: String(stats.students),
+          sub: 'Accounts with Student role',
           accent: '#faf5ff',
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-purple-600">
@@ -103,9 +82,9 @@ export default function TopStatsCards() {
           ),
         },
         {
-          label: 'AI Viva Interviews',
-          value: stats.aiInterviews,
-          sub: stats.aiInterviewsDetail,
+          label: 'Subjects',
+          value: String(stats.subjects),
+          sub: 'Defined in the system',
           accent: '#fff7ed',
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-orange-600">

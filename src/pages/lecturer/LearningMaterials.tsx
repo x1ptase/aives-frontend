@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { subjectApi, learningMaterialApi, MaterialResponse, SubjectResponse } from '@/services/api'
 import { useAuthStore } from '@/store/useAuthStore'
 
@@ -6,7 +7,7 @@ type Subject = SubjectResponse
 type Material = MaterialResponse
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
-function StatusBadge({ status }: { status?: string }) {
+export function StatusBadge({ status }: { status?: string }) {
     const s = (status || 'UNKNOWN').toUpperCase()
     const config: Record<string, { label: string; cls: string }> = {
         COMPLETED:  { label: 'Processed',   cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
@@ -29,7 +30,7 @@ function StatusBadge({ status }: { status?: string }) {
 }
 
 // ── Edit Title Modal ──────────────────────────────────────────────────────────
-function EditTitleModal({
+export function EditTitleModal({
     material,
     onClose,
     onUpdated,
@@ -114,7 +115,7 @@ function EditTitleModal({
 }
 
 // ── Delete Material Modal ─────────────────────────────────────────────────────
-function DeleteMaterialModal({
+export function DeleteMaterialModal({
     material,
     onClose,
     onDeleted,
@@ -222,6 +223,7 @@ function FileIcon({ name }: { name?: string }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function LearningMaterials() {
     const { user } = useAuthStore()
+    const navigate = useNavigate()
     const isAdmin = ['ADMIN', 'Admin', 'admin'].includes(user?.role ?? '')
 
     // Subject state
@@ -239,6 +241,10 @@ export default function LearningMaterials() {
     const [uploading, setUploading] = useState(false)
     const [uploadError, setUploadError] = useState('')
     const [uploadTitle, setUploadTitle] = useState('')
+    const [uploadProgress, setUploadProgress] = useState(0)
+    const [uploadSuccess, setUploadSuccess] = useState('')
+    const [search, setSearch] = useState('')
+    const [statusFilter, setStatusFilter] = useState('')
     const [dragOver, setDragOver] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -293,6 +299,8 @@ export default function LearningMaterials() {
     const handleUpload = async (files: FileList | null) => {
         if (!files || files.length === 0 || !selectedSubject) return
         setUploadError('')
+        setUploadSuccess('')
+        setUploadProgress(0)
         setUploading(true)
 
         const file = files[0]
@@ -304,7 +312,8 @@ export default function LearningMaterials() {
         }
 
         try {
-            await learningMaterialApi.upload(formData)
+            await learningMaterialApi.upload(formData, setUploadProgress)
+            setUploadSuccess(`"${file.name}" uploaded. It will appear below with its processing status.`)
             setUploadTitle('')
             if (fileInputRef.current) fileInputRef.current.value = ''
             await fetchMaterials(selectedSubject.id)
@@ -333,6 +342,19 @@ export default function LearningMaterials() {
         if (selectedSubject?.id) await fetchMaterials(selectedSubject.id)
     }
 
+    const statusOptions = useMemo(
+        () => Array.from(new Set(materials.map(m => m.processingStatus).filter(Boolean) as string[])),
+        [materials]
+    )
+    const visibleMaterials = useMemo(() => {
+        const q = search.trim().toLowerCase()
+        return materials.filter(m => {
+            if (statusFilter && m.processingStatus !== statusFilter) return false
+            if (!q) return true
+            return [m.title, m.originalFileName].some(v => (v || '').toLowerCase().includes(q))
+        })
+    }, [materials, search, statusFilter])
+
     return (
         <div className="flex-1 overflow-y-auto p-8 bg-[#f1f5f9]">
             {/* Header */}
@@ -356,7 +378,7 @@ export default function LearningMaterials() {
                             <button onClick={fetchSubjects} className="text-blue-600 hover:underline font-semibold">Retry</button>
                         </div>
                     ) : subjects.length === 0 ? (
-                        <span className="text-sm text-slate-400">No subjects found. Create one in the Question Bank.</span>
+                        <span className="text-sm text-slate-400">No subjects available to your account.</span>
                     ) : (
                         <select
                             value={selectedSubject?.id ?? ''}
@@ -382,6 +404,11 @@ export default function LearningMaterials() {
                         <span className="ml-2 text-xs text-slate-400 font-normal">({selectedSubject.code})</span>
                     </h2>
 
+                    {uploadSuccess && (
+                        <div className="mb-4 p-3 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium">
+                            {uploadSuccess}
+                        </div>
+                    )}
                     {uploadError && (
                         <div className="mb-4 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm font-medium">
                             {uploadError}
@@ -424,7 +451,10 @@ export default function LearningMaterials() {
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
-                                <p className="text-sm font-medium text-blue-600">Uploading…</p>
+                                <p className="text-sm font-medium text-blue-600">Uploading… {uploadProgress}%</p>
+                                <div className="w-48 h-1.5 bg-blue-100 rounded-full overflow-hidden">
+                                    <div className="h-full bg-blue-500 transition-all" style={{ width: `${uploadProgress}%` }} />
+                                </div>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center gap-2">
@@ -435,7 +465,7 @@ export default function LearningMaterials() {
                                 <p className="text-sm font-medium text-slate-700">
                                     {dragOver ? 'Drop to upload' : 'Click or drag file to upload'}
                                 </p>
-                                <p className="text-xs text-slate-400">PDF, DOCX, images and more</p>
+                                <p className="text-xs text-slate-400">Accepted file types are validated by the server</p>
                             </div>
                         )}
                     </div>
@@ -451,10 +481,38 @@ export default function LearningMaterials() {
                             <span className="ml-2 text-slate-400 font-normal text-xs">({selectedSubject.code})</span>
                         )}
                     </h2>
-                    {!materialsLoading && selectedSubject && (
-                        <span className="text-xs text-slate-400">{materials.length} file{materials.length !== 1 ? 's' : ''}</span>
-                    )}
+                    <div className="flex items-center gap-3">
+                        {!materialsLoading && selectedSubject && (
+                            <span className="text-xs text-slate-400">{visibleMaterials.length} file{visibleMaterials.length !== 1 ? 's' : ''}</span>
+                        )}
+                        <button
+                            onClick={() => navigate('/lecturer/question-bank')}
+                            className="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors"
+                            title="Generate questions from materials in the Question Bank"
+                        >
+                            ✨ Generate Questions
+                        </button>
+                    </div>
                 </div>
+                {selectedSubject && materials.length > 0 && (
+                    <div className="px-6 py-3 border-b border-slate-100 flex items-center gap-3 flex-wrap">
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder="Search title or file name…"
+                            className="flex-1 min-w-48 max-w-72 px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white"
+                        />
+                        <select
+                            value={statusFilter}
+                            onChange={e => setStatusFilter(e.target.value)}
+                            className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-700 outline-none"
+                        >
+                            <option value="">All statuses</option>
+                            {statusOptions.map(st => <option key={st} value={st}>{st}</option>)}
+                        </select>
+                    </div>
+                )}
 
                 {!selectedSubject ? (
                     <div className="px-6 py-16 text-center text-slate-400">
@@ -494,9 +552,11 @@ export default function LearningMaterials() {
                         </svg>
                         <p className="text-sm">No materials uploaded yet for this subject.</p>
                     </div>
+                ) : visibleMaterials.length === 0 ? (
+                    <div className="px-6 py-12 text-center text-sm text-slate-400">No materials match your search.</div>
                 ) : (
                     <div className="divide-y divide-slate-50">
-                        {materials.map(m => {
+                        {visibleMaterials.map(m => {
                             const displayName = m.title || m.originalFileName || `Material #${m.id}`
                             const fileName = m.originalFileName
                             return (

@@ -38,7 +38,7 @@ export default function MyExams() {
             setLoading(true)
             setError(false)
             const [examsRes, subjectsRes, usersRes, studentExamsRes] = await Promise.all([
-                examSessionApi.getAll().catch(() => ({ data: [] })),
+                examSessionApi.getAll(),
                 subjectApi.getAll().catch(() => ({ data: [] })),
                 userApi.getAll().catch(() => ({ data: [] })),
                 studentExamApi.getAll().catch(() => ({ data: [] }))

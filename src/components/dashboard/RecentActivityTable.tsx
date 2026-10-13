@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { examSessionApi, studentExamApi, questionApi, learningMaterialApi, subjectApi, MaterialResponse } from '@/services/api'
+import { QuestionItem, questionApi, learningMaterialApi, subjectApi, MaterialResponse } from '@/services/api'
 
 type ActivityLog = { id: string | number, timestamp: string, timeValue: number, user: string, role: string, action: string, detail: string, status: string }
 
@@ -17,6 +17,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function RolePill({ role }: { role: string }) {
   const r = (role || '').toLowerCase()
+  if (!r) return null
   if (r === 'admin') return <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded leading-none w-fit">ADMIN</span>
   if (r === 'lecturer') return <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded leading-none w-fit">LECTURER</span>
   return <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded leading-none w-fit">STUDENT</span>
@@ -51,15 +52,13 @@ export default function RecentActivityTable() {
 
     const fetchLogs = async () => {
       try {
-        const [sessionsRes, studentExamsRes, questionsRes, materialsRes] = await Promise.all([
-          examSessionApi.getAll().catch(() => ({ data: [] })),
-          studentExamApi.getAll().catch(() => ({ data: [] })),
-          questionApi.getAll().catch(() => ({ data: [] })),
+        // Activity is derived only from real, typed APIs (questions and materials).
+        const [questionsRes, materialsRes] = await Promise.all([
+          questionApi.getAll().catch(() => ({ data: [] as any })),
           fetchAllMaterials()
         ])
 
         const activities: ActivityLog[] = []
-        let idCounter = 1
 
         // Format helper
         const formatDate = (dateString: string) => {
@@ -72,63 +71,36 @@ export default function RecentActivityTable() {
         }
         const getTime = (dateString: string) => dateString ? new Date(dateString).getTime() : 0
 
-        // Created Exam (exam_sessions)
-        const sessions = Array.isArray(sessionsRes.data) ? sessionsRes.data : []
-        sessions.forEach((s: any) => {
+        // Created Question
+        const questionList = questionsRes.data
+        const questions: QuestionItem[] = Array.isArray(questionList)
+          ? questionList
+          : Array.isArray(questionList?.result) ? questionList.result : []
+        questions.forEach(q => {
           activities.push({
-            id: `session-${s.id || idCounter++}`,
-            timestamp: formatDate(s.created_at || s.createdAt),
-            timeValue: getTime(s.created_at || s.createdAt),
-            user: s.creator_name || s.creator || 'Lecturer',
-            role: 'Lecturer',
-            action: 'Created Exam',
-            detail: s.name || s.title || `Exam ID: ${s.id}`,
-            status: 'success'
-          })
-        })
-
-        // Completed Exam (student_exams)
-        const studentExams = Array.isArray(studentExamsRes.data) ? studentExamsRes.data : []
-        studentExams.forEach((se: any) => {
-          activities.push({
-            id: `se-${se.id || idCounter++}`,
-            timestamp: formatDate(se.completed_at || se.completedAt || se.created_at || se.createdAt),
-            timeValue: getTime(se.completed_at || se.completedAt || se.created_at || se.createdAt),
-            user: se.student_name || se.student || 'Student',
-            role: 'Student',
-            action: 'Completed Exam',
-            detail: `Score: ${se.score || 'N/A'}`,
-            status: 'success'
-          })
-        })
-
-        // Created Question (questions)
-        const questions = Array.isArray(questionsRes.data) ? questionsRes.data : []
-        questions.forEach((q: any) => {
-          activities.push({
-            id: `q-${q.id || idCounter++}`,
-            timestamp: formatDate(q.created_at || q.createdAt),
-            timeValue: getTime(q.created_at || q.createdAt),
-            user: q.creator_name || q.creator || 'Lecturer',
-            role: 'Lecturer',
-            action: 'Created Question',
-            detail: q.topic || q.content?.substring(0, 30) + '...' || `Question ID: ${q.id}`,
-            status: 'success'
+            id: `q-${q.id}`,
+            timestamp: formatDate(q.createdAt || ''),
+            timeValue: getTime(q.createdAt || ''),
+            user: q.createdByName || 'Not recorded',
+            role: '',
+            action: q.sourceType ? `Created Question (${q.sourceType})` : 'Created Question',
+            detail: (q.content || '').substring(0, 60) || `Question ID: ${q.id}`,
+            status: q.status || 'success'
           })
         })
 
         // Uploaded Learning Material (learning_materials)
-        const materials = Array.isArray(materialsRes.data) ? materialsRes.data : []
-        materials.forEach((m: any) => {
+        const materials: MaterialResponse[] = materialsRes.data
+        materials.forEach(m => {
           activities.push({
-            id: `mat-${m.id || idCounter++}`,
-            timestamp: formatDate(m.created_at || m.createdAt),
-            timeValue: getTime(m.created_at || m.createdAt),
-            user: m.uploader_name || m.uploader || 'Admin',
-            role: 'Admin',
+            id: `mat-${m.id}`,
+            timestamp: formatDate(m.createdAt || ''),
+            timeValue: getTime(m.createdAt || ''),
+            user: 'Not recorded',
+            role: '',
             action: 'Uploaded Learning Material',
-            detail: m.name || m.title || m.filename || `Material ID: ${m.id}`,
-            status: 'success'
+            detail: m.title || m.originalFileName || `Material ID: ${m.id}`,
+            status: m.processingStatus || 'success'
           })
         })
 
