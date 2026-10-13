@@ -30,6 +30,7 @@ export default function GenerateQuestionsModal({
   const [count, setCount] = useState<number>(3)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [results, setResults] = useState<QuestionItem[] | null>(null)
   const [materials, setMaterials] = useState<MaterialResponse[]>([])
   const [materialIds, setMaterialIds] = useState<(number | string)[]>([])
 
@@ -83,14 +84,20 @@ export default function GenerateQuestionsModal({
         ? (res.data as any)
         : []
 
-      onGenerated(generated)
+      if (generated.length === 0) {
+        setError('The server returned no questions. Try a different keyword or Bloom level.')
+        return
+      }
+      setResults(generated)
     } catch (err: unknown) {
       let code: number | undefined
       let message = 'Failed to generate questions. Please try again.'
+      let status: number | undefined
 
       if (typeof err === 'object' && err !== null && 'response' in err) {
         const res = (err as { response?: { data?: { code?: number; message?: string } } }).response
         code = res?.data?.code
+        status = (err as { response?: { status?: number } }).response?.status
         message = res?.data?.message || message
       } else if (err instanceof Error) {
         message = err.message
@@ -104,6 +111,10 @@ export default function GenerateQuestionsModal({
         setError(
           'You are not assigned to this subject. Only assigned lecturers or administrators can generate questions.'
         )
+      } else if (status === 403) {
+        setError(message || 'You do not have permission to generate questions for this subject.')
+      } else if (status === 401) {
+        setError('Your session has expired. Please sign in again.')
       } else if (code === 1016 || message.includes('SUBJECT_NOT_FOUND')) {
         setError('Subject not found. It may have been deleted; please refresh and select another subject.')
       } else if (code === 1025 || message.includes('AI_GENERATION_FAILED')) {
@@ -118,9 +129,12 @@ export default function GenerateQuestionsModal({
     }
   }
 
+  // Questions are already persisted by the backend once returned, so closing the results view refreshes the parent list.
+  const handleClose = () => (results ? onGenerated(results) : onClose())
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className={`bg-white rounded-2xl shadow-xl w-full ${results ? 'max-w-2xl' : 'max-w-lg'} overflow-hidden animate-in fade-in zoom-in-95 duration-200`}>
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
           <div className="flex items-center gap-2.5">
@@ -139,7 +153,7 @@ export default function GenerateQuestionsModal({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             disabled={loading}
             className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:opacity-50"
           >
@@ -150,6 +164,56 @@ export default function GenerateQuestionsModal({
         </div>
 
         {/* Form */}
+        {results ? (
+          <div className="p-6 space-y-4">
+            <div className="p-3 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg">
+              The server returned {results.length} question{results.length > 1 ? 's' : ''} for {subject.code}. They are stored by the backend and appear in the Question Bank.
+            </div>
+            <div className="max-h-96 overflow-y-auto space-y-3">
+              {results.map((q, i) => (
+                <div key={q.id ?? i} className="border border-slate-200 rounded-xl p-4 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600">#{q.id}</span>
+                    {q.bloomLevel && <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">{q.bloomLevel}</span>}
+                    {q.status && <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700">{q.status}</span>}
+                    {q.answerTimeLimitSeconds != null && <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600">{q.answerTimeLimitSeconds}s</span>}
+                  </div>
+                  <p className="text-sm font-medium text-slate-800">{q.content}</p>
+                  {q.referenceAnswer && (
+                    <p className="text-xs text-slate-600 whitespace-pre-line"><span className="font-semibold">Reference answer: </span>{q.referenceAnswer}</p>
+                  )}
+                  {q.rubric ? (
+                    <div className="text-xs text-slate-600">
+                      <p className="font-semibold">Rubric{q.rubric.title ? `: ${q.rubric.title}` : ''}</p>
+                      {q.rubric.criteria?.length > 0 && (
+                        <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                          {q.rubric.criteria.map((c, j) => (
+                            <li key={c.id ?? j}>
+                              {c.criterionText}
+                              {c.pointWeight != null && <> — {c.pointWeight} pts</>}
+                              {c.isMandatory && <span className="text-red-600"> (required)</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">No rubric returned.</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+              >
+                Back to Question Bank
+              </button>
+            </div>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
             <div className="p-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
@@ -322,6 +386,7 @@ export default function GenerateQuestionsModal({
             </button>
           </div>
         </form>
+        )}
       </div>
     </div>
   )

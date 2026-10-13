@@ -1,6 +1,6 @@
 import { ReactNode, useState, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { IconBell, IconGrid, IconUsers, IconCpu, IconFile, IconBook, IconClipboard } from '@/components/common/Icons'
+import { IconBell, IconGrid, IconUsers, IconCpu, IconShield, IconFile, IconBook, IconClipboard } from '@/components/common/Icons'
 import { useAuthStore } from '@/store/useAuthStore'
 
 type NavItem = { id: string; label: string; icon: ReactNode; path: string; badge?: string }
@@ -8,14 +8,18 @@ type NavItem = { id: string; label: string; icon: ReactNode; path: string; badge
 const ADMIN_NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/admin' },
   { id: 'users', label: 'User Management', icon: <IconUsers />, path: '/admin/users' },
+  { id: 'subjects', label: 'Subject Management', icon: <IconBook />, path: '/admin/subjects' },
+  { id: 'subject-assignments', label: 'Subject Assignment', icon: <IconShield />, path: '/admin/subject-assignments' },
+  { id: 'learning-materials', label: 'Learning Materials', icon: <IconBook />, path: '/admin/learning-materials' },
+  { id: 'question-bank', label: 'Question Bank', icon: <IconFile />, path: '/admin/question-bank' },
   { id: 'ai-config', label: 'AI & API Configuration', icon: <IconCpu />, path: '/admin/ai-config' },
 ]
 
 const LECTURER_NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/lecturer' },
-  { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/lecturer/exams' },
-  { id: 'question-bank', label: 'Question Bank', icon: <IconFile />, path: '/lecturer/question-bank' },
   { id: 'learning-materials', label: 'Learning Materials', icon: <IconBook />, path: '/lecturer/learning-materials' },
+  { id: 'question-bank', label: 'Question Bank', icon: <IconFile />, path: '/lecturer/question-bank' },
+  { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/lecturer/exams' },
 ]
 
 const STUDENT_NAV: NavItem[] = [

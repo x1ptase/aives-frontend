@@ -236,11 +236,16 @@ export const learningMaterialApi = {
     axiosInstance.get<{ code?: number; result?: MaterialResponse[] } | MaterialResponse[]>(
       `/materials/subject/${subjectId}`
     ),
-  upload: (formData: FormData) =>
+  upload: (formData: FormData, onProgress?: (percent: number) => void) =>
     axiosInstance.post<{ code?: number; result?: MaterialResponse } | MaterialResponse>(
       '/materials/upload',
       formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: e => {
+          if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
+        },
+      }
     ),
   updateTitle: (materialId: string | number, title: string) =>
     axiosInstance.patch<{ code?: number; result?: MaterialResponse } | MaterialResponse>(
@@ -279,6 +284,34 @@ export const subjectApi = {
   update: (id: string | number, data: SubjectUpdatePayload) =>
     axiosInstance.put<{ code?: number; result?: SubjectResponse } | SubjectResponse>(`/subjects/${id}`, data),
   delete: (id: string | number) => axiosInstance.delete<{ code?: number; result?: string; message?: string } | string>(`/subjects/${id}`),
+}
+
+// ===== Subject Assignments (lecturer <-> subject) =====
+// Backend contract is not available yet; these reject locally (no network call)
+// and should be pointed at the real endpoints once documented.
+export interface SubjectAssignment {
+  id: number | string
+  lecturerId: number | string
+  lecturerUsername: string
+  lecturerName: string
+  subjectId: number | string
+  subjectCode: string
+  subjectName: string
+  assignedAt?: string
+}
+
+export interface SubjectAssignmentCreatePayload {
+  lecturerId: number | string
+  subjectIds: (number | string)[]
+}
+
+export const subjectAssignmentApi = {
+  getAll: (): Promise<{ data: SubjectAssignment[] | { result?: SubjectAssignment[] } }> =>
+    unsupported('Subject assignment'),
+  create: (_data: SubjectAssignmentCreatePayload): Promise<{ data: unknown }> =>
+    unsupported('Subject assignment'),
+  remove: (_id: number | string): Promise<{ data: unknown }> =>
+    unsupported('Subject assignment'),
 }
 
 // ===== Admin =====
