@@ -20,8 +20,8 @@ export default function UserDetailModal({ user, avatarColor, initials, onClose, 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative">
+    <div className="fixed inset-0 z-50 flex overflow-y-auto p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="m-auto bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative">
         {/* Close Button */}
         <button
           onClick={onClose}

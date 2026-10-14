@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { QuestionItem, questionApi, learningMaterialApi, subjectApi, MaterialResponse } from '@/services/api'
+import { QuestionSummary, questionApi, learningMaterialApi, subjectApi, MaterialResponse } from '@/services/api'
 
-type ActivityLog = { id: string | number, timestamp: string, timeValue: number, user: string, role: string, action: string, detail: string, status: string }
+type ActivityLog = { id: string | number, timestamp: string, fullTimestamp: string, timeValue: number, user: string, role: string, action: string, detail: string, status: string }
 
 function StatusBadge({ status }: { status: string }) {
   const isSuccess = status.toLowerCase() === 'success' || status.toLowerCase() === 'completed' || status.toLowerCase() === 'active'
@@ -54,37 +54,46 @@ export default function RecentActivityTable() {
       try {
         // Activity is derived only from real, typed APIs (questions and materials).
         const [questionsRes, materialsRes] = await Promise.all([
-          questionApi.getAll().catch(() => ({ data: [] as any })),
+          questionApi.search({ size: 20 }).catch(() => ({ data: { result: { items: [] as QuestionSummary[] } } })),
           fetchAllMaterials()
         ])
 
         const activities: ActivityLog[] = []
 
-        // Format helper
+        // Compact timestamp for the table (e.g. "14 Oct, 09:30"); the year is only shown for past years.
         const formatDate = (dateString: string) => {
           if (!dateString) return 'Unknown'
-          try {
-            return new Date(dateString).toLocaleString()
-          } catch {
-            return dateString
-          }
+          const date = new Date(dateString)
+          if (Number.isNaN(date.getTime())) return dateString
+          return date.toLocaleString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            ...(date.getFullYear() !== new Date().getFullYear() ? { year: '2-digit' } : {}),
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          })
+        }
+        // Full timestamp, shown in the detail dialog and as a tooltip.
+        const formatFullDate = (dateString: string) => {
+          if (!dateString) return 'Unknown'
+          const date = new Date(dateString)
+          return Number.isNaN(date.getTime()) ? dateString : date.toLocaleString()
         }
         const getTime = (dateString: string) => dateString ? new Date(dateString).getTime() : 0
 
         // Created Question
-        const questionList = questionsRes.data
-        const questions: QuestionItem[] = Array.isArray(questionList)
-          ? questionList
-          : Array.isArray(questionList?.result) ? questionList.result : []
+        const questions: QuestionSummary[] = questionsRes.data?.result?.items ?? []
         questions.forEach(q => {
           activities.push({
             id: `q-${q.id}`,
             timestamp: formatDate(q.createdAt || ''),
+            fullTimestamp: formatFullDate(q.createdAt || ''),
             timeValue: getTime(q.createdAt || ''),
             user: q.createdByName || 'Not recorded',
             role: '',
             action: q.sourceType ? `Created Question (${q.sourceType})` : 'Created Question',
-            detail: (q.content || '').substring(0, 60) || `Question ID: ${q.id}`,
+            detail: (q.contentPreview || '').substring(0, 60) || `Question ID: ${q.id}`,
             status: q.status || 'success'
           })
         })
@@ -95,11 +104,12 @@ export default function RecentActivityTable() {
           activities.push({
             id: `mat-${m.id}`,
             timestamp: formatDate(m.createdAt || ''),
+            fullTimestamp: formatFullDate(m.createdAt || ''),
             timeValue: getTime(m.createdAt || ''),
             user: 'Not recorded',
             role: '',
             action: 'Uploaded Learning Material',
-            detail: m.title || m.originalFileName || `Material ID: ${m.id}`,
+            detail: m.title || m.fileName || `Material ID: ${m.id}`,
             status: m.processingStatus || 'success'
           })
         })
@@ -158,7 +168,7 @@ export default function RecentActivityTable() {
               ) : (
                 logs.map(log => (
                   <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-5 py-3.5 text-xs whitespace-nowrap" style={{ fontFamily: 'JetBrains Mono, monospace', color: '#64748b' }}>{log.timestamp}</td>
+                    <td className="px-5 py-3.5 text-xs whitespace-nowrap" title={log.fullTimestamp} style={{ fontFamily: 'JetBrains Mono, monospace', color: '#64748b' }}>{log.timestamp}</td>
                     <td className="px-4 py-3.5">
                       <div className="flex flex-col gap-1">
                         <span className="text-xs font-medium text-slate-700 whitespace-nowrap">{log.user}</span>
@@ -192,8 +202,8 @@ export default function RecentActivityTable() {
 
       {/* Activity Detail Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex overflow-y-auto p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'DM Sans, sans-serif' }}>Activity Details</h2>
               <button onClick={() => setSelectedLog(null)} className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
@@ -212,7 +222,7 @@ export default function RecentActivityTable() {
                 <div className="font-medium text-slate-900">{selectedLog.action}</div>
 
                 <div className="font-medium text-slate-500">Timestamp:</div>
-                <div className="text-slate-700">{selectedLog.timestamp}</div>
+                <div className="text-slate-700">{selectedLog.fullTimestamp}</div>
 
                 <div className="font-medium text-slate-500">Status:</div>
                 <div><StatusBadge status={selectedLog.status} /></div>

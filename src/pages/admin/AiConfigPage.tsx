@@ -135,7 +135,7 @@ export default function AiConfigPage() {
   if (user?.role?.toLowerCase() !== 'admin') return null
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-[#f1f5f9]">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#f1f5f9]">
       {/* Page Header */}
       <div className="flex items-center justify-between mb-7">
         <div>

@@ -8,7 +8,7 @@ interface PageContainerProps {
 
 export default function PageContainer({ title, subtitle, children }: PageContainerProps) {
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-[#f1f5f9]">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#f1f5f9]">
       {(title || subtitle) && (
         <div className="mb-6">
           {title && (

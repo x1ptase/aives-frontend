@@ -81,7 +81,7 @@ export default function AdminLearningMaterials() {
       if (statusFilter && m.processingStatus !== statusFilter) return false
       if (!q) return true
       const subj = subjectById.get(String(m.subjectId))
-      return [m.title, m.originalFileName, subj?.code, subj?.name].some(v => (v || '').toLowerCase().includes(q))
+      return [m.title, m.fileName, subj?.code, subj?.name].some(v => (v || '').toLowerCase().includes(q))
     })
   }, [materials, search, subjectFilter, statusFilter, subjectById])
 
@@ -93,7 +93,7 @@ export default function AdminLearningMaterials() {
     'px-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-700 outline-none focus:ring-2 focus:bg-white'
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-[#f1f5f9]">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#f1f5f9]">
       <div className="mb-6">
         <h1 className="text-xl font-bold text-slate-900 leading-tight" style={{ fontFamily: 'DM Sans, sans-serif' }}>
           Learning Materials
@@ -173,13 +173,13 @@ export default function AdminLearningMaterials() {
                       <tr key={m.id} className="hover:bg-slate-50/60">
                         <td className="px-4 py-3 text-slate-400 font-mono text-xs">{m.id}</td>
                         <td className="px-4 py-3 max-w-xs">
-                          <p className="font-medium text-slate-800 truncate">{m.title || m.originalFileName || `Material #${m.id}`}</p>
-                          {m.title && m.originalFileName && m.title !== m.originalFileName && (
-                            <p className="text-xs text-slate-400 truncate">{m.originalFileName}</p>
+                          <p className="font-medium text-slate-800 truncate">{m.title || m.fileName || `Material #${m.id}`}</p>
+                          {m.title && m.fileName && m.title !== m.fileName && (
+                            <p className="text-xs text-slate-400 truncate">{m.fileName}</p>
                           )}
                         </td>
                         <td className="px-4 py-3">{subj ? `${subj.code} - ${subj.name}` : `#${m.subjectId}`}</td>
-                        <td className="px-4 py-3 text-xs font-semibold text-slate-500">{fileExt(m.originalFileName)}</td>
+                        <td className="px-4 py-3 text-xs font-semibold text-slate-500">{fileExt(m.fileName)}</td>
                         <td className="px-4 py-3"><StatusBadge status={m.processingStatus} /></td>
                         <td className="px-4 py-3 text-slate-500">{m.createdAt ? new Date(m.createdAt).toLocaleString() : '—'}</td>
                         <td className="px-4 py-3 text-right whitespace-nowrap">

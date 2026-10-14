@@ -16,7 +16,7 @@ type Load<T> =
 const errMsg = (err: any, fallback: string) => err?.response?.data?.message || err?.message || fallback
 
 // Only two student-facing data sources are wired:
-//  - GET /users/my-info (real, typed as BackendUserResponse)
+//  - GET /users/myInfo (real, typed as BackendUserResponse)
 //  - studentExamApi.getAll (backend contract not available yet; surfaces its real outcome)
 // Scores, upcoming exams and other metrics are intentionally omitted until their API contracts exist.
 export default function StudentDashboard() {

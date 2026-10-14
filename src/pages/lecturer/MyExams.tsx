@@ -239,7 +239,7 @@ export default function MyExams() {
     }
 
     return (
-        <div className="flex-1 overflow-y-auto p-8 bg-[#f1f5f9]">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#f1f5f9]">
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
                 <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                     <div>
@@ -349,8 +349,8 @@ export default function MyExams() {
 
             {/* Exam Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-50 flex overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4">
+                    <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                             <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
                                 {editingExam ? 'Edit Exam' : 'New Exam'}
@@ -414,7 +414,7 @@ export default function MyExams() {
                                     </select>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-semibold text-slate-700 mb-1.5">Max Main Questions</label>
                                         <input 
@@ -470,8 +470,8 @@ export default function MyExams() {
 
             {/* Assign Students Modal */}
             {isAssignModalOpen && assigningExam && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+                <div className="fixed inset-0 z-50 flex overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4">
+                    <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
                         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                             <div>
                                 <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>

@@ -235,13 +235,13 @@ export default function Profile() {
   const formattedCreatedAt = profile?.createdAt
     ? (() => {
         const d = new Date(profile.createdAt)
-        return isNaN(d.getTime()) ? profile.createdAt : d.toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })
+        return isNaN(d.getTime()) ? profile.createdAt : d.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
       })()
     : '—'
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 lg:p-8 bg-[#f1f5f9]">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#f1f5f9]">
+      <div className="max-w-4xl mx-auto space-y-6">
 
         {/* Page Title */}
         <div>
@@ -280,29 +280,54 @@ export default function Profile() {
         {/* Profile Card */}
         {!loading && !fetchError && profile && (
           <>
-            {/* Avatar + Role Banner */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div
-                className="h-24 w-full"
-                style={{ background: roleStyle.gradient }}
-              />
-              <div className="px-8 pb-6">
-                <div className="flex items-end gap-4 -mt-10 mb-4">
-                  <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white shadow-lg ring-4 ring-white flex-shrink-0"
-                    style={{ background: roleStyle.gradient }}
-                  >
-                    {getInitials(profile.fullName || profile.username)}
-                  </div>
-                  <div className="mb-1">
-                    <h2 className="text-xl font-bold text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                      {profile.fullName || profile.username}
-                    </h2>
+            {/* Profile header card */}
+            <div className="bg-gradient-to-b from-slate-50 to-white rounded-xl border border-slate-200 shadow-sm">
+              <div className="p-5 sm:p-6 grid gap-5 lg:gap-6 items-center sm:grid-cols-[auto_minmax(0,1fr)] lg:grid-cols-[auto_minmax(0,1fr)_minmax(0,18rem)]">
+                <div
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl font-bold text-white shadow-lg"
+                  style={{ background: roleStyle.gradient, fontFamily: 'DM Sans, sans-serif' }}
+                >
+                  {getInitials(profile.fullName || profile.username)}
+                </div>
+
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-slate-400">{roleLabel} profile</div>
+                  <h2 className="mt-0.5 text-xl sm:text-2xl font-bold text-slate-800 leading-tight break-words" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+                    {profile.fullName || profile.username}
+                  </h2>
+                  <div className="mt-2.5 flex items-center gap-x-3 gap-y-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-slate-400">
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4 21a8 8 0 0 1 16 0" />
+                      </svg>
+                      {profile.username}
+                    </span>
                     <span
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold mt-1"
+                      className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold"
                       style={{ backgroundColor: roleStyle.bg, color: roleStyle.text, outline: `1px solid ${roleStyle.ring}` }}
                     >
                       {roleLabel}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="sm:col-span-2 lg:col-span-1 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-1 min-w-0">
+                  <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl min-w-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-slate-400 flex-shrink-0">
+                      <rect x="3" y="5" width="18" height="14" rx="2" />
+                      <path d="M3 7l9 6 9-6" />
+                    </svg>
+                    <span className="text-sm text-slate-700 truncate" title={profile.email}>{profile.email || '—'}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl min-w-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-slate-400 flex-shrink-0">
+                      <rect x="3" y="5" width="18" height="16" rx="2" />
+                      <path d="M16 3v4M8 3v4M3 11h18" />
+                    </svg>
+                    <span className="text-sm text-slate-700 truncate">
+                      <span className="text-slate-400">Member since </span>
+                      {formattedCreatedAt}
                     </span>
                   </div>
                 </div>
@@ -361,10 +386,6 @@ export default function Profile() {
                     <div>
                       <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Member Since</div>
                       <div className="text-sm font-medium text-slate-700">{formattedCreatedAt}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">User ID</div>
-                      <div className="text-sm font-medium text-slate-500 font-mono">#{String(profile.id).padStart(4, '0')}</div>
                     </div>
                   </div>
                 </div>

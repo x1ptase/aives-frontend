@@ -1,7 +1,7 @@
-import { ReactNode, useState, useRef, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 import { IconBell, IconGrid, IconUsers, IconCpu, IconShield, IconFile, IconBook, IconClipboard } from '@/components/common/Icons'
-import { useAuthStore } from '@/store/useAuthStore'
+import UserMenu from '@/components/layout/UserMenu'
 
 type NavItem = { id: string; label: string; icon: ReactNode; path: string; badge?: string }
 
@@ -28,81 +28,20 @@ const STUDENT_NAV: NavItem[] = [
   { id: 'history', label: 'Exam History', icon: <IconFile />, path: '/student/history' },
 ]
 
-const USER_INFO = {
-  admin: {
-    initials: 'AD',
-    name: 'Administrator',
-    role: 'System Administrator',
-    subtitle: 'Admin Portal',
-    gradient: 'linear-gradient(135deg,#2563eb,#7c3aed)',
-  },
-  lecturer: {
-    initials: 'PA',
-    name: 'Phạm Tuấn Anh',
-    role: 'Lecturer',
-    subtitle: 'Lecturer Portal',
-    gradient: 'linear-gradient(135deg,#0369a1,#2563eb)',
-  },
-  student: {
-    initials: 'NA',
-    name: 'Nguyễn Văn An',
-    role: 'Student',
-    subtitle: 'Student Portal',
-    gradient: 'linear-gradient(135deg,#059669,#10b981)',
-  },
+const PORTAL_LABEL = {
+  admin: 'Admin Portal',
+  lecturer: 'Lecturer Portal',
+  student: 'Student Portal',
 }
 
 interface TopHeaderProps {
   role: 'admin' | 'lecturer' | 'student'
+  onMenuClick?: () => void
 }
 
-export default function TopHeader({ role }: TopHeaderProps) {
+export default function TopHeader({ role, onMenuClick }: TopHeaderProps) {
   const location = useLocation()
-  const navigate = useNavigate()
   const navItems = role === 'admin' ? ADMIN_NAV : role === 'student' ? STUDENT_NAV : LECTURER_NAV
-  const user = USER_INFO[role]
-  const authUser = useAuthStore((state) => state.user)
-  const logout = useAuthStore((state) => state.logout)
-
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setIsMenuOpen(false)
-      }
-    }
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsMenuOpen(false)
-    }
-    if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      document.addEventListener('keydown', handleEsc)
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleEsc)
-    }
-  }, [isMenuOpen])
-
-  const handleLogout = () => {
-    logout()
-    navigate('/')
-  }
-
-  const handleProfileClick = () => {
-    navigate(`/${role}/profile`)
-  }
-
-  const displayName = authUser?.name || user.name
-  const initials = displayName
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map(p => p[0]?.toUpperCase())
-    .join('') || user.initials
-
   const activeId = navItems.reduce<string>((found, item) => {
     if (location.pathname === item.path) return item.id
     if (found) return found
@@ -111,14 +50,26 @@ export default function TopHeader({ role }: TopHeaderProps) {
   }, navItems[0].id)
 
   return (
-    <header className="flex-shrink-0 flex items-center justify-between px-8 py-4 bg-white border-b border-slate-200">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs text-slate-400">
-        <span>{user.subtitle}</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
+    <header className="flex-shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 bg-white border-b border-slate-200">
+      {/* Menu button (drawer) + breadcrumb */}
+      <div className="flex items-center gap-2 text-xs text-slate-400 min-w-0">
+        {onMenuClick && (
+          <button
+            onClick={onMenuClick}
+            aria-label="Toggle sidebar"
+            title="Toggle sidebar"
+            className="-ml-1 mr-1 p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="w-5 h-5">
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        )}
+        <span className="hidden sm:inline">{PORTAL_LABEL[role]}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 hidden sm:block">
           <polyline points="9 18 15 12 9 6" />
         </svg>
-        <span className="text-slate-700 font-medium">
+        <span className="text-slate-700 font-medium truncate">
           {navItems.find(n => n.id === activeId)?.label}
         </span>
       </div>
@@ -131,44 +82,8 @@ export default function TopHeader({ role }: TopHeaderProps) {
           <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500"></span>
         </button>
         <div className="w-px h-6 bg-slate-200"></div>
-        {/* User info dropdown */}
-        <div className="relative" ref={menuRef}>
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center gap-2.5 p-1 -m-1 rounded-lg hover:bg-slate-50 transition-colors focus:outline-none"
-          >
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm"
-              style={{ background: user.gradient }}
-            >
-              {initials}
-            </div>
-            <div className="text-left hidden sm:block">
-              <div className="text-sm font-semibold text-slate-800">{displayName}</div>
-              <div className="text-[11px] text-slate-400">{authUser?.role || user.role}</div>
-            </div>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-slate-400 hidden sm:block ml-1">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-          
-          {isMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
-              <button
-                onClick={() => { setIsMenuOpen(false); handleProfileClick() }}
-                className="w-full text-left px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-              >
-                Profile
-              </button>
-              <button
-                onClick={() => { setIsMenuOpen(false); handleLogout() }}
-                className="w-full text-left px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          )}
-        </div>
+        {/* User menu */}
+        <UserMenu role={role} compact />
       </div>
     </header>
   )
