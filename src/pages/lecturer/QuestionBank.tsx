@@ -1,33 +1,30 @@
 import { useState, useEffect, useCallback } from 'react'
-import { subjectApi, questionApi, BloomLevel, QuestionItem, QuestionUpsertPayload, SubjectResponse } from '@/services/api'
+import {
+    subjectApi, questionApi, BloomLevel, QuestionItem, QuestionSourceType, QuestionStatus, QuestionSummary,
+    QuestionUpsertPayload, SubjectResponse,
+} from '@/services/api'
 import GenerateQuestionsModal from '@/components/questions/GenerateQuestionsModal'
 import QuestionDetailModal from '@/components/questions/QuestionDetailModal'
+import { questionErrorMessage } from '@/components/questions/questionErrors'
+import QuestionStatusBadge, {
+    QUESTION_STATUSES, isDeletableStatus, isEditableStatus,
+} from '@/components/questions/QuestionStatusBadge'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Subject = SubjectResponse
 
-type Question = QuestionItem & { difficulty?: string; topic?: string }
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const LevelBadge = ({ level, difficulty }: { level?: string; difficulty?: string }) => {
-    const val = level || difficulty || 'N/A'
-    const l = val.toUpperCase()
-    const isBloom = ['REMEMBER', 'UNDERSTAND', 'APPLY', 'ANALYZE', 'EVALUATE', 'CREATE'].includes(l)
-    const style = isBloom
-        ? l === 'REMEMBER' || l === 'UNDERSTAND'
-            ? 'bg-blue-50 text-blue-700 border-blue-200'
-            : l === 'APPLY' || l === 'ANALYZE'
-            ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-            : 'bg-purple-50 text-purple-700 border-purple-200'
-        : val.toLowerCase() === 'hard'
-        ? 'bg-red-50 text-red-700 border-red-200'
-        : val.toLowerCase() === 'medium'
-        ? 'bg-amber-50 text-amber-700 border-amber-200'
-        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+const LevelBadge = ({ level }: { level?: string | null }) => {
+    if (!level) return <span className="text-slate-400 text-xs">—</span>
+    const style = level === 'REMEMBER' || level === 'UNDERSTAND'
+        ? 'bg-blue-50 text-blue-700 border-blue-200'
+        : level === 'APPLY' || level === 'ANALYZE'
+        ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+        : 'bg-purple-50 text-purple-700 border-purple-200'
 
     return (
         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${style}`}>
-            {val}
+            {level}
         </span>
     )
 }
@@ -67,33 +64,33 @@ export function CreateQuestionModal({
         }
         const topicList = topics.split(',').map(t => t.trim()).filter(Boolean)
 
+        // PATCH: null clears a field, and topics always replaces the whole list.
         const payload: QuestionUpsertPayload = {
             content: content.trim(),
-            referenceAnswer: referenceAnswer.trim() || undefined,
-            topics: topicList.length > 0 ? topicList : undefined,
-            bloomLevel: bloomLevel || undefined,
-            answerTimeLimitSeconds: limit,
+            referenceAnswer: referenceAnswer.trim() || null,
+            topics: topicList,
+            bloomLevel: bloomLevel || null,
+            answerTimeLimitSeconds: limit ?? null,
         }
 
         try {
             setLoading(true)
             if (isEdit) {
-                await questionApi.update(question!.id, payload)
+                await questionApi.update(question!.id, { ...payload, expectedVersion: question!.version ?? 0 })
             } else {
                 await questionApi.create({ ...payload, subjectId })
             }
             onCreated()
         } catch (err: any) {
-            const msg = err.response?.data?.message || err.message || `Failed to ${isEdit ? 'update' : 'create'} question.`
-            setError(msg)
+            setError(questionErrorMessage(err, `Failed to ${isEdit ? 'update' : 'create'} question.`))
         } finally {
             setLoading(false)
         }
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+        <div className="fixed inset-0 z-50 flex overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4">
+            <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
                         {isEdit ? 'Edit Question' : 'Create Question'}
@@ -147,7 +144,7 @@ export function CreateQuestionModal({
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-semibold text-slate-700 mb-1.5">Bloom Level</label>
                                 <select
@@ -201,6 +198,9 @@ export function CreateQuestionModal({
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 20
+const SOURCE_OPTIONS: QuestionSourceType[] = ['MANUAL', 'IMPORT', 'AI']
+
 export default function QuestionBank() {
     // Subjects state
     const [subjects, setSubjects] = useState<Subject[]>([])
@@ -209,19 +209,22 @@ export default function QuestionBank() {
     const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null)
 
     // Questions state
-    const [questions, setQuestions] = useState<Question[]>([])
+    const [questions, setQuestions] = useState<QuestionSummary[]>([])
+    const [totalElements, setTotalElements] = useState(0)
+    const [totalPages, setTotalPages] = useState(0)
     const [questionsLoading, setQuestionsLoading] = useState(false)
     const [questionsError, setQuestionsError] = useState(false)
     const [search, setSearch] = useState('')
-    const [bloomFilter, setBloomFilter] = useState('')
-    const [statusFilter, setStatusFilter] = useState('')
-    const [sourceFilter, setSourceFilter] = useState('')
+    const [debouncedSearch, setDebouncedSearch] = useState('')
+    const [bloomFilter, setBloomFilter] = useState<BloomLevel | ''>('')
+    const [statusFilter, setStatusFilter] = useState<QuestionStatus | ''>('')
+    const [sourceFilter, setSourceFilter] = useState<QuestionSourceType | ''>('')
     const [questionsErrorMsg, setQuestionsErrorMsg] = useState('')
     const [page, setPage] = useState(0)
+    const [reloadKey, setReloadKey] = useState(0)
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | number | null>(null)
     const [deleteLoading, setDeleteLoading] = useState(false)
     const [deleteError, setDeleteError] = useState('')
-    const PAGE_SIZE = 20
 
     // Modals
     const [showCreateQuestion, setShowCreateQuestion] = useState(false)
@@ -229,6 +232,7 @@ export default function QuestionBank() {
     const [editQuestion, setEditQuestion] = useState<QuestionItem | null>(null)
     const [detailQuestion, setDetailQuestion] = useState<QuestionItem | null>(null)
     const [aiSuccessBanner, setAiSuccessBanner] = useState('')
+    const [actionError, setActionError] = useState('')
 
     // ── Fetch subjects ────────────────────────────────────────────────────────
     const fetchSubjects = useCallback(async () => {
@@ -253,81 +257,97 @@ export default function QuestionBank() {
 
     useEffect(() => { fetchSubjects() }, [fetchSubjects])
 
-    // ── Fetch questions when subject changes ──────────────────────────────────
-    const fetchQuestions = useCallback(async (subjectId: string | number) => {
-        try {
-            setQuestionsLoading(true)
-            setQuestionsError(false)
-            setQuestionsErrorMsg('')
-            const res = await questionApi.getBySubject(subjectId)
-            const list: Question[] = Array.isArray(res.data) ? res.data
-                : Array.isArray(res.data?.result) ? res.data.result
-                : Array.isArray(res.data?.result?.data) ? res.data.result.data
-                : Array.isArray(res.data?.result?.content) ? res.data.result.content : []
-            setQuestions(list)
-        } catch (err: any) {
-            const data = err?.response?.data
-            setQuestionsErrorMsg(
-                data?.code === 1101 || err?.response?.status === 403
-                    ? (data?.message || 'You are not assigned to this subject, so its questions are not available to you.')
-                    : (data?.message || '')
-            )
-            setQuestionsError(true)
-        } finally {
-            setQuestionsLoading(false)
-        }
-    }, [])
+    // ── Fetch questions (server-side filter + pagination) ─────────────────────
+    useEffect(() => {
+        const t = setTimeout(() => {
+            setDebouncedSearch(search.trim())
+            setPage(0)
+        }, 300)
+        return () => clearTimeout(t)
+    }, [search])
 
     useEffect(() => {
-        if (selectedSubject?.id) {
-            setPage(0)
-            fetchQuestions(selectedSubject.id)
-        } else {
+        if (!selectedSubject?.id) {
             setQuestions([])
+            setTotalElements(0)
+            setTotalPages(0)
+            return
         }
-    }, [selectedSubject, fetchQuestions])
+        let cancelled = false
+        const load = async () => {
+            try {
+                setQuestionsLoading(true)
+                setQuestionsError(false)
+                setQuestionsErrorMsg('')
+                const res = await questionApi.search({
+                    subjectId: selectedSubject.id,
+                    page,
+                    size: PAGE_SIZE,
+                    ...(debouncedSearch ? { keyword: debouncedSearch } : {}),
+                    ...(bloomFilter ? { bloomLevel: bloomFilter } : {}),
+                    ...(statusFilter ? { status: statusFilter } : {}),
+                    ...(sourceFilter ? { sourceType: sourceFilter } : {}),
+                })
+                if (cancelled) return
+                const result = res.data?.result
+                setQuestions(result?.items ?? [])
+                setTotalElements(result?.totalElements ?? 0)
+                setTotalPages(result?.totalPages ?? 0)
+            } catch (err: any) {
+                if (cancelled) return
+                const data = err?.response?.data
+                setQuestionsErrorMsg(
+                    data?.code === 1101 || err?.response?.status === 403
+                        ? (data?.message || 'You are not assigned to this subject, so its questions are not available to you.')
+                        : (data?.message || '')
+                )
+                setQuestionsError(true)
+            } finally {
+                if (!cancelled) setQuestionsLoading(false)
+            }
+        }
+        load()
+        return () => { cancelled = true }
+    }, [selectedSubject, page, debouncedSearch, bloomFilter, statusFilter, sourceFilter, reloadKey])
+
+    const refreshQuestions = () => setReloadKey(k => k + 1)
 
     // ── Handlers ──────────────────────────────────────────────────────────────
-    const handleQuestionCreated = async () => {
+    const handleQuestionCreated = () => {
         setShowCreateQuestion(false)
         setEditQuestion(null)
-        if (selectedSubject?.id) {
-            await fetchQuestions(selectedSubject.id)
-        }
+        refreshQuestions()
     }
 
-    const handleQuestionsGenerated = async (generated: QuestionItem[]) => {
+    const handleQuestionsGenerated = (generated: QuestionItem[]) => {
         setShowGenerateQuestions(false)
-        if (selectedSubject?.id) {
-            await fetchQuestions(selectedSubject.id)
-        }
-        setAiSuccessBanner(`Successfully generated ${generated.length} question(s) with rubrics via AI!`)
+        refreshQuestions()
+        setAiSuccessBanner(`Successfully generated ${generated.length} question(s) with rubrics via AI! They are saved as DRAFT.`)
         setTimeout(() => setAiSuccessBanner(''), 10000)
         if (generated.length > 0) {
             setDetailQuestion(generated[0])
         }
     }
 
-    const handleViewQuestion = async (q: Question) => {
-        if (q.rubric) {
-            setDetailQuestion(q)
-        } else {
-            try {
-                const res = await questionApi.getById(q.id)
-                const full = res.data?.result || q
-                setDetailQuestion(full)
-            } catch {
-                setDetailQuestion(q)
-            }
+    // The list only carries summaries, so the full question (rubric, version) is fetched on demand.
+    const handleViewQuestion = async (q: QuestionSummary) => {
+        setActionError('')
+        try {
+            const res = await questionApi.getById(q.id)
+            setDetailQuestion(res.data.result)
+        } catch (err: any) {
+            setActionError(questionErrorMessage(err, 'Could not load question details.'))
         }
     }
 
-    const handleEditQuestion = async (q: Question) => {
+    // Editing needs the current version, so there is no fallback to the summary row.
+    const handleEditQuestion = async (q: QuestionSummary) => {
+        setActionError('')
         try {
             const res = await questionApi.getById(q.id)
-            setEditQuestion(res.data?.result || q)
-        } catch {
-            setEditQuestion(q)
+            setEditQuestion(res.data.result)
+        } catch (err: any) {
+            setActionError(questionErrorMessage(err, 'Could not load the question for editing.'))
         }
     }
 
@@ -337,40 +357,19 @@ export default function QuestionBank() {
             setDeleteError('')
             await questionApi.delete(id)
             setConfirmDeleteId(null)
-            if (selectedSubject?.id) await fetchQuestions(selectedSubject.id)
+            refreshQuestions()
         } catch (err: any) {
-            const msg = err.response?.data?.message || err.message || 'Failed to delete question.'
-            setDeleteError(msg)
+            setDeleteError(questionErrorMessage(err, 'Failed to delete question.'))
         } finally {
             setDeleteLoading(false)
         }
     }
 
-    // ── Filtered questions by search (client-side) ────────────────────────────
-    const statusOptions = Array.from(new Set(questions.map(q => q.status).filter(Boolean) as string[]))
-    const sourceOptions = Array.from(new Set(questions.map(q => q.sourceType).filter(Boolean) as string[]))
-    const bloomOptions = Array.from(new Set(questions.map(q => q.bloomLevel).filter(Boolean) as string[]))
-
-    const filteredQuestions = questions.filter(q => {
-        if (bloomFilter && q.bloomLevel !== bloomFilter) return false
-        if (statusFilter && q.status !== statusFilter) return false
-        if (sourceFilter && q.sourceType !== sourceFilter) return false
-        if (!search.trim()) return true
-        const s = search.toLowerCase()
-        const topicStr = Array.isArray(q.topics) ? q.topics.join(' ') : (q.topic || '')
-        return (q.content || '').toLowerCase().includes(s)
-            || topicStr.toLowerCase().includes(s)
-            || (q.bloomLevel || '').toLowerCase().includes(s)
-            || (q.difficulty || '').toLowerCase().includes(s)
-            || (q.status || '').toLowerCase().includes(s)
-    })
-
-    const totalPages = Math.ceil(filteredQuestions.length / PAGE_SIZE)
-    const pagedQuestions = filteredQuestions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+    const hasFilters = !!(debouncedSearch || bloomFilter || statusFilter || sourceFilter)
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
-        <div className="flex-1 overflow-y-auto p-8 bg-[#f1f5f9]">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#f1f5f9]">
             {/* Header */}
             <div className="mb-6">
                 <h1 className="text-xl font-bold text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
@@ -392,7 +391,7 @@ export default function QuestionBank() {
                             <button onClick={fetchSubjects} className="text-blue-600 hover:underline font-semibold">Retry</button>
                         </div>
                     ) : subjects.length === 0 ? (
-                        <span className="text-sm text-slate-400">No subjects available. Subjects are managed by an administrator.</span>
+                        <span className="text-sm text-slate-400">You have not been assigned to any subject yet. Please contact an administrator.</span>
                     ) : (
                         <select
                             value={selectedSubject?.id ?? ''}
@@ -400,8 +399,13 @@ export default function QuestionBank() {
                                 const found = subjects.find(s => String(s.id) === e.target.value)
                                 setSelectedSubject(found || null)
                                 setSearch('')
+                                setDebouncedSearch('')
+                                setBloomFilter('')
+                                setStatusFilter('')
+                                setSourceFilter('')
+                                setPage(0)
                             }}
-                            className="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm min-w-[280px]"
+                            className="px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm w-full sm:w-auto sm:min-w-[280px]"
                         >
                             {subjects.map(s => (
                                 <option key={s.id} value={s.id}>
@@ -435,9 +439,13 @@ export default function QuestionBank() {
                     </div>
                 )}
 
+                {actionError && (
+                    <div className="mx-6 mt-4 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm">{actionError}</div>
+                )}
+
                 {/* Questions toolbar */}
-                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 flex-1">
+                <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-3 sm:gap-4 flex-wrap">
+                    <div className="flex items-center gap-3 flex-1 flex-wrap min-w-0">
                         <h2 className="font-semibold text-slate-800 text-sm shrink-0" style={{ fontFamily: 'DM Sans, sans-serif' }}>
                             Questions
                             {selectedSubject && (
@@ -450,30 +458,37 @@ export default function QuestionBank() {
                             <input
                                 type="text"
                                 value={search}
-                                onChange={e => { setSearch(e.target.value); setPage(0) }}
+                                onChange={e => setSearch(e.target.value)}
                                 placeholder="Search questions..."
-                                className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-64"
+                                className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-full sm:w-64"
                             />
                         )}
-                        {selectedSubject && questions.length > 0 && (
+                        {selectedSubject && (
                             <>
-                                {([
-                                    ['All Bloom levels', bloomFilter, setBloomFilter, bloomOptions],
-                                    ['All statuses', statusFilter, setStatusFilter, statusOptions],
-                                    ['All sources', sourceFilter, setSourceFilter, sourceOptions],
-                                ] as const).map(([label, value, setter, options]) => (
-                                    options.length > 0 && (
-                                        <select
-                                            key={label}
-                                            value={value}
-                                            onChange={e => { setter(e.target.value); setPage(0) }}
-                                            className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none"
-                                        >
-                                            <option value="">{label}</option>
-                                            {options.map(o => <option key={o} value={o}>{o}</option>)}
-                                        </select>
-                                    )
-                                ))}
+                                <select
+                                    value={bloomFilter}
+                                    onChange={e => { setBloomFilter(e.target.value as BloomLevel | ''); setPage(0) }}
+                                    className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none"
+                                >
+                                    <option value="">All Bloom levels</option>
+                                    {BLOOM_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+                                <select
+                                    value={statusFilter}
+                                    onChange={e => { setStatusFilter(e.target.value as QuestionStatus | ''); setPage(0) }}
+                                    className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none"
+                                >
+                                    <option value="">All statuses</option>
+                                    {QUESTION_STATUSES.map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
+                                <select
+                                    value={sourceFilter}
+                                    onChange={e => { setSourceFilter(e.target.value as QuestionSourceType | ''); setPage(0) }}
+                                    className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none"
+                                >
+                                    <option value="">All sources</option>
+                                    {SOURCE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                                </select>
                             </>
                         )}
                     </div>
@@ -504,7 +519,7 @@ export default function QuestionBank() {
                     {!selectedSubject ? (
                         <div className="px-6 py-12 text-center text-slate-500 text-sm">
                             {subjects.length === 0
-                                ? 'Create a subject first to start adding questions.'
+                                ? 'You need to be assigned to a subject before you can add questions.'
                                 : 'Select a subject to view its questions.'}
                         </div>
                     ) : questionsLoading ? (
@@ -517,7 +532,7 @@ export default function QuestionBank() {
                         <div className="px-6 py-12 text-center text-red-500 text-sm">
                             {questionsErrorMsg || 'Failed to load questions.'}
                             <button
-                                onClick={() => fetchQuestions(selectedSubject.id)}
+                                onClick={refreshQuestions}
                                 className="ml-2 text-blue-600 hover:underline font-semibold"
                             >
                                 Retry
@@ -546,14 +561,14 @@ export default function QuestionBank() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 text-sm">
-                                {filteredQuestions.length === 0 ? (
+                                {questions.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                                            {search || bloomFilter || statusFilter || sourceFilter ? 'No questions match your filters.' : 'No questions yet. Click "✨ Generate with AI" or "+ Create Manually" to get started.'}
+                                            {hasFilters ? 'No questions match your filters.' : 'No questions yet. Click "✨ Generate with AI" or "+ Create Manually" to get started.'}
                                         </td>
                                     </tr>
                                 ) : (
-                                    pagedQuestions.map(q => (
+                                    questions.map(q => (
                                         <tr key={q.id} className="hover:bg-slate-50/50 transition-colors group">
                                             <td className="px-6 py-4 text-slate-700 max-w-lg">
                                                 <div className="space-y-1">
@@ -564,42 +579,28 @@ export default function QuestionBank() {
                                                                 ✨ AI
                                                             </span>
                                                         )}
-                                                        {q.status && (
-                                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                                                q.status === 'ACTIVE'
-                                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
-                                                            }`}>
-                                                                {q.status}
-                                                            </span>
-                                                        )}
-                                                        {q.answerTimeLimitSeconds && (
-                                                            <span className="text-[11px] text-slate-400">
-                                                                ⏱️ {q.answerTimeLimitSeconds}s
+                                                        <QuestionStatusBadge status={q.status} />
+                                                        {q.sourceType && q.sourceType !== 'AI' && (
+                                                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-200">
+                                                                {q.sourceType}
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="line-clamp-2 text-slate-800 font-medium">{q.content || '—'}</p>
+                                                    <p className="line-clamp-2 text-slate-800 font-medium">{q.contentPreview || '—'}</p>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-slate-600 text-xs whitespace-nowrap">
-                                                {Array.isArray(q.topics) && q.topics.length > 0 ? q.topics.join(', ') : (q.topic || '—')}
+                                                {Array.isArray(q.topics) && q.topics.length > 0 ? q.topics.join(', ') : '—'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <LevelBadge level={q.bloomLevel} difficulty={q.difficulty} />
+                                                <LevelBadge level={q.bloomLevel} />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                {q.rubric ? (() => {
-                                                    const totalWeight = Array.isArray(q.rubric.criteria)
-                                                        ? q.rubric.criteria.reduce((sum, c) => sum + (c.pointWeight ?? 0), 0)
-                                                        : 0
-                                                    const count = Array.isArray(q.rubric.criteria) ? q.rubric.criteria.length : 0
-                                                    return (
-                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                                                            📊 {count > 0 ? `${count} criteria · ${totalWeight} pts` : 'Rubric'}
-                                                        </span>
-                                                    )
-                                                })() : (
+                                                {q.hasRubric ? (
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                                        📊 Rubric
+                                                    </span>
+                                                ) : (
                                                     <span className="text-slate-400 text-xs">—</span>
                                                 )}
                                             </td>
@@ -645,18 +646,22 @@ export default function QuestionBank() {
                                                             </svg>
                                                             <span>Rubric</span>
                                                         </button>
-                                                        <button
-                                                            onClick={() => handleEditQuestion(q)}
-                                                            className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md transition-colors"
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            onClick={() => { setConfirmDeleteId(q.id); setDeleteError('') }}
-                                                            className="px-2.5 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors"
-                                                        >
-                                                            Delete
-                                                        </button>
+                                                        {isEditableStatus(q.status) && (
+                                                            <button
+                                                                onClick={() => handleEditQuestion(q)}
+                                                                className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md transition-colors"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                        )}
+                                                        {isDeletableStatus(q.status) && (
+                                                            <button
+                                                                onClick={() => { setConfirmDeleteId(q.id); setDeleteError('') }}
+                                                                className="px-2.5 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors"
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 )}
                                             </td>
@@ -669,7 +674,7 @@ export default function QuestionBank() {
                         {totalPages > 1 && (
                             <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-between">
                                 <span className="text-xs text-slate-500">
-                                    Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, filteredQuestions.length)} of {filteredQuestions.length}
+                                    Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalElements)} of {totalElements}
                                 </span>
                                 <div className="flex items-center gap-1">
                                     <button

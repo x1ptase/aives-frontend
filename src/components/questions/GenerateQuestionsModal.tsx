@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import QuestionStatusBadge from '@/components/questions/QuestionStatusBadge'
 import { BloomLevel, MaterialResponse, QuestionItem, learningMaterialApi, questionApi } from '@/services/api'
 
 interface GenerateQuestionsModalProps {
@@ -133,8 +134,8 @@ export default function GenerateQuestionsModal({
   const handleClose = () => (results ? onGenerated(results) : onClose())
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-      <div className={`bg-white rounded-2xl shadow-xl w-full ${results ? 'max-w-2xl' : 'max-w-lg'} overflow-hidden animate-in fade-in zoom-in-95 duration-200`}>
+    <div className="fixed inset-0 z-50 flex overflow-y-auto bg-slate-900/50 backdrop-blur-sm p-4">
+      <div className={`m-auto bg-white rounded-2xl shadow-xl w-full ${results ? 'max-w-2xl' : 'max-w-lg'} overflow-hidden animate-in fade-in zoom-in-95 duration-200`}>
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
           <div className="flex items-center gap-2.5">
@@ -175,7 +176,7 @@ export default function GenerateQuestionsModal({
                   <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
                     <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600">#{q.id}</span>
                     {q.bloomLevel && <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">{q.bloomLevel}</span>}
-                    {q.status && <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700">{q.status}</span>}
+                    <QuestionStatusBadge status={q.status} />
                     {q.answerTimeLimitSeconds != null && <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600">{q.answerTimeLimitSeconds}s</span>}
                   </div>
                   <p className="text-sm font-medium text-slate-800">{q.content}</p>
@@ -320,7 +321,7 @@ export default function GenerateQuestionsModal({
                       checked={materialIds.includes(m.id)}
                       onChange={() => toggleMaterial(m.id)}
                     />
-                    <span className="flex-1 truncate">{m.title || m.originalFileName || `Material ${m.id}`}</span>
+                    <span className="flex-1 truncate">{m.title || m.fileName || `Material ${m.id}`}</span>
                     {m.processingStatus && <span className="text-[10px] text-slate-400">{m.processingStatus}</span>}
                   </label>
                 ))}

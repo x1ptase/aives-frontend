@@ -1,4 +1,5 @@
 import { QuestionItem } from '@/services/api'
+import QuestionStatusBadge from '@/components/questions/QuestionStatusBadge'
 
 interface QuestionDetailModalProps {
   question: QuestionItem
@@ -17,18 +18,10 @@ export default function QuestionDetailModal({ question, onClose }: QuestionDetai
             <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">
               Question #{question.id}
             </span>
-            {question.status && (
-              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
-                question.status === 'ACTIVE'
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'bg-amber-100 text-amber-700'
-              }`}>
-                {question.status}
-              </span>
-            )}
+            <QuestionStatusBadge status={question.status} />
             {question.sourceType && (
               <span className="px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-700 flex items-center gap-1">
-                ✨ {question.sourceType}
+                {question.sourceType === 'AI' && '✨ '}{question.sourceType}
               </span>
             )}
           </div>

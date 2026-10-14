@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { questionApi, subjectApi, QuestionItem, SubjectResponse } from '@/services/api'
+import { useCallback, useEffect, useState } from 'react'
+import {
+  questionApi, subjectApi, BloomLevel, QuestionItem, QuestionStatus, QuestionSummary, SubjectResponse,
+} from '@/services/api'
 import GenerateQuestionsModal from '@/components/questions/GenerateQuestionsModal'
 import QuestionDetailModal from '@/components/questions/QuestionDetailModal'
+import { questionErrorMessage } from '@/components/questions/questionErrors'
+import QuestionStatusBadge, { QUESTION_STATUSES, isDeletableStatus } from '@/components/questions/QuestionStatusBadge'
 import { SearchIcon, TrashIcon } from '@/components/common/Icons'
 
 const PAGE_SIZE = 10
-const BLOOM_LEVELS = ['REMEMBER', 'UNDERSTAND', 'APPLY', 'ANALYZE', 'EVALUATE', 'CREATE']
+const BLOOM_LEVELS: BloomLevel[] = ['REMEMBER', 'UNDERSTAND', 'APPLY', 'ANALYZE', 'EVALUATE', 'CREATE']
 
 const unwrapList = <T,>(data: any): T[] =>
   Array.isArray(data) ? data
@@ -16,19 +20,23 @@ const unwrapList = <T,>(data: any): T[] =>
 const errMsg = (err: any, fallback: string) => err?.response?.data?.message || err?.message || fallback
 
 export default function AdminQuestionBank() {
-  const [questions, setQuestions] = useState<QuestionItem[]>([])
+  const [questions, setQuestions] = useState<QuestionSummary[]>([])
+  const [totalElements, setTotalElements] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
   const [subjects, setSubjects] = useState<SubjectResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const [search, setSearch] = useState('')
   const [subjectFilter, setSubjectFilter] = useState('')
-  const [bloomFilter, setBloomFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
-  const [page, setPage] = useState(1)
+  const [bloomFilter, setBloomFilter] = useState<BloomLevel | ''>('')
+  const [statusFilter, setStatusFilter] = useState<QuestionStatus | ''>('')
+  const [page, setPage] = useState(0)
 
   const [detail, setDetail] = useState<QuestionItem | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<QuestionItem | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<QuestionSummary | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteError, setDeleteError] = useState('')
   const [actionError, setActionError] = useState('')
@@ -38,26 +46,55 @@ export default function AdminQuestionBank() {
   const [genSubject, setGenSubject] = useState<SubjectResponse | null>(null)
   const [banner, setBanner] = useState('')
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    const [qRes, sRes] = await Promise.allSettled([questionApi.getAll(), subjectApi.getAll()])
-    if (qRes.status === 'fulfilled') {
-      setQuestions(unwrapList<QuestionItem>(qRes.value.data))
-    } else {
-      setQuestions([])
-      setError(errMsg(qRes.reason, 'Could not load questions.'))
-    }
-    setSubjects(sRes.status === 'fulfilled' ? unwrapList<SubjectResponse>(sRes.value.data) : [])
-    setLoading(false)
+  useEffect(() => {
+    subjectApi.getAll()
+      .then(res => setSubjects(unwrapList<SubjectResponse>(res.data)))
+      .catch(() => setSubjects([]))
   }, [])
 
   useEffect(() => {
-    load()
-  }, [load])
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim())
+      setPage(0)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError('')
+    questionApi
+      .search({
+        page,
+        size: PAGE_SIZE,
+        ...(subjectFilter ? { subjectId: subjectFilter } : {}),
+        ...(debouncedSearch ? { keyword: debouncedSearch } : {}),
+        ...(bloomFilter ? { bloomLevel: bloomFilter } : {}),
+        ...(statusFilter ? { status: statusFilter } : {}),
+      })
+      .then(res => {
+        if (cancelled) return
+        const result = res.data?.result
+        setQuestions(result?.items ?? [])
+        setTotalElements(result?.totalElements ?? 0)
+        setTotalPages(result?.totalPages ?? 0)
+      })
+      .catch(err => {
+        if (cancelled) return
+        setQuestions([])
+        setError(errMsg(err, 'Could not load questions.'))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [page, subjectFilter, debouncedSearch, bloomFilter, statusFilter, reloadKey])
+
+  const load = () => setReloadKey(k => k + 1)
 
   const subjectLabel = useCallback(
-    (q: QuestionItem) => {
+    (q: QuestionSummary) => {
       if (q.subjectName) return q.subjectName
       const s = subjects.find(x => String(x.id) === String(q.subjectId))
       return s ? `${s.code} - ${s.name}` : `#${q.subjectId}`
@@ -65,35 +102,16 @@ export default function AdminQuestionBank() {
     [subjects]
   )
 
-  const statuses = useMemo(
-    () => Array.from(new Set(questions.map(q => q.status).filter(Boolean) as string[])),
-    [questions]
-  )
+  const hasFilters = !!(debouncedSearch || subjectFilter || bloomFilter || statusFilter)
+  const reset = () => setPage(0)
 
-  const filtered = useMemo(() => {
-    const t = search.trim().toLowerCase()
-    return questions.filter(q => {
-      if (subjectFilter && String(q.subjectId) !== subjectFilter) return false
-      if (bloomFilter && q.bloomLevel !== bloomFilter) return false
-      if (statusFilter && q.status !== statusFilter) return false
-      if (!t) return true
-      return (q.content || '').toLowerCase().includes(t) || subjectLabel(q).toLowerCase().includes(t)
-    })
-  }, [questions, search, subjectFilter, bloomFilter, statusFilter, subjectLabel])
-
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const currentPage = Math.min(page, pageCount)
-  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-  const hasFilters = !!(search || subjectFilter || bloomFilter || statusFilter)
-  const reset = () => setPage(1)
-
-  const openDetail = async (q: QuestionItem) => {
+  const openDetail = async (q: QuestionSummary) => {
     setActionError('')
     try {
       const res = await questionApi.getById(q.id)
       setDetail(res.data?.result || q)
     } catch (err) {
-      setActionError(errMsg(err, 'Could not load question details.'))
+      setActionError(questionErrorMessage(err, 'Could not load question details.'))
     }
   }
 
@@ -106,7 +124,7 @@ export default function AdminQuestionBank() {
       setDeleteTarget(null)
       await load()
     } catch (err) {
-      setDeleteError(errMsg(err, 'Failed to delete question.'))
+      setDeleteError(questionErrorMessage(err, 'Failed to delete question.'))
     } finally {
       setDeleteLoading(false)
     }
@@ -123,7 +141,7 @@ export default function AdminQuestionBank() {
     'px-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-700 outline-none focus:ring-2 focus:bg-white'
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-[#f1f5f9]">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#f1f5f9]">
       <div className="flex items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 leading-tight" style={{ fontFamily: 'DM Sans, sans-serif' }}>
@@ -134,7 +152,7 @@ export default function AdminQuestionBank() {
         <button
           onClick={() => { setGenSubjectId(''); setPickingSubject(true) }}
           disabled={subjects.length === 0}
-          title={subjects.length === 0 ? 'No subjects available' : undefined}
+          title={subjects.length === 0 ? 'No subjects exist yet. Create one in Subject Management first.' : undefined}
           className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           ✨ Generate Questions
@@ -150,9 +168,9 @@ export default function AdminQuestionBank() {
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><SearchIcon /></span>
             <input
               type="text"
-              placeholder="Search question or subject…"
+              placeholder="Search question…"
               value={search}
-              onChange={e => { setSearch(e.target.value); reset() }}
+              onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:bg-white transition-all"
             />
           </div>
@@ -160,17 +178,17 @@ export default function AdminQuestionBank() {
             <option value="">All subjects</option>
             {subjects.map(s => <option key={s.id} value={String(s.id)}>{s.code} - {s.name}</option>)}
           </select>
-          <select value={bloomFilter} onChange={e => { setBloomFilter(e.target.value); reset() }} className={selectCls}>
+          <select value={bloomFilter} onChange={e => { setBloomFilter(e.target.value as BloomLevel | ''); reset() }} className={selectCls}>
             <option value="">All Bloom levels</option>
             {BLOOM_LEVELS.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); reset() }} className={selectCls}>
+          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as QuestionStatus | ''); reset() }} className={selectCls}>
             <option value="">All statuses</option>
-            {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+            {QUESTION_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           {hasFilters && (
             <button
-              onClick={() => { setSearch(''); setSubjectFilter(''); setBloomFilter(''); setStatusFilter(''); reset() }}
+              onClick={() => { setSearch(''); setDebouncedSearch(''); setSubjectFilter(''); setBloomFilter(''); setStatusFilter(''); reset() }}
               className="text-xs font-semibold text-blue-600 hover:text-blue-700"
             >
               Clear filters
@@ -190,7 +208,7 @@ export default function AdminQuestionBank() {
               Retry
             </button>
           </div>
-        ) : filtered.length === 0 ? (
+        ) : questions.length === 0 ? (
           <div className="p-10 text-center text-sm text-slate-500">
             {hasFilters ? 'No questions match your filters.' : 'No questions yet. Use "Generate Questions" to create some.'}
           </div>
@@ -211,22 +229,24 @@ export default function AdminQuestionBank() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {pageItems.map(q => (
+                  {questions.map(q => (
                     <tr key={q.id} className="hover:bg-slate-50/60">
                       <td className="px-4 py-3 text-slate-400 font-mono text-xs">{q.id}</td>
-                      <td className="px-4 py-3 max-w-sm"><p className="line-clamp-2 text-slate-800">{q.content}</p></td>
+                      <td className="px-4 py-3 max-w-sm"><p className="line-clamp-2 text-slate-800">{q.contentPreview}</p></td>
                       <td className="px-4 py-3">{subjectLabel(q)}</td>
                       <td className="px-4 py-3 text-xs font-semibold">{q.bloomLevel || '—'}</td>
                       <td className="px-4 py-3 text-xs">{q.sourceType || '—'}</td>
-                      <td className="px-4 py-3 text-xs font-semibold">{q.status || '—'}</td>
+                      <td className="px-4 py-3"><QuestionStatusBadge status={q.status} /></td>
                       <td className="px-4 py-3 text-slate-500">{q.createdAt ? new Date(q.createdAt).toLocaleString() : '—'}</td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <button onClick={() => openDetail(q)} className="px-2.5 py-1.5 mr-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors">
                           View
                         </button>
-                        <button onClick={() => { setDeleteTarget(q); setDeleteError('') }} className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors">
-                          <TrashIcon /> Delete
-                        </button>
+                        {isDeletableStatus(q.status) && (
+                          <button onClick={() => { setDeleteTarget(q); setDeleteError('') }} className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors">
+                            <TrashIcon /> Delete
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -234,11 +254,11 @@ export default function AdminQuestionBank() {
               </table>
             </div>
             <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>{filtered.length} question(s)</span>
+              <span>{totalElements} question(s)</span>
               <div className="flex items-center gap-2">
-                <button disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)} className="px-3 py-1.5 border border-slate-200 rounded-md disabled:opacity-40 hover:bg-slate-50">Prev</button>
-                <span>Page {currentPage} / {pageCount}</span>
-                <button disabled={currentPage >= pageCount} onClick={() => setPage(currentPage + 1)} className="px-3 py-1.5 border border-slate-200 rounded-md disabled:opacity-40 hover:bg-slate-50">Next</button>
+                <button disabled={page <= 0} onClick={() => setPage(page - 1)} className="px-3 py-1.5 border border-slate-200 rounded-md disabled:opacity-40 hover:bg-slate-50">Prev</button>
+                <span>Page {page + 1} / {Math.max(1, totalPages)}</span>
+                <button disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)} className="px-3 py-1.5 border border-slate-200 rounded-md disabled:opacity-40 hover:bg-slate-50">Next</button>
               </div>
             </div>
           </>
@@ -248,8 +268,8 @@ export default function AdminQuestionBank() {
       {detail && <QuestionDetailModal question={detail} onClose={() => setDetail(null)} />}
 
       {pickingSubject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 flex overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>Choose a subject</h2>
             <p className="text-sm text-slate-500 mt-1">Questions are generated from a subject's learning materials.</p>
             <select value={genSubjectId} onChange={e => setGenSubjectId(e.target.value)} className={`${selectCls} w-full mt-4`}>
@@ -278,10 +298,10 @@ export default function AdminQuestionBank() {
       )}
 
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 flex overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>Delete question?</h2>
-            <p className="text-sm text-slate-600 mt-2 line-clamp-3">{deleteTarget.content}</p>
+            <p className="text-sm text-slate-600 mt-2 line-clamp-3">{deleteTarget.contentPreview}</p>
             <p className="mt-2 text-xs text-slate-500">This action cannot be undone.</p>
             {deleteError && <div className="mt-3 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm">{deleteError}</div>}
             <div className="mt-6 flex justify-end gap-3">

@@ -111,7 +111,7 @@ export default function SubjectAssignments() {
     'px-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-700 outline-none focus:ring-2 focus:bg-white'
 
   return (
-    <div className="flex-1 overflow-y-auto p-8 bg-[#f1f5f9]">
+    <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#f1f5f9]">
       <div className="flex items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 leading-tight" style={{ fontFamily: 'DM Sans, sans-serif' }}>
@@ -240,8 +240,8 @@ export default function SubjectAssignments() {
       )}
 
       {removeTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <div className="fixed inset-0 z-50 flex overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
               Remove assignment?
             </h2>

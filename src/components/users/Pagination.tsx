@@ -14,7 +14,7 @@ export default function Pagination({ page, totalPages, totalItems, pageSize, onP
   const endItem = Math.min(safePage * pageSize, totalItems)
 
   return (
-    <div className="flex items-center justify-between px-8 py-3.5 border-t border-slate-100 bg-[#f8fafc]">
+    <div className="flex items-center justify-between gap-3 flex-wrap px-4 sm:px-6 lg:px-8 py-3.5 border-t border-slate-100 bg-[#f8fafc]">
       <div className="text-xs text-slate-400">
         Showing <strong className="text-slate-600">{startItem}</strong>–<strong className="text-slate-600">{endItem}</strong> of <strong className="text-slate-600">{totalItems}</strong> users
       </div>

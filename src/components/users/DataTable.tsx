@@ -42,7 +42,7 @@ export default function DataTable({
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Filters bar */}
-      <div className="flex-shrink-0 px-8 py-4 bg-white border-b border-slate-100 flex items-center gap-3 flex-wrap">
+      <div className="flex-shrink-0 px-4 sm:px-6 lg:px-8 py-4 bg-white border-b border-slate-100 flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-52 max-w-80">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><SearchIcon /></span>
           <input
@@ -86,7 +86,7 @@ export default function DataTable({
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto px-8 py-5">
+      <div className="flex-1 overflow-auto px-4 sm:px-6 lg:px-8 py-5">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <table className="w-full whitespace-nowrap">
             <thead>

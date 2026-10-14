@@ -68,7 +68,7 @@ export interface UserCreatePayload {
 // ===== Users =====
 export const userApi = {
   getMyInfo: () =>
-    axiosInstance.get<{ code: number; result: BackendUserResponse }>('/users/my-info'),
+    axiosInstance.get<{ code: number; result: BackendUserResponse }>('/users/myInfo'),
 
   getAll: () =>
     axiosInstance.get<{ code: number; result: BackendUserResponse[] }>('/users'),
@@ -131,6 +131,48 @@ export interface Rubric {
   criteria: RubricCriterion[]
 }
 
+export type QuestionStatus = 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED'
+export type QuestionSourceType = 'MANUAL' | 'IMPORT' | 'AI'
+
+export interface PageResult<T> {
+  items: T[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+
+// Row returned by GET /questions (QuestionSummaryResponse)
+export interface QuestionSummary {
+  id: number | string
+  subjectId: number | string
+  subjectName?: string
+  contentPreview?: string
+  topics?: string[]
+  bloomLevel?: BloomLevel | null
+  sourceType?: QuestionSourceType | null
+  status?: QuestionStatus | null
+  createdById?: number | string
+  createdByName?: string
+  createdAt?: string
+  archivedAt?: string | null
+  hasRubric: boolean
+}
+
+export interface QuestionSearchParams {
+  subjectId?: number | string
+  topic?: string
+  bloomLevel?: BloomLevel
+  status?: QuestionStatus
+  sourceType?: QuestionSourceType
+  keyword?: string
+  createdById?: number | string
+  archived?: boolean
+  page?: number
+  size?: number
+  sort?: string
+}
+
 export interface QuestionItem {
   id: number | string
   subjectId: number | string
@@ -140,8 +182,8 @@ export interface QuestionItem {
   topics?: string[]
   bloomLevel?: BloomLevel
   answerTimeLimitSeconds?: number
-  sourceType?: string
-  status?: string
+  sourceType?: QuestionSourceType | null
+  status?: QuestionStatus | null
   createdById?: number | string
   createdByName?: string
   updatedById?: number | string
@@ -153,20 +195,20 @@ export interface QuestionItem {
   rubric?: Rubric
 }
 
+// PATCH semantics: an omitted field is left unchanged, an explicit null clears it.
 export interface QuestionUpsertPayload {
   subjectId?: number | string
+  expectedVersion?: number
   content?: string
-  referenceAnswer?: string
+  referenceAnswer?: string | null
   topics?: string[]
-  bloomLevel?: BloomLevel
-  answerTimeLimitSeconds?: number
+  bloomLevel?: BloomLevel | null
+  answerTimeLimitSeconds?: number | null
 }
 
 export const questionApi = {
-  getAll: () => axiosInstance.get('/questions'),
-
-  getBySubject: (subjectId: string | number) =>
-    axiosInstance.get('/questions', { params: { subjectId } }),
+  search: (params: QuestionSearchParams) =>
+    axiosInstance.get<{ code?: number; result: PageResult<QuestionSummary> }>('/questions', { params }),
 
   getById: (id: string | number) => axiosInstance.get<{ code: number; result: QuestionItem }>(`/questions/${id}`),
 
@@ -220,15 +262,20 @@ export const studentExamApi = {
 }
 
 // ===== Learning Materials =====
+// Mirrors the backend MaterialUploadResponse, which is also what the list endpoint returns.
 export interface MaterialResponse {
   id: number | string
   subjectId: number | string
+  subjectCode?: string
+  subjectName?: string
   title?: string
-  originalFileName?: string
+  fileName?: string
   storagePath?: string
-  processingStatus?: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | string
+  mimeType?: string
+  totalChunks?: number
+  processingStatus?: 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'FAILED' | string
+  uploadedBy?: string
   createdAt?: string
-  updatedAt?: string
 }
 
 export const learningMaterialApi = {
