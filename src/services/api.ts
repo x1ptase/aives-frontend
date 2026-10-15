@@ -74,7 +74,9 @@ export const userApi = {
     axiosInstance.get<{ code: number; result: BackendUserResponse[] }>('/users'),
 
   create: (data: UserCreatePayload) =>
-    axiosInstance.post<{ code: number; message?: string; result: BackendUserResponse }>('/users/create', data),
+    axiosInstance.post<{ code: number; message?: string; result: BackendUserResponse }>('/users/create', data, {
+      timeout: 60000, // SMTP mail sending can take 10-20s depending on network
+    }),
 
   update: (id: string | number, data: UserUpdatePayload) =>
     axiosInstance.put<{ code: number; result: BackendUserResponse }>(`/users/${id}`, data),
