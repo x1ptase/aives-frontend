@@ -6,9 +6,10 @@ import {
 } from '@/services/api'
 import GenerateQuestionsModal from '@/components/questions/GenerateQuestionsModal'
 import QuestionDetailModal from '@/components/questions/QuestionDetailModal'
+import QuestionTabs, { QuestionTab, tabStatus, emptyTabMessage } from '@/components/questions/QuestionTabs'
 import { questionErrorMessage } from '@/components/questions/questionErrors'
 import QuestionStatusBadge, {
-    QUESTION_STATUSES, isApprovableStatus, isDeletableStatus, isEditableStatus,
+    QUESTION_STATUSES, RubricBadge, isApprovableStatus, isDeletableStatus, isEditableStatus,
 } from '@/components/questions/QuestionStatusBadge'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -222,6 +223,8 @@ export default function QuestionBank() {
     const [debouncedSearch, setDebouncedSearch] = useState('')
     const [bloomFilter, setBloomFilter] = useState<BloomLevel | ''>('')
     const [statusFilter, setStatusFilter] = useState<QuestionStatus | ''>('')
+    const [tab, setTab] = useState<QuestionTab>('DRAFT')
+    const effectiveStatus = tabStatus(tab, statusFilter)
     const [sourceFilter, setSourceFilter] = useState<QuestionSourceType | ''>('')
     const [questionsErrorMsg, setQuestionsErrorMsg] = useState('')
     const [page, setPage] = useState(0)
@@ -288,7 +291,7 @@ export default function QuestionBank() {
                     size: PAGE_SIZE,
                     ...(debouncedSearch ? { keyword: debouncedSearch } : {}),
                     ...(bloomFilter ? { bloomLevel: bloomFilter } : {}),
-                    ...(statusFilter ? { status: statusFilter } : {}),
+                    ...(effectiveStatus ? { status: effectiveStatus } : {}),
                     ...(sourceFilter ? { sourceType: sourceFilter } : {}),
                 })
                 if (cancelled) return
@@ -311,7 +314,7 @@ export default function QuestionBank() {
         }
         load()
         return () => { cancelled = true }
-    }, [selectedSubject, page, debouncedSearch, bloomFilter, statusFilter, sourceFilter, reloadKey])
+    }, [selectedSubject, page, debouncedSearch, bloomFilter, effectiveStatus, sourceFilter, reloadKey])
 
     const refreshQuestions = () => setReloadKey(k => k + 1)
 
@@ -380,7 +383,7 @@ export default function QuestionBank() {
         }
     }
 
-    const hasFilters = !!(debouncedSearch || bloomFilter || statusFilter || sourceFilter)
+    const hasFilters = !!(debouncedSearch || bloomFilter || (tab === 'ALL' && statusFilter) || sourceFilter)
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
@@ -458,6 +461,8 @@ export default function QuestionBank() {
                     <div className="mx-6 mt-4 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm">{actionError}</div>
                 )}
 
+                {selectedSubject && <QuestionTabs value={tab} onChange={t => { setTab(t); setPage(0) }} />}
+
                 {/* Questions toolbar */}
                 <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-3 sm:gap-4 flex-wrap">
                     <div className="flex items-center gap-3 flex-1 flex-wrap min-w-0">
@@ -488,14 +493,16 @@ export default function QuestionBank() {
                                     <option value="">All Bloom levels</option>
                                     {BLOOM_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                                 </select>
-                                <select
-                                    value={statusFilter}
-                                    onChange={e => { setStatusFilter(e.target.value as QuestionStatus | ''); setPage(0) }}
-                                    className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none"
-                                >
-                                    <option value="">All statuses</option>
-                                    {QUESTION_STATUSES.map(o => <option key={o} value={o}>{o}</option>)}
-                                </select>
+                                {tab === 'ALL' && (
+                                    <select
+                                        value={statusFilter}
+                                        onChange={e => { setStatusFilter(e.target.value as QuestionStatus | ''); setPage(0) }}
+                                        className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none"
+                                    >
+                                        <option value="">All statuses</option>
+                                        {QUESTION_STATUSES.map(o => <option key={o} value={o}>{o}</option>)}
+                                    </select>
+                                )}
                                 <select
                                     value={sourceFilter}
                                     onChange={e => { setSourceFilter(e.target.value as QuestionSourceType | ''); setPage(0) }}
@@ -579,7 +586,7 @@ export default function QuestionBank() {
                                 {questions.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                                            {hasFilters ? 'No questions match your filters.' : 'No questions yet. Click "✨ Generate with AI" or "+ Create Manually" to get started.'}
+                                            {hasFilters ? 'No questions match your filters.' : emptyTabMessage(tab) ?? 'No questions yet. Click "✨ Generate with AI" or "+ Create Manually" to get started.'}
                                         </td>
                                     </tr>
                                 ) : (
@@ -613,13 +620,7 @@ export default function QuestionBank() {
                                                 <LevelBadge level={q.bloomLevel} />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap w-28">
-                                                {q.hasRubric ? (
-                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                                                        📊 Rubric
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-slate-400 text-xs">—</span>
-                                                )}
+                                                <RubricBadge hasRubric={q.hasRubric} />
                                             </td>
                                             <td className="px-6 py-4 text-right whitespace-nowrap w-56">
                                                 {confirmDeleteId === q.id ? (
@@ -661,7 +662,7 @@ export default function QuestionBank() {
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                             </svg>
-                                                            <span>Rubric</span>
+                                                            <span>View</span>
                                                         </button>
                                                         {isApprovableStatus(q.status) && (
                                                             <button
