@@ -15,6 +15,9 @@ export const isEditableStatus = (status?: string | null) => status === 'DRAFT'
 // The backend only deletes drafts (and refuses ones already used in an exam).
 export const isDeletableStatus = (status?: string | null) => status === 'DRAFT'
 
+// Questions that are not yet approved can be approved into the official bank
+export const isApprovableStatus = (status?: string | null) => status !== 'APPROVED'
+
 export default function QuestionStatusBadge({ status }: { status?: string | null }) {
   const style = (status && STYLES[status as QuestionStatus]) || 'bg-slate-50 text-slate-500 border-slate-200'
   return (

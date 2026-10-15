@@ -224,6 +224,9 @@ export const questionApi = {
     axiosInstance.post<{ code: number; message: string; result: QuestionItem[] }>('/questions/generate', data, {
       timeout: 120000, // AI generation (RAG + LLM) routinely exceeds the 10s default
     }),
+
+  approve: (id: string | number) =>
+    axiosInstance.post<{ code: number; message: string; result: QuestionItem }>(`/questions/${id}/approve`),
 }
 
 // ===== Students =====

@@ -8,7 +8,7 @@ import GenerateQuestionsModal from '@/components/questions/GenerateQuestionsModa
 import QuestionDetailModal from '@/components/questions/QuestionDetailModal'
 import { questionErrorMessage } from '@/components/questions/questionErrors'
 import QuestionStatusBadge, {
-    QUESTION_STATUSES, isDeletableStatus, isEditableStatus,
+    QUESTION_STATUSES, isApprovableStatus, isDeletableStatus, isEditableStatus,
 } from '@/components/questions/QuestionStatusBadge'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -354,6 +354,18 @@ export default function QuestionBank() {
         }
     }
 
+    const handleApproveQuestion = async (id: string | number) => {
+        setActionError('')
+        try {
+            await questionApi.approve(id)
+            setAiSuccessBanner('Question approved successfully! It is now part of the official question bank.')
+            setTimeout(() => setAiSuccessBanner(''), 6000)
+            refreshQuestions()
+        } catch (err: any) {
+            setActionError(questionErrorMessage(err, 'Failed to approve question.'))
+        }
+    }
+
     const handleDeleteQuestion = async (id: string | number) => {
         try {
             setDeleteLoading(true)
@@ -649,6 +661,15 @@ export default function QuestionBank() {
                                                             </svg>
                                                             <span>Rubric</span>
                                                         </button>
+                                                        {isApprovableStatus(q.status) && (
+                                                            <button
+                                                                onClick={() => handleApproveQuestion(q.id)}
+                                                                className="px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors"
+                                                                title="Approve question into official bank"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                        )}
                                                         {isEditableStatus(q.status) && (
                                                             <button
                                                                 onClick={() => handleEditQuestion(q)}
@@ -752,6 +773,9 @@ export default function QuestionBank() {
                 <QuestionDetailModal
                     question={detailQuestion}
                     onClose={() => setDetailQuestion(null)}
+                    onApprove={() => {
+                        refreshQuestions()
+                    }}
                 />
             )}
         </div>

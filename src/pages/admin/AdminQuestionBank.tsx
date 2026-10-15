@@ -5,7 +5,7 @@ import {
 import GenerateQuestionsModal from '@/components/questions/GenerateQuestionsModal'
 import QuestionDetailModal from '@/components/questions/QuestionDetailModal'
 import { questionErrorMessage } from '@/components/questions/questionErrors'
-import QuestionStatusBadge, { QUESTION_STATUSES, isDeletableStatus } from '@/components/questions/QuestionStatusBadge'
+import QuestionStatusBadge, { QUESTION_STATUSES, isApprovableStatus, isDeletableStatus } from '@/components/questions/QuestionStatusBadge'
 import { SearchIcon, TrashIcon } from '@/components/common/Icons'
 
 const PAGE_SIZE = 10
@@ -130,6 +130,18 @@ export default function AdminQuestionBank() {
     }
   }
 
+  const handleApprove = async (id: number | string) => {
+    setActionError('')
+    try {
+      await questionApi.approve(id)
+      setBanner('Question approved successfully!')
+      setTimeout(() => setBanner(''), 6000)
+      load()
+    } catch (err) {
+      setActionError(questionErrorMessage(err, 'Failed to approve question.'))
+    }
+  }
+
   const startGenerate = () => {
     const s = subjects.find(x => String(x.id) === genSubjectId)
     if (!s) return
@@ -242,6 +254,15 @@ export default function AdminQuestionBank() {
                         <button onClick={() => openDetail(q)} className="px-2.5 py-1.5 mr-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors">
                           View
                         </button>
+                        {isApprovableStatus(q.status) && (
+                          <button
+                            onClick={() => handleApprove(q.id)}
+                            className="px-2.5 py-1.5 mr-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors"
+                            title="Approve question into official bank"
+                          >
+                            Approve
+                          </button>
+                        )}
                         {isDeletableStatus(q.status) && (
                           <button onClick={() => { setDeleteTarget(q); setDeleteError('') }} className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors">
                             <TrashIcon /> Delete
@@ -265,7 +286,15 @@ export default function AdminQuestionBank() {
         )}
       </div>
 
-      {detail && <QuestionDetailModal question={detail} onClose={() => setDetail(null)} />}
+      {detail && (
+        <QuestionDetailModal
+          question={detail}
+          onClose={() => setDetail(null)}
+          onApprove={() => {
+            load()
+          }}
+        />
+      )}
 
       {pickingSubject && (
         <div className="fixed inset-0 z-50 flex overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4">
