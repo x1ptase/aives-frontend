@@ -291,6 +291,7 @@ export const learningMaterialApi = {
       formData,
       {
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120000, // large files + server-side processing exceed the 10s default
         onUploadProgress: e => {
           if (onProgress && e.total) onProgress(Math.round((e.loaded / e.total) * 100))
         },
