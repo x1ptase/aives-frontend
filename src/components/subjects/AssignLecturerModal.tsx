@@ -31,7 +31,7 @@ export default function AssignLecturerModal({
   const alreadyAssigned = useMemo(
     () =>
       new Set(
-        assignments.filter(a => String(a.lecturerId) === lecturerId).map(a => String(a.subjectId))
+        assignments.filter(a => String(a.lecturerId) === lecturerId).map(a => String(a.subject.id))
       ),
     [assignments, lecturerId]
   )
@@ -50,7 +50,7 @@ export default function AssignLecturerModal({
     setLecturerId(value)
     // Drop selections that are already assigned to the newly chosen lecturer
     const assigned = new Set(
-      assignments.filter(a => String(a.lecturerId) === value).map(a => String(a.subjectId))
+      assignments.filter(a => String(a.lecturerId) === value).map(a => String(a.subject.id))
     )
     setSelected(prev => prev.filter(id => !assigned.has(String(id))))
   }
@@ -64,7 +64,7 @@ export default function AssignLecturerModal({
 
     try {
       setLoading(true)
-      await subjectAssignmentApi.create({ lecturerId: lecturer.id, subjectIds: selected })
+      await subjectAssignmentApi.assign({ lecturerId: lecturer.id, subjectIds: selected })
       onAssigned()
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to assign lecturer.')
