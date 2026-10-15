@@ -4,18 +4,13 @@ import {
   SubjectResponse,
   subjectApi,
   subjectAssignmentApi,
+  getAllSubjectAssignments,
   userApi,
 } from '@/services/api'
 import AssignLecturerModal, { LecturerOption } from '@/components/subjects/AssignLecturerModal'
 import { SearchIcon, PlusIcon, TrashIcon } from '@/components/common/Icons'
 
 const errMsg = (err: any, fallback: string) => err?.response?.data?.message || err?.message || fallback
-
-const formatDate = (value?: string) => {
-  if (!value) return '—'
-  const d = new Date(value)
-  return Number.isNaN(d.getTime()) ? value : d.toLocaleString()
-}
 
 export default function SubjectAssignments() {
   const [assignments, setAssignments] = useState<SubjectAssignment[]>([])
@@ -39,14 +34,13 @@ export default function SubjectAssignments() {
     setAssignError('')
     setRefError('')
     const [aRes, uRes, sRes] = await Promise.allSettled([
-      subjectAssignmentApi.getAll(),
+      getAllSubjectAssignments(),
       userApi.getAll(),
       subjectApi.getAll(),
     ])
 
     if (aRes.status === 'fulfilled') {
-      const d = aRes.value.data
-      setAssignments(Array.isArray(d) ? d : d?.result ?? [])
+      setAssignments(aRes.value)
     } else {
       setAssignments([])
       setAssignError(errMsg(aRes.reason, 'Could not load subject assignments.'))
@@ -82,9 +76,9 @@ export default function SubjectAssignments() {
     const q = search.trim().toLowerCase()
     return assignments.filter(a => {
       if (lecturerFilter && String(a.lecturerId) !== lecturerFilter) return false
-      if (subjectFilter && String(a.subjectId) !== subjectFilter) return false
+      if (subjectFilter && String(a.subject.id) !== subjectFilter) return false
       if (!q) return true
-      return [a.lecturerUsername, a.lecturerName, a.subjectCode, a.subjectName].some(v =>
+      return [a.lecturerUsername, a.lecturerFullName, a.subject.code, a.subject.name].some(v =>
         (v || '').toLowerCase().includes(q)
       )
     })
@@ -95,7 +89,10 @@ export default function SubjectAssignments() {
     try {
       setRemoveLoading(true)
       setRemoveError('')
-      await subjectAssignmentApi.remove(removeTarget.id)
+      await subjectAssignmentApi.revoke({
+        lecturerId: removeTarget.lecturerId,
+        subjectIds: [removeTarget.subject.id],
+      })
       setRemoveTarget(null)
       await load()
     } catch (err: any) {
@@ -200,7 +197,6 @@ export default function SubjectAssignments() {
                   <th className="px-4 py-3">Lecturer Name</th>
                   <th className="px-4 py-3">Subject Code</th>
                   <th className="px-4 py-3">Subject Name</th>
-                  <th className="px-4 py-3">Assigned At</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -208,10 +204,9 @@ export default function SubjectAssignments() {
                 {filtered.map(a => (
                   <tr key={a.id} className="hover:bg-slate-50/60">
                     <td className="px-4 py-3 font-medium">{a.lecturerUsername}</td>
-                    <td className="px-4 py-3">{a.lecturerName}</td>
-                    <td className="px-4 py-3 font-semibold">{a.subjectCode}</td>
-                    <td className="px-4 py-3">{a.subjectName}</td>
-                    <td className="px-4 py-3 text-slate-500">{formatDate(a.assignedAt)}</td>
+                    <td className="px-4 py-3">{a.lecturerFullName || '—'}</td>
+                    <td className="px-4 py-3 font-semibold">{a.subject.code}</td>
+                    <td className="px-4 py-3">{a.subject.name}</td>
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => { setRemoveTarget(a); setRemoveError('') }}
@@ -246,8 +241,12 @@ export default function SubjectAssignments() {
               Remove assignment?
             </h2>
             <p className="text-sm text-slate-600 mt-2">
-              <strong>{removeTarget.lecturerName}</strong> ({removeTarget.lecturerUsername}) will no longer be assigned to{' '}
-              <strong>{removeTarget.subjectCode} - {removeTarget.subjectName}</strong>.
+              <strong>{removeTarget.lecturerFullName || removeTarget.lecturerUsername}</strong> ({removeTarget.lecturerUsername}) will no longer be assigned to{' '}
+              <strong>{removeTarget.subject.code} - {removeTarget.subject.name}</strong>.
+            </p>
+            <p className="mt-3 p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-xs">
+              No questions, rubrics or materials are deleted. However, the lecturer loses access to all Questions in
+              this subject, including the ones they created.
             </p>
             {removeError && (
               <div className="mt-3 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm">{removeError}</div>

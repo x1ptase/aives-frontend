@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
-    subjectApi, questionApi, BloomLevel, QuestionItem, QuestionSourceType, QuestionStatus, QuestionSummary,
+    getMySubjects, questionApi, BloomLevel, QuestionItem, QuestionSourceType, QuestionStatus, QuestionSummary,
     QuestionUpsertPayload, SubjectResponse,
 } from '@/services/api'
 import GenerateQuestionsModal from '@/components/questions/GenerateQuestionsModal'
@@ -202,6 +203,9 @@ const PAGE_SIZE = 20
 const SOURCE_OPTIONS: QuestionSourceType[] = ['MANUAL', 'IMPORT', 'AI']
 
 export default function QuestionBank() {
+    // Read once so later URL changes don't re-trigger subject selection
+    const [searchParams] = useSearchParams()
+    const [initialSubjectId] = useState(() => searchParams.get('subject'))
     // Subjects state
     const [subjects, setSubjects] = useState<Subject[]>([])
     const [subjectsLoading, setSubjectsLoading] = useState(true)
@@ -239,21 +243,20 @@ export default function QuestionBank() {
         try {
             setSubjectsLoading(true)
             setSubjectsError(false)
-            const res = await subjectApi.getAll()
-            const list: Subject[] = Array.isArray(res.data) ? res.data
-                : Array.isArray(res.data?.result) ? res.data.result : []
+            const list: Subject[] = await getMySubjects()
             setSubjects(list)
             // Auto-select first subject on initial load
             setSelectedSubject(prev => {
                 if (prev) return prev // keep current selection on refresh
-                return list.length > 0 ? list[0] : null
+                // Dashboard shortcut passes ?subject=<id>; fall back to the first subject
+                                return list.find(s => String(s.id) === initialSubjectId) ?? list[0] ?? null
             })
         } catch {
             setSubjectsError(true)
         } finally {
             setSubjectsLoading(false)
         }
-    }, [])
+    }, [initialSubjectId])
 
     useEffect(() => { fetchSubjects() }, [fetchSubjects])
 

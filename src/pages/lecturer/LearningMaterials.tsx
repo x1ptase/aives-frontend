@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { subjectApi, learningMaterialApi, MaterialResponse, SubjectResponse } from '@/services/api'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { getMySubjects, learningMaterialApi, MaterialResponse, SubjectResponse } from '@/services/api'
 import { useAuthStore } from '@/store/useAuthStore'
 
 type Subject = SubjectResponse
@@ -223,6 +223,9 @@ function FileIcon({ name }: { name?: string }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function LearningMaterials() {
+    // Read once so later URL changes don't re-trigger subject selection
+    const [searchParams] = useSearchParams()
+    const [initialSubjectId] = useState(() => searchParams.get('subject'))
     const { user } = useAuthStore()
     const navigate = useNavigate()
     const isAdmin = ['ADMIN', 'Admin', 'admin'].includes(user?.role ?? '')
@@ -258,17 +261,16 @@ export default function LearningMaterials() {
         try {
             setSubjectsLoading(true)
             setSubjectsError(false)
-            const res = await subjectApi.getAll()
-            const list: Subject[] = Array.isArray(res.data) ? res.data
-                : Array.isArray((res.data as any)?.result) ? (res.data as any).result : []
+            const list: Subject[] = await getMySubjects()
             setSubjects(list)
-            setSelectedSubject(prev => prev ?? (list[0] ?? null))
+            // Dashboard shortcut passes ?subject=<id>; fall back to the first subject
+            setSelectedSubject(prev => prev ?? list.find(s => String(s.id) === initialSubjectId) ?? list[0] ?? null)
         } catch {
             setSubjectsError(true)
         } finally {
             setSubjectsLoading(false)
         }
-    }, [])
+    }, [initialSubjectId])
 
     useEffect(() => { fetchSubjects() }, [fetchSubjects])
 

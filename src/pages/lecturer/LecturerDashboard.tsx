@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { examSessionApi } from '@/services/api'
 import { useAuthStore } from '@/store/useAuthStore'
 import PageContainer from '@/components/common/PageContainer'
@@ -7,6 +6,7 @@ import SectionCard from '@/components/common/SectionCard'
 import LoadingState from '@/components/common/LoadingState'
 import EmptyState from '@/components/common/EmptyState'
 import ErrorState from '@/components/common/ErrorState'
+import MySubjectsCard from '@/components/dashboard/MySubjectsCard'
 
 type State =
     | { status: 'loading' }
@@ -17,7 +17,6 @@ type State =
 // that are not available yet, so that section reports the real API outcome instead of showing numbers.
 export default function LecturerDashboard() {
     const user = useAuthStore(s => s.user)
-    const navigate = useNavigate()
     const [exams, setExams] = useState<State>({ status: 'loading' })
 
     const loadExams = useCallback(async () => {
@@ -39,25 +38,9 @@ export default function LecturerDashboard() {
         loadExams()
     }, [loadExams])
 
-    const shortcuts = [
-        { label: 'Learning Materials', desc: 'Upload and manage subject materials for AI generation.', path: '/lecturer/learning-materials' },
-        { label: 'Question Bank', desc: 'Generate, create and review questions with rubrics.', path: '/lecturer/question-bank' },
-    ]
-
     return (
         <PageContainer title={`Welcome${user?.name ? `, ${user.name}` : ''}`} subtitle="Your teaching workspace.">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-                {shortcuts.map(s => (
-                    <button
-                        key={s.path}
-                        onClick={() => navigate(s.path)}
-                        className="text-left bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:shadow-md transition-shadow"
-                    >
-                        <p className="text-sm font-semibold text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>{s.label}</p>
-                        <p className="text-xs text-slate-500 mt-1">{s.desc}</p>
-                    </button>
-                ))}
-            </div>
+            <MySubjectsCard />
 
             <SectionCard title="Exams & Grading">
                 {exams.status === 'loading' && <LoadingState />}

@@ -221,7 +221,9 @@ export const questionApi = {
   delete: (id: string | number) => axiosInstance.delete(`/questions/${id}`),
 
   generate: (data: QuestionGeneratePayload) =>
-    axiosInstance.post<{ code: number; message: string; result: QuestionItem[] }>('/questions/generate', data),
+    axiosInstance.post<{ code: number; message: string; result: QuestionItem[] }>('/questions/generate', data, {
+      timeout: 120000, // AI generation (RAG + LLM) routinely exceeds the 10s default
+    }),
 }
 
 // ===== Students =====
@@ -334,32 +336,72 @@ export const subjectApi = {
 }
 
 // ===== Subject Assignments (lecturer <-> subject) =====
-// Backend contract is not available yet; these reject locally (no network call)
-// and should be pointed at the real endpoints once documented.
 export interface SubjectAssignment {
   id: number | string
   lecturerId: number | string
   lecturerUsername: string
-  lecturerName: string
-  subjectId: number | string
-  subjectCode: string
-  subjectName: string
-  assignedAt?: string
+  lecturerFullName?: string
+  subject: SubjectResponse
 }
 
-export interface SubjectAssignmentCreatePayload {
+// Payload shared by POST /lecturer-subject-assignments and /revocations (max 100 subjectIds)
+export interface SubjectAssignmentChangePayload {
   lecturerId: number | string
   subjectIds: (number | string)[]
 }
 
-export const subjectAssignmentApi = {
-  getAll: (): Promise<{ data: SubjectAssignment[] | { result?: SubjectAssignment[] } }> =>
-    unsupported('Subject assignment'),
-  create: (_data: SubjectAssignmentCreatePayload): Promise<{ data: unknown }> =>
-    unsupported('Subject assignment'),
-  remove: (_id: number | string): Promise<{ data: unknown }> =>
-    unsupported('Subject assignment'),
+export interface AssignmentChangeResult {
+  lecturerId: number | string
+  changedSubjectIds: (number | string)[]
+  unchangedSubjectIds: (number | string)[]
 }
+
+const ASSIGNMENT_PAGE_SIZE = 100
+
+export const subjectAssignmentApi = {
+  getPage: (params: { lecturerId?: number | string; page?: number; size?: number } = {}) =>
+    axiosInstance.get<{ code?: number; result?: PageResult<SubjectAssignment> }>('/lecturer-subject-assignments', {
+      params: { size: ASSIGNMENT_PAGE_SIZE, ...params },
+    }),
+  assign: (data: SubjectAssignmentChangePayload) =>
+    axiosInstance.post<{ code?: number; message?: string; result?: AssignmentChangeResult }>(
+      '/lecturer-subject-assignments',
+      data
+    ),
+  revoke: (data: SubjectAssignmentChangePayload) =>
+    axiosInstance.post<{ code?: number; message?: string; result?: AssignmentChangeResult }>(
+      '/lecturer-subject-assignments/revocations',
+      data
+    ),
+  getMySubjectsPage: (page = 0) =>
+    axiosInstance.get<{ code?: number; result?: PageResult<SubjectResponse> }>(
+      '/lecturer-subject-assignments/my-subjects',
+      { params: { page, size: ASSIGNMENT_PAGE_SIZE } }
+    ),
+}
+
+// Walks every page of a paged endpoint (size 100) and returns all items.
+const fetchAllPages = async <T>(
+  fetchPage: (page: number) => Promise<{ data: { result?: PageResult<T> } }>
+): Promise<T[]> => {
+  const items: T[] = []
+  let page = 0
+  let totalPages = 1
+  while (page < totalPages) {
+    const res = await fetchPage(page)
+    const result = res.data?.result
+    items.push(...(result?.items ?? []))
+    totalPages = result?.totalPages ?? 0
+    page += 1
+  }
+  return items
+}
+
+export const getAllSubjectAssignments = (lecturerId?: number | string) =>
+  fetchAllPages<SubjectAssignment>(page => subjectAssignmentApi.getPage({ lecturerId, page }))
+
+// Subjects assigned to the logged-in lecturer (all pages)
+export const getMySubjects = () => fetchAllPages<SubjectResponse>(subjectAssignmentApi.getMySubjectsPage)
 
 // ===== Admin =====
 export const adminApi = {
