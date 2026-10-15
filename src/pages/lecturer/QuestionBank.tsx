@@ -8,7 +8,7 @@ import GenerateQuestionsModal from '@/components/questions/GenerateQuestionsModa
 import QuestionDetailModal from '@/components/questions/QuestionDetailModal'
 import { questionErrorMessage } from '@/components/questions/questionErrors'
 import QuestionStatusBadge, {
-    QUESTION_STATUSES, isDeletableStatus, isEditableStatus,
+    QUESTION_STATUSES, isApprovableStatus, isDeletableStatus, isEditableStatus,
 } from '@/components/questions/QuestionStatusBadge'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -354,6 +354,18 @@ export default function QuestionBank() {
         }
     }
 
+    const handleApproveQuestion = async (id: string | number) => {
+        setActionError('')
+        try {
+            await questionApi.approve(id)
+            setAiSuccessBanner('Question approved successfully! It is now part of the official question bank.')
+            setTimeout(() => setAiSuccessBanner(''), 6000)
+            refreshQuestions()
+        } catch (err: any) {
+            setActionError(questionErrorMessage(err, 'Failed to approve question.'))
+        }
+    }
+
     const handleDeleteQuestion = async (id: string | number) => {
         try {
             setDeleteLoading(true)
@@ -543,22 +555,22 @@ export default function QuestionBank() {
                         </div>
                     ) : (
                         <>
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full text-left border-collapse min-w-[950px]">
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-100">
-                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider w-full">
+                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider min-w-[300px]">
                                         Question & Details
                                     </th>
-                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider w-64 min-w-[180px] max-w-xs">
                                         Topic
                                     </th>
-                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap w-28">
                                         Bloom / Level
                                     </th>
-                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap w-28">
                                         Rubric
                                     </th>
-                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-right whitespace-nowrap">
+                                    <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-right whitespace-nowrap w-56">
                                         Actions
                                     </th>
                                 </tr>
@@ -573,7 +585,7 @@ export default function QuestionBank() {
                                 ) : (
                                     questions.map(q => (
                                         <tr key={q.id} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="px-6 py-4 text-slate-700 max-w-lg">
+                                            <td className="px-6 py-4 text-slate-700 min-w-[300px]">
                                                 <div className="space-y-1">
                                                     <div className="flex items-center gap-1.5 flex-wrap">
                                                         <span className="text-[11px] font-mono text-slate-400">#{q.id}</span>
@@ -589,16 +601,18 @@ export default function QuestionBank() {
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="line-clamp-2 text-slate-800 font-medium">{q.contentPreview || '—'}</p>
+                                                    <p className="line-clamp-2 text-slate-800 font-medium leading-relaxed">{q.contentPreview || '—'}</p>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-slate-600 text-xs whitespace-nowrap">
-                                                {Array.isArray(q.topics) && q.topics.length > 0 ? q.topics.join(', ') : '—'}
+                                            <td className="px-6 py-4 text-slate-600 text-xs w-64 min-w-[180px] max-w-xs">
+                                                <p className="line-clamp-2 leading-relaxed" title={Array.isArray(q.topics) ? q.topics.join(', ') : undefined}>
+                                                    {Array.isArray(q.topics) && q.topics.length > 0 ? q.topics.join(', ') : '—'}
+                                                </p>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-6 py-4 whitespace-nowrap w-28">
                                                 <LevelBadge level={q.bloomLevel} />
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-6 py-4 whitespace-nowrap w-28">
                                                 {q.hasRubric ? (
                                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
                                                         📊 Rubric
@@ -607,7 +621,7 @@ export default function QuestionBank() {
                                                     <span className="text-slate-400 text-xs">—</span>
                                                 )}
                                             </td>
-                                            <td className="px-6 py-4 text-right">
+                                            <td className="px-6 py-4 text-right whitespace-nowrap w-56">
                                                 {confirmDeleteId === q.id ? (
                                                     <div className="flex items-center justify-end gap-1.5">
                                                         {deleteError && (
@@ -649,6 +663,15 @@ export default function QuestionBank() {
                                                             </svg>
                                                             <span>Rubric</span>
                                                         </button>
+                                                        {isApprovableStatus(q.status) && (
+                                                            <button
+                                                                onClick={() => handleApproveQuestion(q.id)}
+                                                                className="px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors"
+                                                                title="Approve question into official bank"
+                                                            >
+                                                                Approve
+                                                            </button>
+                                                        )}
                                                         {isEditableStatus(q.status) && (
                                                             <button
                                                                 onClick={() => handleEditQuestion(q)}
@@ -752,6 +775,9 @@ export default function QuestionBank() {
                 <QuestionDetailModal
                     question={detailQuestion}
                     onClose={() => setDetailQuestion(null)}
+                    onApprove={() => {
+                        refreshQuestions()
+                    }}
                 />
             )}
         </div>
