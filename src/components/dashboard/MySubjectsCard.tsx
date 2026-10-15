@@ -34,16 +34,16 @@ export default function MySubjectsCard() {
   }, [load])
 
   return (
-    <div className="mb-6 bg-white rounded-xl border border-slate-300 shadow-sm overflow-hidden">
-      <div className="px-6 py-4 bg-slate-800 flex items-center justify-between gap-3">
+    <div className="mb-6 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 border-l-4 border-l-blue-600 flex items-center justify-between gap-3">
         <div>
-          <h2 className="font-bold text-white text-base" style={{ fontFamily: 'DM Sans, sans-serif' }}>
+          <h2 className="font-bold text-slate-900 text-base" style={{ fontFamily: 'DM Sans, sans-serif' }}>
             My Subjects
           </h2>
-          <p className="text-xs text-slate-300 mt-0.5">Subjects assigned to you by an administrator</p>
+          <p className="text-xs text-slate-500 mt-0.5">Subjects assigned to you by an administrator</p>
         </div>
         {state.status === 'loaded' && (
-          <span className="px-2.5 py-1 text-xs font-semibold text-slate-800 bg-white rounded-full">
+          <span className="px-2.5 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-100 rounded-full">
             {state.subjects.length} assigned
           </span>
         )}

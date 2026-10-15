@@ -141,7 +141,7 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
               <div className="pt-2 border-t border-slate-100">
                 <div className="mb-2">
                   <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    📊 Rubric Evaluation
+                    Rubric Evaluation
                   </h3>
                   {rubric.title && <p className="text-xs text-slate-500 mt-0.5">{rubric.title}</p>}
                   {rubric.description && (

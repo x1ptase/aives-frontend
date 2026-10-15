@@ -5,7 +5,8 @@ import {
 import GenerateQuestionsModal from '@/components/questions/GenerateQuestionsModal'
 import QuestionDetailModal from '@/components/questions/QuestionDetailModal'
 import { questionErrorMessage } from '@/components/questions/questionErrors'
-import QuestionStatusBadge, { QUESTION_STATUSES, isApprovableStatus, isDeletableStatus } from '@/components/questions/QuestionStatusBadge'
+import QuestionTabs, { QuestionTab, tabStatus, emptyTabMessage } from '@/components/questions/QuestionTabs'
+import QuestionStatusBadge, { QUESTION_STATUSES, RubricBadge, isApprovableStatus, isDeletableStatus } from '@/components/questions/QuestionStatusBadge'
 import { SearchIcon, TrashIcon } from '@/components/common/Icons'
 
 const PAGE_SIZE = 10
@@ -33,6 +34,8 @@ export default function AdminQuestionBank() {
   const [subjectFilter, setSubjectFilter] = useState('')
   const [bloomFilter, setBloomFilter] = useState<BloomLevel | ''>('')
   const [statusFilter, setStatusFilter] = useState<QuestionStatus | ''>('')
+  const [tab, setTab] = useState<QuestionTab>('DRAFT')
+  const effectiveStatus = tabStatus(tab, statusFilter)
   const [page, setPage] = useState(0)
 
   const [detail, setDetail] = useState<QuestionItem | null>(null)
@@ -71,7 +74,7 @@ export default function AdminQuestionBank() {
         ...(subjectFilter ? { subjectId: subjectFilter } : {}),
         ...(debouncedSearch ? { keyword: debouncedSearch } : {}),
         ...(bloomFilter ? { bloomLevel: bloomFilter } : {}),
-        ...(statusFilter ? { status: statusFilter } : {}),
+        ...(effectiveStatus ? { status: effectiveStatus } : {}),
       })
       .then(res => {
         if (cancelled) return
@@ -89,7 +92,7 @@ export default function AdminQuestionBank() {
         if (!cancelled) setLoading(false)
       })
     return () => { cancelled = true }
-  }, [page, subjectFilter, debouncedSearch, bloomFilter, statusFilter, reloadKey])
+  }, [page, subjectFilter, debouncedSearch, bloomFilter, effectiveStatus, reloadKey])
 
   const load = () => setReloadKey(k => k + 1)
 
@@ -102,7 +105,7 @@ export default function AdminQuestionBank() {
     [subjects]
   )
 
-  const hasFilters = !!(debouncedSearch || subjectFilter || bloomFilter || statusFilter)
+  const hasFilters = !!(debouncedSearch || subjectFilter || bloomFilter || (tab === 'ALL' && statusFilter))
   const reset = () => setPage(0)
 
   const openDetail = async (q: QuestionSummary) => {
@@ -175,6 +178,7 @@ export default function AdminQuestionBank() {
       {actionError && <div className="mb-4 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm">{actionError}</div>}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <QuestionTabs value={tab} onChange={t => { setTab(t); reset() }} />
         <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3 flex-wrap">
           <div className="relative flex-1 min-w-52 max-w-80">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><SearchIcon /></span>
@@ -194,10 +198,12 @@ export default function AdminQuestionBank() {
             <option value="">All Bloom levels</option>
             {BLOOM_LEVELS.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
-          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as QuestionStatus | ''); reset() }} className={selectCls}>
-            <option value="">All statuses</option>
-            {QUESTION_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+          {tab === 'ALL' && (
+            <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as QuestionStatus | ''); reset() }} className={selectCls}>
+              <option value="">All statuses</option>
+              {QUESTION_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          )}
           {hasFilters && (
             <button
               onClick={() => { setSearch(''); setDebouncedSearch(''); setSubjectFilter(''); setBloomFilter(''); setStatusFilter(''); reset() }}
@@ -222,7 +228,7 @@ export default function AdminQuestionBank() {
           </div>
         ) : questions.length === 0 ? (
           <div className="p-10 text-center text-sm text-slate-500">
-            {hasFilters ? 'No questions match your filters.' : 'No questions yet. Use "Generate Questions" to create some.'}
+            {hasFilters ? 'No questions match your filters.' : emptyTabMessage(tab) ?? 'No questions yet. Use "Generate Questions" to create some.'}
           </div>
         ) : (
           <>
@@ -236,6 +242,7 @@ export default function AdminQuestionBank() {
                     <th className="px-4 py-3">Bloom</th>
                     <th className="px-4 py-3">Source</th>
                     <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Rubric</th>
                     <th className="px-4 py-3">Created</th>
                     <th className="px-4 py-3 text-right">Actions</th>
                   </tr>
@@ -249,6 +256,7 @@ export default function AdminQuestionBank() {
                       <td className="px-4 py-3 text-xs font-semibold">{q.bloomLevel || '—'}</td>
                       <td className="px-4 py-3 text-xs">{q.sourceType || '—'}</td>
                       <td className="px-4 py-3"><QuestionStatusBadge status={q.status} /></td>
+                      <td className="px-4 py-3"><RubricBadge hasRubric={q.hasRubric} /></td>
                       <td className="px-4 py-3 text-slate-500">{q.createdAt ? new Date(q.createdAt).toLocaleString() : '—'}</td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <button onClick={() => openDetail(q)} className="px-2.5 py-1.5 mr-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors">
