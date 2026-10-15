@@ -227,11 +227,11 @@ export default function AdminQuestionBank() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-left text-sm min-w-[900px]">
                 <thead className="bg-slate-50 border-b border-slate-100">
                   <tr className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    <th className="px-4 py-3">ID</th>
-                    <th className="px-4 py-3">Question</th>
+                    <th className="px-4 py-3 w-16">ID</th>
+                    <th className="px-4 py-3 min-w-[260px]">Question</th>
                     <th className="px-4 py-3">Subject</th>
                     <th className="px-4 py-3">Bloom</th>
                     <th className="px-4 py-3">Source</th>
@@ -244,7 +244,7 @@ export default function AdminQuestionBank() {
                   {questions.map(q => (
                     <tr key={q.id} className="hover:bg-slate-50/60">
                       <td className="px-4 py-3 text-slate-400 font-mono text-xs">{q.id}</td>
-                      <td className="px-4 py-3 max-w-sm"><p className="line-clamp-2 text-slate-800">{q.contentPreview}</p></td>
+                      <td className="px-4 py-3 min-w-[260px] max-w-sm"><p className="line-clamp-2 text-slate-800">{q.contentPreview}</p></td>
                       <td className="px-4 py-3">{subjectLabel(q)}</td>
                       <td className="px-4 py-3 text-xs font-semibold">{q.bloomLevel || '—'}</td>
                       <td className="px-4 py-3 text-xs">{q.sourceType || '—'}</td>
