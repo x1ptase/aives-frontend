@@ -1,13 +1,39 @@
-import { QuestionItem } from '@/services/api'
+import { useState } from 'react'
+import { QuestionItem, questionApi } from '@/services/api'
 import QuestionStatusBadge from '@/components/questions/QuestionStatusBadge'
 
 interface QuestionDetailModalProps {
   question: QuestionItem
   onClose: () => void
+  onApprove?: (question: QuestionItem) => Promise<void> | void
 }
 
-export default function QuestionDetailModal({ question, onClose }: QuestionDetailModalProps) {
-  const rubric = question.rubric
+export default function QuestionDetailModal({ question, onClose, onApprove }: QuestionDetailModalProps) {
+  const [currentQuestion, setCurrentQuestion] = useState<QuestionItem>(question)
+  const [approving, setApproving] = useState(false)
+  const [approveError, setApproveError] = useState('')
+  const [approveSuccess, setApproveSuccess] = useState(false)
+
+  const rubric = currentQuestion.rubric
+
+  const handleApprove = async () => {
+    setApproving(true)
+    setApproveError('')
+    try {
+      const res = await questionApi.approve(currentQuestion.id)
+      const updated: QuestionItem = res.data?.result || { ...currentQuestion, status: 'APPROVED' }
+      setCurrentQuestion(updated)
+      setApproveSuccess(true)
+      if (onApprove) {
+        await onApprove(updated)
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to approve question.'
+      setApproveError(msg)
+    } finally {
+      setApproving(false)
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 overflow-y-auto">
@@ -16,12 +42,12 @@ export default function QuestionDetailModal({ question, onClose }: QuestionDetai
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/70">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">
-              Question #{question.id}
+              Question #{currentQuestion.id}
             </span>
-            <QuestionStatusBadge status={question.status} />
-            {question.sourceType && (
+            <QuestionStatusBadge status={currentQuestion.status} />
+            {currentQuestion.sourceType && (
               <span className="px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-700 flex items-center gap-1">
-                {question.sourceType === 'AI' && '✨ '}{question.sourceType}
+                {currentQuestion.sourceType === 'AI' && '✨ '}{currentQuestion.sourceType}
               </span>
             )}
           </div>
@@ -39,33 +65,33 @@ export default function QuestionDetailModal({ question, onClose }: QuestionDetai
         <div className="p-6 space-y-5 overflow-y-auto">
           {/* Metadata chips */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            {question.bloomLevel && (
+            {currentQuestion.bloomLevel && (
               <div className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 font-medium">
-                Bloom: <strong>{question.bloomLevel}</strong>
+                Bloom: <strong>{currentQuestion.bloomLevel}</strong>
               </div>
             )}
-            {question.answerTimeLimitSeconds && (
+            {currentQuestion.answerTimeLimitSeconds && (
               <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 font-medium">
-                ⏱️ Time limit: <strong>{question.answerTimeLimitSeconds}s</strong>
+                ⏱️ Time limit: <strong>{currentQuestion.answerTimeLimitSeconds}s</strong>
               </div>
             )}
-            {question.createdByName && (
+            {currentQuestion.createdByName && (
               <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
-                Created by: <strong>{question.createdByName}</strong>
+                Created by: <strong>{currentQuestion.createdByName}</strong>
               </div>
             )}
-            {question.subjectName && (
+            {currentQuestion.subjectName && (
               <div className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-100">
-                Subject: <strong>{question.subjectName}</strong>
+                Subject: <strong>{currentQuestion.subjectName}</strong>
               </div>
             )}
           </div>
 
           {/* Topics */}
-          {question.topics && question.topics.length > 0 && (
+          {currentQuestion.topics && currentQuestion.topics.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-xs text-slate-400 mr-1">Topics:</span>
-              {question.topics.map((t, idx) => (
+              {currentQuestion.topics.map((t, idx) => (
                 <span key={idx} className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-xs font-medium">
                   #{t}
                 </span>
@@ -79,18 +105,18 @@ export default function QuestionDetailModal({ question, onClose }: QuestionDetai
               Oral Exam Question
             </h3>
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium leading-relaxed">
-              {question.content}
+              {currentQuestion.content}
             </div>
           </div>
 
           {/* Reference Answer */}
-          {question.referenceAnswer && (
+          {currentQuestion.referenceAnswer && (
             <div>
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                 <span>Reference Answer & Key Outline</span>
               </h3>
               <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl text-slate-700 text-sm leading-relaxed whitespace-pre-line">
-                {question.referenceAnswer}
+                {currentQuestion.referenceAnswer}
               </div>
             </div>
           )}
@@ -115,7 +141,7 @@ export default function QuestionDetailModal({ question, onClose }: QuestionDetai
               <div className="pt-2 border-t border-slate-100">
                 <div className="mb-2">
                   <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    📊 Rubric Evaluation
+                    Rubric Evaluation
                   </h3>
                   {rubric.title && <p className="text-xs text-slate-500 mt-0.5">{rubric.title}</p>}
                   {rubric.description && (
@@ -188,13 +214,28 @@ export default function QuestionDetailModal({ question, onClose }: QuestionDetai
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-end shrink-0">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors shadow-sm"
-          >
-            Close
-          </button>
+        <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            {approveError && <span className="text-xs text-red-600 font-medium">{approveError}</span>}
+            {approveSuccess && <span className="text-xs text-emerald-600 font-medium">✓ Question approved successfully!</span>}
+          </div>
+          <div className="flex items-center gap-2">
+            {currentQuestion.status !== 'APPROVED' && (
+              <button
+                onClick={handleApprove}
+                disabled={approving}
+                className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
+              >
+                {approving ? 'Approving...' : '✓ Approve Question'}
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors shadow-sm"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
