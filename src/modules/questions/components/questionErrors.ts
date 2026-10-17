@@ -9,8 +9,6 @@ const QUESTION_ERROR_MESSAGES: Record<number, string> = {
   1105: 'The question is referenced elsewhere or is being modified at the same time. Please try again.',
 }
 
-export const QUESTION_VERSION_CONFLICT = 1104
-
 export function questionErrorCode(err: unknown): number | undefined {
   return (err as { response?: { data?: { code?: number } } })?.response?.data?.code
 }
