@@ -4,10 +4,10 @@ An intelligent oral examination system that assists instructors in automating qu
 
 ## 🚀 Tech Stack
 
-- **Core Framework:** React 18 (Vite)
+- **Core Framework:** React 19 (Vite)
 - **Language:** TypeScript
-- **State Management:** Zustand (Global State), TanStack Query (Server State)
-- **UI/Styling:** Tailwind CSS + shadcn/ui
+- **State Management:** Zustand (global state), React hooks (local/server state)
+- **UI/Styling:** Tailwind CSS
 - **Real-time Communication:** WebSockets & MediaRecorder API
 - **Backend Architecture:** Tight integration with a Java-based Backend (Spring Boot) to handle audio streaming and AI processing.
 
@@ -36,7 +36,7 @@ src/
 ├── shared/               # Shared kernel: no dependency on modules/ or app/
 │   ├── api/              #   axios instance, common API types (PageResult)
 │   ├── components/common #   Generic UI (EmptyState, Icons, SectionCard...)
-│   └── config/, utils/, types/, mocks/
+│   └── config/, types/
 └── assets/               # Static images
 ```
 
