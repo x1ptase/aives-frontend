@@ -11,19 +11,38 @@ An intelligent oral examination system that assists instructors in automating qu
 - **Real-time Communication:** WebSockets & MediaRecorder API
 - **Backend Architecture:** Tight integration with a Java-based Backend (Spring Boot) to handle audio streaming and AI processing.
 
-## 📂 Folder Structure
+## 📂 Folder Structure (Modular Monolith)
+
+The frontend is a single deployable SPA organised into **business modules** (feature-first),
+a **shared kernel** and an **app shell**.
 
 ```text
 src/
-├── assets/         # Static images, icons, and audio files
-├── components/     # Shared UI components (Button, Modal, Table...)
-├── config/         # Project configurations (axios instance, constants...)
-├── hooks/          # Custom hooks (useAudioRecorder, useWebSocket...)
-├── layouts/        # Main layouts (AdminLayout, ExamLayout)
-├── pages/          # Page components (Dashboard, QuestionBank, ExamRoom, Review)
-├── services/       # API call functions (api.ts, websocket.ts)
-├── store/          # Zustand stores (useAuthStore, useExamStore)
-├── types/          # TypeScript interfaces/types (Student, Rubric...)
-├── utils/          # Utility functions (formatDate, calculateScore...)
-├── App.tsx         # Root component
-└── main.tsx        # Entry point
+├── main.tsx, App.tsx     # Entry point and providers
+├── app/                  # App shell: routing, per-role shells, layouts
+│   ├── routes/           #   AppRoutes
+│   ├── shells/           #   AdminApp, LecturerApp, StudentApp
+│   └── layout/           #   DashboardLayout, Sidebar, TopHeader, UserMenu
+├── modules/              # Business modules: each owns its API, UI, state and pages
+│   ├── auth/             #   sign in/up, session store (useAuthStore)
+│   ├── users/            #   user management, profile
+│   ├── subjects/         #   subjects, lecturer-subject assignments, My Subjects card
+│   ├── questions/        #   question bank, AI generation, approval, rubrics
+│   ├── materials/        #   learning materials upload/management
+│   ├── exams/            #   exams, grading, WebSocket/audio (realtime), exam store
+│   ├── ai-config/        #   AI provider configuration
+│   └── dashboard/        #   role dashboards (compose other modules)
+│   (each module: api.ts, components/, pages/, store/, hooks/, index.ts = public API)
+├── shared/               # Shared kernel: no dependency on modules/ or app/
+│   ├── api/              #   axios instance, common API types (PageResult)
+│   ├── components/common #   Generic UI (EmptyState, Icons, SectionCard...)
+│   └── config/, utils/, types/, mocks/
+└── assets/               # Static images
+```
+
+### Module rules (enforced by `.oxlintrc.json`)
+1. A module exposes its public API only through `modules/<name>/index.ts`.
+2. Other modules import it as `@/modules/<name>`, never `@/modules/<name>/internal/path`.
+3. `shared/` must not import from `modules/` or `app/`; `modules/` must not import from `app/`.
+4. Dependencies between modules stay acyclic:
+   `auth` ← `users` ← `subjects` ← `materials` ← `questions`; `exams` and `dashboard` sit on top.
