@@ -1,57 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
-import { studentExamApi } from '../api'
-import SectionCard from '@/shared/components/common/SectionCard'
-import PageContainer from '@/shared/components/common/PageContainer'
-import LoadingState from '@/shared/components/common/LoadingState'
-import EmptyState from '@/shared/components/common/EmptyState'
-import ErrorState from '@/shared/components/common/ErrorState'
+import StudentExamList from '../components/StudentExamList'
 
-type State =
-    | { status: 'loading' }
-    | { status: 'error'; message: string }
-    | { status: 'loaded'; count: number }
-
-// The student exam contract (fields, statuses, start/join actions) is not documented, so this page
-// reports the real outcome of studentExamApi.getAll without interpreting unknown fields or offering actions.
-export default function MyExams() {
-    const [state, setState] = useState<State>({ status: 'loading' })
-
-    const load = useCallback(async () => {
-        setState({ status: 'loading' })
-        try {
-            const res = await studentExamApi.getAll()
-            const d = res.data
-            const list = Array.isArray(d) ? d : Array.isArray(d?.result) ? d.result : []
-            setState({ status: 'loaded', count: list.length })
-        } catch (err: any) {
-            setState({
-                status: 'error',
-                message: err?.response?.data?.message || err?.message || 'Could not load your exams.',
-            })
-        }
-    }, [])
-
-    useEffect(() => {
-        load()
-    }, [load])
-
-    return (
-        <PageContainer title="My Exams" subtitle="Exams assigned to you.">
-            <SectionCard title="Assigned Exams">
-                {state.status === 'loading' && <LoadingState />}
-                {state.status === 'error' && (
-                    <ErrorState title="Exams are unavailable" message={state.message} onRetry={load} />
-                )}
-                {state.status === 'loaded' && (
-                    <EmptyState
-                        message={
-                            state.count === 0
-                                ? 'You have no exams assigned yet.'
-                                : `The server returned ${state.count} exam record(s). Detailed display and actions are pending the student exam API contract.`
-                        }
-                    />
-                )}
-            </SectionCard>
-        </PageContainer>
-    )
+/** Trang dùng lịch thi cá nhân thật; không giả lập chức năng bắt đầu hoặc chấm thi. */
+export default function StudentMyExams() {
+  return <StudentExamList title="My Exams" subtitle="Your assigned exam sessions and scheduled slots." />
 }

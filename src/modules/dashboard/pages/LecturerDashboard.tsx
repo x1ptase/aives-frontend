@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { examSessionApi } from '@/modules/exams'
+import { examSessionApi, examPage } from '@/modules/exams'
 import { useAuthStore } from '@/modules/auth'
 import PageContainer from '@/shared/components/common/PageContainer'
 import SectionCard from '@/shared/components/common/SectionCard'
@@ -13,8 +13,6 @@ type State =
     | { status: 'error'; message: string }
     | { status: 'loaded'; count: number }
 
-// Only real data sources are used. Exam, grading and result metrics need backend exam endpoints
-// that are not available yet, so that section reports the real API outcome instead of showing numbers.
 export default function LecturerDashboard() {
     const user = useAuthStore(s => s.user)
     const [exams, setExams] = useState<State>({ status: 'loading' })
@@ -22,10 +20,8 @@ export default function LecturerDashboard() {
     const loadExams = useCallback(async () => {
         setExams({ status: 'loading' })
         try {
-            const res = await examSessionApi.getAll()
-            const d = res.data
-            const list = Array.isArray(d) ? d : Array.isArray(d?.result) ? d.result : []
-            setExams({ status: 'loaded', count: list.length })
+            const res = await examSessionApi.getAll({ size: 1 })
+            setExams({ status: 'loaded', count: examPage(res.data).totalElements })
         } catch (err: any) {
             setExams({
                 status: 'error',
@@ -51,7 +47,7 @@ export default function LecturerDashboard() {
                     <EmptyState
                         message={exams.count === 0
                             ? 'No exams yet.'
-                            : `The server returned ${exams.count} exam record(s). Detailed display is pending the exam API contract.`}
+                            : `${exams.count} exam session(s). Open My Exams to manage sessions and student schedules.`}
                     />
                 )}
             </SectionCard>

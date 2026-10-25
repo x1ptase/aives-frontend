@@ -29,6 +29,43 @@ export interface Rubric {
   criteria: RubricCriterion[]
 }
 
+/** Rubric dùng chung theo môn, tách hợp đồng cũ theo câu hỏi để không đổi các màn hình hiện có. */
+export interface SubjectRubric extends Omit<Rubric, 'questionId'> {
+  /** Môn sở hữu rubric. */ subjectId: number | string
+  /** Thời điểm cập nhật gần nhất nếu backend cung cấp. */ updatedAt?: string | null
+}
+
+/** Tiêu chí ghi theo thứ tự trên form; không gửi ID cũ vì BE thay danh sách tiêu chí khi cập nhật. */
+export interface SubjectRubricCriterionPayload {
+  /** Nội dung tiêu chí chấm. */ criterionText: string
+  /** Điểm tối đa, tổng rubric đúng 10. */ pointWeight: number
+  /** Cờ bắt buộc hiện hành. */ isMandatory: boolean
+  /** Thứ tự dương không trùng. */ displayOrder: number
+}
+
+/** Tạo rubric của một môn được phân công; mỗi môn chỉ có tối đa một rubric. */
+export interface SubjectRubricCreatePayload {
+  /** Môn học được chọn từ phân công hiện hành. */ subjectId: number
+  /** Tên bộ tiêu chí. */ title: string
+  /** Hướng dẫn chung. */ description: string
+  /** Toàn bộ các tiêu chí. */ criteria: SubjectRubricCriterionPayload[]
+}
+
+/** PUT không được đổi môn sở hữu hoặc gửi điểm bài thi. */
+export type SubjectRubricUpdatePayload = Omit<SubjectRubricCreatePayload, 'subjectId'>
+
+/** API rubric cấp môn dùng chung cho màn hình CRUD và điều kiện tạo phiên. */
+export const subjectRubricApi = {
+  /** Chỉ đọc rubric của môn giảng viên được phép truy cập. */
+  getBySubject: (subjectId: number, signal?: AbortSignal) => axiosInstance.get<{ code: number; result: SubjectRubric }>(`/rubrics/subject/${subjectId}`, { signal }),
+  /** Tạo bằng subjectId, quyền thực tế được BE kiểm tra lại. */
+  create: (data: SubjectRubricCreatePayload) => axiosInstance.post<{ code: number; result: SubjectRubric }>('/rubrics', data),
+  /** Sửa bằng ID rubric, không dùng ID môn thay thế. */
+  update: (id: number, data: SubjectRubricUpdatePayload) => axiosInstance.put<{ code: number; result: SubjectRubric }>(`/rubrics/${id}`, data),
+  /** Xóa rubric/tiêu chí nguồn; không xóa bản chụp của bài thi đã chốt. */
+  delete: (id: number) => axiosInstance.delete<{ code: number; message?: string }>(`/rubrics/${id}`),
+}
+
 export type QuestionStatus = 'DRAFT' | 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED'
 export type QuestionSourceType = 'MANUAL' | 'IMPORT' | 'AI'
 

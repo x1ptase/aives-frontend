@@ -1,4 +1,5 @@
 export * from './api'
+export { examPage } from './components/examHelpers'
 export { useExamStore } from './store/useExamStore'
 export { wsService } from './realtime/websocket'
 export { useAudioRecorder } from './hooks/useAudioRecorder'

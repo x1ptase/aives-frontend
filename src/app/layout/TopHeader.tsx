@@ -18,6 +18,7 @@ const ADMIN_NAV: NavItem[] = [
 const LECTURER_NAV: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/lecturer' },
   { id: 'learning-materials', label: 'Learning Materials', icon: <IconBook />, path: '/lecturer/learning-materials' },
+  { id: 'rubrics', label: 'Rubrics', icon: <IconClipboard />, path: '/lecturer/rubrics' },
   { id: 'question-bank', label: 'Question Bank', icon: <IconFile />, path: '/lecturer/question-bank' },
   { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/lecturer/exams' },
 ]

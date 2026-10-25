@@ -69,10 +69,10 @@ export const subjectAssignmentApi = {
       '/lecturer-subject-assignments/revocations',
       data
     ),
-  getMySubjectsPage: (page = 0) =>
+  getMySubjectsPage: (page = 0, signal?: AbortSignal) =>
     axiosInstance.get<{ code?: number; result?: PageResult<SubjectResponse> }>(
       '/lecturer-subject-assignments/my-subjects',
-      { params: { page, size: ASSIGNMENT_PAGE_SIZE } }
+      { params: { page, size: ASSIGNMENT_PAGE_SIZE }, signal }
     ),
 }
 
