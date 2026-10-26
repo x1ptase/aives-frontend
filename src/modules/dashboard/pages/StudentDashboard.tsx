@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { BackendUserResponse } from '@/shared/types'
-import { studentExamApi } from '@/modules/exams'
+import { studentExamApi, examPage } from '@/modules/exams'
 import { userApi } from '@/modules/users'
 import { useAuthStore } from '@/modules/auth'
 import SectionCard from '@/shared/components/common/SectionCard'
@@ -19,8 +19,8 @@ const errMsg = (err: any, fallback: string) => err?.response?.data?.message || e
 
 // Only two student-facing data sources are wired:
 //  - GET /users/myInfo (real, typed as BackendUserResponse)
-//  - studentExamApi.getAll (backend contract not available yet; surfaces its real outcome)
-// Scores, upcoming exams and other metrics are intentionally omitted until their API contracts exist.
+//  - GET /student-exams/me (lịch riêng từ JWT, có phân trang)
+// Điểm và dữ liệu chấm vẫn chưa có trong hợp đồng lịch thi.
 export default function StudentDashboard() {
     const authUser = useAuthStore(s => s.user)
     const [profile, setProfile] = useState<Load<BackendUserResponse>>({ status: 'loading' })
@@ -39,10 +39,8 @@ export default function StudentDashboard() {
     const loadExams = useCallback(async () => {
         setExams({ status: 'loading' })
         try {
-            const res = await studentExamApi.getAll()
-            const d = res.data
-            const list = Array.isArray(d) ? d : Array.isArray(d?.result) ? d.result : []
-            setExams({ status: 'loaded', data: list.length })
+            const res = await studentExamApi.getAll({ size: 1 })
+            setExams({ status: 'loaded', data: examPage(res.data).totalElements })
         } catch (err) {
             setExams({ status: 'error', message: errMsg(err, 'Could not load your exams.') })
         }
@@ -94,7 +92,7 @@ export default function StudentDashboard() {
                         <ErrorState title="Exams are unavailable" message={exams.message} onRetry={loadExams} />
                     )}
                     {exams.status === 'loaded' && (
-                        <EmptyState message={exams.data === 0 ? 'You have no exams yet.' : `The server returned ${exams.data} exam record(s). Detailed display is pending the student exam API contract.`} />
+                        <EmptyState message={exams.data === 0 ? 'You have no exams yet.' : `${exams.data} exam assignment(s). Open My Exams to view your schedule.`} />
                     )}
                 </SectionCard>
             </div>
