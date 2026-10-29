@@ -46,9 +46,9 @@ export default function TopHeader({ role, onMenuClick }: TopHeaderProps) {
   const activeId = navItems.reduce<string>((found, item) => {
     if (location.pathname === item.path) return item.id
     if (found) return found
-    if (item.path !== `/${role}` && location.pathname.startsWith(item.path)) return item.id
+    if (item.path !== `/${role}` && location.pathname.startsWith(`${item.path}/`)) return item.id
     return found
-  }, navItems[0].id)
+  }, '') || navItems[0].id
 
   return (
     <header className="flex-shrink-0 flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-8 py-3 sm:py-4 bg-white border-b border-slate-200">

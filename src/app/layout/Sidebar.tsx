@@ -55,9 +55,9 @@ export default function Sidebar({ role, open, onClose, collapsed = false }: Side
   const activeId = navItems.reduce<string>((found, item) => {
     if (location.pathname === item.path) return item.id
     if (found) return found
-    if (item.path !== `/${role}` && location.pathname.startsWith(item.path)) return item.id
+    if (item.path !== `/${role}` && location.pathname.startsWith(`${item.path}/`)) return item.id
     return found
-  }, navItems[0].id)
+  }, '') || navItems[0].id
 
   return (
     <>
