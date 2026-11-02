@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/modules/auth'
 import DashboardLayout from '@/app/layout/DashboardLayout'
 import { StudentDashboard } from '@/modules/dashboard'
-import { StudentMyExams as MyExams, ExamHistory } from '@/modules/exams'
+import { StudentMyExams as MyExams, ExamHistory, OralExamPreview, OralExamPage } from '@/modules/exams'
 import { Profile } from '@/modules/users'
 
 export default function StudentApp() {
@@ -18,6 +18,8 @@ export default function StudentApp() {
             <Routes>
                 <Route path="/" element={<StudentDashboard />} />
                 <Route path="/exams" element={<MyExams />} />
+                <Route path="/exams/oral-preview" element={<OralExamPreview />} />
+                <Route path="/exams/:studentExamId/oral" element={<OralExamPage />} />
                 <Route path="/history" element={<ExamHistory />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="*" element={<StudentDashboard />} />

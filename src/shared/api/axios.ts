@@ -1,6 +1,15 @@
 import axios from 'axios'
+import { Capacitor } from '@capacitor/core'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const getDefaultApiBaseUrl = () => {
+  if (Capacitor.isNativePlatform()) {
+    // 10.0.2.2 là IP trỏ về máy chủ từ máy ảo Android Studio
+    return 'http://10.0.2.2:8080'
+  }
+  return 'http://localhost:8080'
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || getDefaultApiBaseUrl()
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
