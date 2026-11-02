@@ -54,12 +54,13 @@ export default function ExamSessionModal({ exam, subjects, onClose, onSaved }: {
       <p className="text-xs text-slate-500">Status: {exam?.status ?? 'UPCOMING'} (managed by the backend)</p>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-semibold">Scheduled start
-          <input required type="datetime-local" step="0.001" disabled={busy} className={`${inputStyle} mt-1.5`}
+          <input required type="datetime-local" step="60" disabled={busy} className={`${inputStyle} mt-1.5`}
             value={form.scheduledStartAt} onChange={event => setForm({ ...form, scheduledStartAt: event.target.value })} /></label>
         <label className="block text-sm font-semibold">Scheduled end
-          <input required type="datetime-local" step="0.001" disabled={busy} className={`${inputStyle} mt-1.5`}
+          <input required type="datetime-local" step="60" disabled={busy} className={`${inputStyle} mt-1.5`}
             value={form.scheduledEndAt} onChange={event => setForm({ ...form, scheduledEndAt: event.target.value })} /></label>
       </div>
+      <p className="text-xs text-slate-500">Giờ thi được tính từ đầu phút đã chọn, theo múi giờ trình duyệt.</p>
       <div className="grid gap-4 sm:grid-cols-3">
         {([{ key: 'slotDurationMinutes', label: 'Minutes per student', min: 1 },
           { key: 'maxMainQuestions', label: 'Main questions', min: 1 },

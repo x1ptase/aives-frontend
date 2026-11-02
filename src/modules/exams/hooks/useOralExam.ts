@@ -173,16 +173,24 @@ export function useOralExam(examId: number, userId: string) {
     oralApi.runtime(controller.signal).then(value => { if (!controller.signal.aborted) setRuntime(value) })
       .catch(cause => { if (!controller.signal.aborted) setIssue(oralError(cause)) })
     queueMicrotask(() => { if (alive.current) void refresh() })
-    let poll: ReturnType<typeof setTimeout>
-    const tick = async () => {
-      if (!current.current || !oralTerminal(current.current)) await refresh()
-      // Chỉ đọc nhanh lúc chờ worker; vẫn chờ GET trước kết thúc, không gây request chồng nhau.
-      if (alive.current) poll = window.setTimeout(tick, current.current && ['TRANSCRIBING', 'DECIDING', 'PREPARING'].includes(current.current.phase) ? 800 : 3000)
-    }
-    poll = window.setTimeout(tick, 3000)
     const leaseTimer = window.setInterval(() => void heartbeat(), 10000)
-    return () => { alive.current = false; aborters.forEach(item => item.abort()); aborters.clear(); window.clearTimeout(poll); window.clearInterval(leaseTimer) }
+    return () => { alive.current = false; aborters.forEach(item => item.abort()); aborters.clear(); window.clearInterval(leaseTimer) }
   }, [identity.id, refresh, heartbeat])
+
+  /** Vào bước xử lý thì lập lịch đọc nhanh ngay, không chờ hết timer 3 giây từ bước trả lời. */
+  useEffect(() => {
+    const phase = state?.phase
+    if (phase === 'COMPLETED' || phase === 'EXPIRED') return
+    const delay = phase && ['TRANSCRIBING', 'DECIDING', 'PREPARING'].includes(phase) ? 800 : 3000
+    let disposed = false, poll: ReturnType<typeof setTimeout>
+    const tick = async () => {
+      await refresh()
+      // GET trước phải kết thúc; effect cũ không được tự khởi động lại sau khi phase đổi.
+      if (!disposed && alive.current) poll = window.setTimeout(tick, delay)
+    }
+    poll = window.setTimeout(tick, delay)
+    return () => { disposed = true; window.clearTimeout(poll) }
+  }, [state?.phase, refresh])
 
   /** Tab được nhân bản có thể sao chép sessionStorage; peer đang sống buộc bản sao lấy UUID riêng. */
   useEffect(() => {
@@ -299,7 +307,8 @@ export function useOralExam(examId: number, userId: string) {
     const next = current.current
     if (!next || !speechCurrent(turnId)) throw new Error('Lượt nghe đã thay đổi.')
     const blob = await oralApi.speech(examId, { clientSessionId: identity.id, turnId, expectedRevision: next.revision }, signal)
-    await refresh(); return blob
+    // BE đã confirmSpeech trước khi trả WAV; phát ngay, GET đồng bộ metadata chạy nền.
+    void refresh(); return blob
   }
   /** Audio thực sự ended mới tính giờ trả lời; callback trễ không được xác nhận lượt khác. */
   const speechFinished = async (turnId: string) => {

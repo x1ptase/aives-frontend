@@ -23,21 +23,36 @@ function StudentExamListContent({ title, subtitle, showOralPreview = false }: {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const feedback = useExamFeedback()
+  /** Máy chủ chốt hết giờ; danh sách đang mở tự đọc lại, không đoán EXPIRED bằng đồng hồ máy Student. */
   useEffect(() => {
     const controller = new AbortController()
-    setLoading(true); setError('')
-    studentExamApi.getAll({ page, size: 20 }, controller.signal).then(response => {
-      const next = examPage(response.data)
-      if (page > 0 && next.items.length === 0) setPage(Math.max(0, next.totalPages - 1))
-      else setResult(next)
-    }).catch(cause => {
-      if (!controller.signal.aborted) {
-        const message = examError(cause, 'Không thể tải lịch thi của bạn. Vui lòng thử lại.')
-        setError(message); feedback.notify({ title: 'Không thể tải lịch thi', message, tone: 'error' })
+    let fetching = false, hasRunning = false
+    const load = async (foreground: boolean) => {
+      if (fetching || controller.signal.aborted) return
+      fetching = true
+      if (foreground) { setLoading(true); setError('') }
+      try {
+        const response = await studentExamApi.getAll({ page, size: 20 }, controller.signal)
+        if (controller.signal.aborted) return
+        const next = examPage(response.data)
+        hasRunning = next.items.some(exam => exam.status === 'IN_PROGRESS')
+        if (page > 0 && next.items.length === 0) setPage(Math.max(0, next.totalPages - 1))
+        else setResult(next)
+      } catch (cause) {
+        if (!controller.signal.aborted && foreground) {
+          const message = examError(cause, 'Không thể tải lịch thi của bạn. Vui lòng thử lại.')
+          setError(message); feedback.notify({ title: 'Không thể tải lịch thi', message, tone: 'error' })
+        }
+      } finally {
+        fetching = false
+        if (!controller.signal.aborted && foreground) setLoading(false)
       }
-    })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false) })
-    return () => controller.abort()
+    }
+    const refreshRunning = () => { if (hasRunning && document.visibilityState === 'visible') void load(false) }
+    void load(true)
+    const timer = window.setInterval(refreshRunning, 5000)
+    document.addEventListener('visibilitychange', refreshRunning)
+    return () => { controller.abort(); window.clearInterval(timer); document.removeEventListener('visibilitychange', refreshRunning) }
   }, [page, reload, feedback])
 
   return <PageContainer title={title} subtitle={subtitle}>

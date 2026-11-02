@@ -100,6 +100,25 @@ test('heartbeat bị tab khác chiếm quyền vẫn báo lỗi khi backend xác
   assert.equal(latest.state.phase,'SPEAKING')
 })
 
+test('WAV đã được BE xác nhận được phát mà không chờ GET tiến trình tiếp theo',async()=>{
+  const state={...fixture(),phase:'PREPARING'}, wav=new Blob([new Uint8Array(128)],{type:'audio/wav'})
+  let downloaded=false, release, result
+  adapter=async config=>{
+    if(config.url.endsWith('/runtime')) return ready
+    if(config.url.endsWith('/lease')) return envelope({serverTime:time,leaseUntil:state.leaseUntil})
+    if(config.url.endsWith('/speech')) { downloaded=true; return wav }
+    if(config.method==='get' && downloaded) return new Promise(resolve=>{release=()=>resolve(envelope({...state,phase:'SPEAKING',revision:9}))})
+    return envelope({...state})
+  }
+  await act(async()=>root.render(createElement(Provider,null,createElement(Probe))))
+  await wait(()=>latest?.state && latest.runtime); await act(async()=>latest.open())
+  let finished=false
+  await act(async()=>{void latest.speech(turnId,new AbortController().signal).then(value=>{result=value; finished=true})})
+  await wait(()=>!!release)
+  try { assert.equal(finished,true); assert.equal(result,wav) }
+  finally { await act(async()=>{release(); await sleep(5)}) }
+})
+
 test('bản ghi cũ bị 1802 được gửi lại cùng Blob sau xác nhận từ chối, không cần xóa local hoặc ghi lại',async()=>{
   let state=fixture(), actions=[], uploaded=0
   const key=`${session.oralSessionKey('student',7,base)}:${clientId}`
