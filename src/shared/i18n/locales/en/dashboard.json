@@ -64,6 +64,14 @@
     "uploadedMaterial": "Uploaded Learning Material",
     "questionId": "Question ID: {{id}}",
     "materialId": "Material ID: {{id}}",
-    "success": "Success"
+    "success": "Success",
+    "statusValues": {
+      "success": "Success",
+      "completed": "Completed",
+      "active": "Active",
+      "failed": "Failed",
+      "pending": "Pending",
+      "error": "Error"
+    }
   }
 }

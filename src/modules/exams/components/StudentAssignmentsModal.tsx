@@ -105,7 +105,7 @@ export default function StudentAssignmentsModal({ exam, canWrite, onClose }: {
   /** Chỉ tìm theo tên/username như hợp đồng backend, không tìm email qua API quản trị. */
   const searchStudents = (event: FormEvent) => { event.preventDefault(); setQuery(search.trim()); setEligiblePage(0) }
 
-  return <ExamDialog title={t('exams.assign.title')} subtitle={`${exam.title} · ${exam.subjectCode} · ${exam.status}`} busy={busy} onClose={onClose}>
+  return <ExamDialog title={t('exams.assign.title')} subtitle={`${exam.title} · ${exam.subjectCode} · ${t(`exams.sessionStatus.${exam.status}`, { defaultValue: exam.status })}`} busy={busy} onClose={onClose}>
     <div className="space-y-5 p-6">
       {!canWrite && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{t('exams.assign.readOnly')}</p>}
       {canWrite && <section aria-label={t('exams.assign.addSection')} className="space-y-3">

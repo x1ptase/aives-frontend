@@ -137,7 +137,6 @@ export default function AdminLearningMaterials() {
             <option value="">{t('common.contentLanguage.all')}</option>
             <option value="vi">{t('common.contentLanguage.vi')}</option>
             <option value="en">{t('common.contentLanguage.en')}</option>
-            <option value="ja">{t('common.contentLanguage.ja')}</option>
           </select>
           {hasFilters && (
             <button
