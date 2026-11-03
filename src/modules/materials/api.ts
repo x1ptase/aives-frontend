@@ -11,10 +11,16 @@ export interface MaterialResponse {
   fileName?: string
   storagePath?: string
   mimeType?: string
+  language?: 'vi' | 'en'
   totalChunks?: number
   processingStatus?: 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'FAILED' | string
   uploadedBy?: string
   createdAt?: string
+}
+
+export interface MaterialUpdateRequest {
+  title?: string
+  language?: 'vi' | 'en'
 }
 
 export const learningMaterialApi = {
@@ -34,11 +40,13 @@ export const learningMaterialApi = {
         },
       }
     ),
-  updateTitle: (materialId: string | number, title: string) =>
-    axiosInstance.patch<{ code?: number; result?: MaterialResponse } | MaterialResponse>(
+  updateTitle: (materialId: string | number, payload: string | MaterialUpdateRequest) => {
+    const body = typeof payload === 'string' ? { title: payload } : payload
+    return axiosInstance.patch<{ code?: number; result?: MaterialResponse } | MaterialResponse>(
       `/materials/${materialId}/title`,
-      { title }
-    ),
+      body
+    )
+  },
   delete: (materialId: string | number) =>
     axiosInstance.delete(`/materials/${materialId}`),
 }

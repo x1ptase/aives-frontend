@@ -25,6 +25,7 @@ export default function AdminLearningMaterials() {
   const [search, setSearch] = useState('')
   const [subjectFilter, setSubjectFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [languageFilter, setLanguageFilter] = useState('')
   const [page, setPage] = useState(1)
 
   const [editTarget, setEditTarget] = useState<MaterialResponse | null>(null)
@@ -80,16 +81,17 @@ export default function AdminLearningMaterials() {
     return materials.filter(m => {
       if (subjectFilter && String(m.subjectId) !== subjectFilter) return false
       if (statusFilter && m.processingStatus !== statusFilter) return false
+      if (languageFilter && m.language !== languageFilter) return false
       if (!q) return true
       const subj = subjectById.get(String(m.subjectId))
       return [m.title, m.fileName, subj?.code, subj?.name].some(v => (v || '').toLowerCase().includes(q))
     })
-  }, [materials, search, subjectFilter, statusFilter, subjectById])
+  }, [materials, search, subjectFilter, statusFilter, languageFilter, subjectById])
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const currentPage = Math.min(page, pageCount)
   const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
-  const hasFilters = !!(search || subjectFilter || statusFilter)
+  const hasFilters = !!(search || subjectFilter || statusFilter || languageFilter)
   const selectCls =
     'px-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-700 outline-none focus:ring-2 focus:bg-white'
 
@@ -126,9 +128,14 @@ export default function AdminLearningMaterials() {
             <option value="">All statuses</option>
             {statuses.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
+          <select value={languageFilter} onChange={e => { setLanguageFilter(e.target.value); setPage(1) }} className={selectCls}>
+            <option value="">All languages</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="en">🇬🇧 English</option>
+          </select>
           {hasFilters && (
             <button
-              onClick={() => { setSearch(''); setSubjectFilter(''); setStatusFilter(''); setPage(1) }}
+              onClick={() => { setSearch(''); setSubjectFilter(''); setStatusFilter(''); setLanguageFilter(''); setPage(1) }}
               className="text-xs font-semibold text-blue-600 hover:text-blue-700"
             >
               Clear filters
@@ -161,6 +168,7 @@ export default function AdminLearningMaterials() {
                     <th className="px-4 py-3">ID</th>
                     <th className="px-4 py-3">Title / File</th>
                     <th className="px-4 py-3">Subject</th>
+                    <th className="px-4 py-3">Language</th>
                     <th className="px-4 py-3">Type</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Created</th>
@@ -180,6 +188,19 @@ export default function AdminLearningMaterials() {
                           )}
                         </td>
                         <td className="px-4 py-3">{subj ? `${subj.code} - ${subj.name}` : `#${m.subjectId}`}</td>
+                        <td className="px-4 py-3">
+                          {m.language ? (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                              m.language === 'en'
+                                ? 'bg-sky-50 text-sky-700 border-sky-200'
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            }`}>
+                              {m.language === 'en' ? '🇬🇧 EN' : '🇻🇳 VI'}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-400">—</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-xs font-semibold text-slate-500">{fileExt(m.fileName)}</td>
                         <td className="px-4 py-3"><StatusBadge status={m.processingStatus} /></td>
                         <td className="px-4 py-3 text-slate-500">{m.createdAt ? new Date(m.createdAt).toLocaleString() : '—'}</td>

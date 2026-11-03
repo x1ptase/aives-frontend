@@ -44,6 +44,15 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
             <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">
               Question #{currentQuestion.id}
             </span>
+            {currentQuestion.language && (
+              <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider border ${
+                currentQuestion.language === 'en'
+                  ? 'bg-sky-50 text-sky-700 border-sky-200'
+                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              }`}>
+                {currentQuestion.language === 'en' ? '🇬🇧 English' : '🇻🇳 Tiếng Việt'}
+              </span>
+            )}
             <QuestionStatusBadge status={currentQuestion.status} />
             {currentQuestion.sourceType && (
               <span className="px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-700 flex items-center gap-1">
