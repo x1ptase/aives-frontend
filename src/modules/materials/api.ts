@@ -11,7 +11,7 @@ export interface MaterialResponse {
   fileName?: string
   storagePath?: string
   mimeType?: string
-  language?: 'vi' | 'en' | 'ja'
+  language?: 'vi' | 'en'
   totalChunks?: number
   processingStatus?: 'PENDING' | 'PROCESSING' | 'READY' | 'COMPLETED' | 'FAILED' | string
   uploadedBy?: string
@@ -20,7 +20,7 @@ export interface MaterialResponse {
 
 export interface MaterialUpdateRequest {
   title?: string
-  language?: 'vi' | 'en' | 'ja'
+  language?: 'vi' | 'en'
 }
 
 export const learningMaterialApi = {

@@ -29,7 +29,7 @@ export default function GenerateQuestionsModal({
 }: GenerateQuestionsModalProps) {
   const [keyword, setKeyword] = useState('')
   const [bloomLevel, setBloomLevel] = useState<BloomLevel | ''>('')
-  const [language, setLanguage] = useState<'AUTO' | 'vi' | 'en' | 'ja'>('AUTO')
+  const [language, setLanguage] = useState<'AUTO' | 'vi' | 'en'>('AUTO')
   const [count, setCount] = useState<number>(3)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -182,8 +182,6 @@ export default function GenerateQuestionsModal({
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
                         q.language === 'en'
                           ? 'bg-sky-50 text-sky-700 border-sky-200'
-                          : q.language === 'ja'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
                           : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       }`}>
                         {q.language.toUpperCase()}
@@ -285,13 +283,12 @@ export default function GenerateQuestionsModal({
             <select
               disabled={loading}
               value={language}
-              onChange={e => setLanguage(e.target.value as 'AUTO' | 'vi' | 'en' | 'ja')}
+              onChange={e => setLanguage(e.target.value as 'AUTO' | 'vi' | 'en')}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50 bg-white transition-all"
             >
               <option value="AUTO">Auto (Follows learning material context)</option>
               <option value="vi">Tiếng Việt (Vietnamese)</option>
               <option value="en">English</option>
-              <option value="ja">Tiếng Nhật (日本語)</option>
             </select>
           </div>
 
@@ -357,8 +354,6 @@ export default function GenerateQuestionsModal({
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${
                         m.language === 'en'
                           ? 'bg-sky-50 text-sky-700 border-sky-200'
-                          : m.language === 'ja'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
                           : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       }`}>
                         {m.language.toUpperCase()}
