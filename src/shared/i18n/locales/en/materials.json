@@ -1,0 +1,85 @@
+{
+  "status": {
+    "READY": "Processed",
+    "COMPLETED": "Processed",
+    "PROCESSING": "Processing…",
+    "PENDING": "Pending",
+    "FAILED": "Failed"
+  },
+  "fallbackName": "Material #{{id}}",
+  "edit": {
+    "title": "Edit Material",
+    "file": "File: {{name}}",
+    "unknownFile": "(unknown)",
+    "displayTitle": "Display Title",
+    "titlePlaceholder": "Enter a display title",
+    "titleRequired": "Title is required.",
+    "failed": "Failed to update material.",
+    "save": "Save Changes"
+  },
+  "delete": {
+    "title": "Delete Material",
+    "confirm": "Are you sure you want to delete <b>\"{{name}}\"</b>?",
+    "warning": "This action cannot be undone.",
+    "failed": "Failed to delete material.",
+    "button": "Delete"
+  },
+  "page": {
+    "title": "Learning Materials",
+    "subtitle": "Upload and manage study materials organised by subject",
+    "subject": "Subject",
+    "subjectsFailed": "Failed to load subjects.",
+    "noAssignment": "You have not been assigned to any subject yet. Please contact an administrator."
+  },
+  "upload": {
+    "title": "Upload Material",
+    "titlePlaceholder": "Display title (optional)",
+    "success": "\"{{name}}\" uploaded. It will appear below with its processing status.",
+    "failed": "Upload failed.",
+    "uploading": "Uploading… {{progress}}%",
+    "drop": "Drop to upload",
+    "click": "Click or drag file to upload",
+    "hint": "Accepted file types are validated by the server"
+  },
+  "list": {
+    "title": "Materials",
+    "fileCount_one": "{{count}} file",
+    "fileCount_other": "{{count}} files",
+    "generate": "✨ Generate Questions",
+    "generateTitle": "Generate questions from materials in the Question Bank",
+    "searchPlaceholder": "Search title or file name…",
+    "allStatuses": "All statuses",
+    "selectSubject": "Select a subject to view materials",
+    "loadFailed": "Failed to load materials.",
+    "empty": "No materials uploaded yet for this subject.",
+    "noMatch": "No materials match your search.",
+    "editTitle": "Edit title",
+    "deleteTitle": "Delete material"
+  },
+  "admin": {
+    "title": "Learning Materials",
+    "subtitle": "All learning materials across subjects.",
+    "partialError": "Could not load materials for {{failed}} of {{total}} subject(s). The list may be incomplete.",
+    "loadFailedFallback": "Could not load learning materials.",
+    "searchPlaceholder": "Search title, file or subject…",
+    "allSubjects": "All subjects",
+    "clearFilters": "Clear filters",
+    "loadFailedTitle": "Could not load materials",
+    "noMatch": "No materials match your filters.",
+    "empty": "No learning materials have been uploaded yet.",
+    "colId": "ID",
+    "colTitle": "Title / File",
+    "colSubject": "Subject",
+    "colLanguage": "Language",
+    "colType": "Type",
+    "colStatus": "Status",
+    "colCreated": "Created",
+    "colActions": "Actions",
+    "edit": "Edit",
+    "delete": "Delete",
+    "total": "{{count}} material(s)",
+    "prev": "Prev",
+    "next": "Next",
+    "page": "Page {{page}} / {{total}}"
+  }
+}

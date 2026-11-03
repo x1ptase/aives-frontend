@@ -1,0 +1,84 @@
+{
+  "status": {
+    "READY": "Đã xử lý",
+    "COMPLETED": "Đã xử lý",
+    "PROCESSING": "Đang xử lý…",
+    "PENDING": "Chờ xử lý",
+    "FAILED": "Thất bại"
+  },
+  "fallbackName": "Tài liệu #{{id}}",
+  "edit": {
+    "title": "Chỉnh sửa tài liệu",
+    "file": "Tệp: {{name}}",
+    "unknownFile": "(không rõ)",
+    "displayTitle": "Tiêu đề hiển thị",
+    "titlePlaceholder": "Nhập tiêu đề hiển thị",
+    "titleRequired": "Vui lòng nhập tiêu đề.",
+    "failed": "Không thể cập nhật tài liệu.",
+    "save": "Lưu thay đổi"
+  },
+  "delete": {
+    "title": "Xóa tài liệu",
+    "confirm": "Bạn có chắc muốn xóa <b>\"{{name}}\"</b>?",
+    "warning": "Hành động này không thể hoàn tác.",
+    "failed": "Không thể xóa tài liệu.",
+    "button": "Xóa"
+  },
+  "page": {
+    "title": "Tài liệu học tập",
+    "subtitle": "Tải lên và quản lý tài liệu học tập theo môn học",
+    "subject": "Môn học",
+    "subjectsFailed": "Không thể tải danh sách môn học.",
+    "noAssignment": "Bạn chưa được phân công môn học nào. Vui lòng liên hệ quản trị viên."
+  },
+  "upload": {
+    "title": "Tải lên tài liệu",
+    "titlePlaceholder": "Tiêu đề hiển thị (không bắt buộc)",
+    "success": "Đã tải lên \"{{name}}\". Tài liệu sẽ xuất hiện bên dưới cùng trạng thái xử lý.",
+    "failed": "Tải lên thất bại.",
+    "uploading": "Đang tải lên… {{progress}}%",
+    "drop": "Thả tệp để tải lên",
+    "click": "Nhấp hoặc kéo thả tệp để tải lên",
+    "hint": "Máy chủ sẽ kiểm tra các loại tệp được chấp nhận"
+  },
+  "list": {
+    "title": "Tài liệu",
+    "fileCount_other": "{{count}} tệp",
+    "generate": "✨ Tạo câu hỏi",
+    "generateTitle": "Tạo câu hỏi từ tài liệu trong Ngân hàng câu hỏi",
+    "searchPlaceholder": "Tìm theo tiêu đề hoặc tên tệp…",
+    "allStatuses": "Tất cả trạng thái",
+    "selectSubject": "Chọn môn học để xem tài liệu",
+    "loadFailed": "Không thể tải tài liệu.",
+    "empty": "Môn học này chưa có tài liệu nào được tải lên.",
+    "noMatch": "Không có tài liệu nào khớp với tìm kiếm.",
+    "editTitle": "Sửa tiêu đề",
+    "deleteTitle": "Xóa tài liệu"
+  },
+  "admin": {
+    "title": "Tài liệu học tập",
+    "subtitle": "Tất cả tài liệu học tập của mọi môn học.",
+    "partialError": "Không thể tải tài liệu của {{failed}}/{{total}} môn học. Danh sách có thể chưa đầy đủ.",
+    "loadFailedFallback": "Không thể tải tài liệu học tập.",
+    "searchPlaceholder": "Tìm theo tiêu đề, tệp hoặc môn học…",
+    "allSubjects": "Tất cả môn học",
+    "clearFilters": "Xóa bộ lọc",
+    "loadFailedTitle": "Không thể tải tài liệu",
+    "noMatch": "Không có tài liệu nào khớp với bộ lọc.",
+    "empty": "Chưa có tài liệu học tập nào được tải lên.",
+    "colId": "ID",
+    "colTitle": "Tiêu đề / Tệp",
+    "colSubject": "Môn học",
+    "colLanguage": "Ngôn ngữ",
+    "colType": "Loại",
+    "colStatus": "Trạng thái",
+    "colCreated": "Ngày tạo",
+    "colActions": "Thao tác",
+    "edit": "Sửa",
+    "delete": "Xóa",
+    "total": "{{count}} tài liệu",
+    "prev": "Trước",
+    "next": "Sau",
+    "page": "Trang {{page}} / {{total}}"
+  }
+}

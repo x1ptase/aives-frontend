@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import FlagIcon from '@/shared/components/common/FlagIcon'
+import { useTranslation, Trans } from 'react-i18next'
+import { formatDate } from '@/shared/i18n/format'
 import { getMySubjects, SubjectResponse } from '@/modules/subjects'
 import { learningMaterialApi, MaterialResponse } from '../api'
 import { useAuthStore } from '@/modules/auth'
@@ -9,15 +12,17 @@ type Material = MaterialResponse
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
 export function StatusBadge({ status }: { status?: string }) {
+    const { t } = useTranslation()
     const s = (status || 'UNKNOWN').toUpperCase()
-    const config: Record<string, { label: string; cls: string }> = {
-        READY:      { label: 'Processed',   cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-        COMPLETED:  { label: 'Processed',   cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-        PROCESSING: { label: 'Processing…', cls: 'bg-blue-50 text-blue-700 border-blue-200' },
-        PENDING:    { label: 'Pending',      cls: 'bg-amber-50 text-amber-700 border-amber-200' },
-        FAILED:     { label: 'Failed',       cls: 'bg-red-50 text-red-700 border-red-200' },
+    const config: Record<string, { cls: string }> = {
+        READY:      { cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+        COMPLETED:  { cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+        PROCESSING: { cls: 'bg-blue-50 text-blue-700 border-blue-200' },
+        PENDING:    { cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+        FAILED:     { cls: 'bg-red-50 text-red-700 border-red-200' },
     }
-    const { label, cls } = config[s] ?? { label: s, cls: 'bg-slate-50 text-slate-600 border-slate-200' }
+    const { cls } = config[s] ?? { cls: 'bg-slate-50 text-slate-600 border-slate-200' }
+    const label = t(`materials.status.${s}`, { defaultValue: s })
     return (
         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${cls}`}>
             {s === 'PROCESSING' && (
@@ -41,6 +46,7 @@ export function EditTitleModal({
     onClose: () => void
     onUpdated: (updated: Material) => void
 }) {
+    const { t } = useTranslation()
     const [title, setTitle] = useState(material.title || material.fileName || '')
     const [language, setLanguage] = useState<'vi' | 'en'>(material.language === 'en' ? 'en' : 'vi')
     const [loading, setLoading] = useState(false)
@@ -50,14 +56,14 @@ export function EditTitleModal({
         e.preventDefault()
         setError('')
         const trimmed = title.trim()
-        if (!trimmed) return setError('Title is required.')
+        if (!trimmed) return setError(t('materials.edit.titleRequired'))
         try {
             setLoading(true)
             const res = await learningMaterialApi.updateTitle(material.id, { title: trimmed, language })
             const updated: Material = (res.data as any)?.result || res.data || { ...material, title: trimmed, language }
             onUpdated(updated)
         } catch (err: any) {
-            setError(err.response?.data?.message || err.message || 'Failed to update material.')
+            setError(err.response?.data?.message || err.message || t('materials.edit.failed'))
         } finally {
             setLoading(false)
         }
@@ -68,7 +74,7 @@ export function EditTitleModal({
             <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                        Edit Material
+                        {t('materials.edit.title')}
                     </h2>
                     <button onClick={onClose} disabled={loading} className="text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -83,18 +89,18 @@ export function EditTitleModal({
                         </div>
                     )}
                     <div className="mb-3 text-xs text-slate-400 truncate">
-                        File: {material.fileName || '(unknown)'}
+                        {t('materials.edit.file', { name: material.fileName || t('materials.edit.unknownFile') })}
                     </div>
                     <div className="mb-4">
                         <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Display Title
+                            {t('materials.edit.displayTitle')}
                         </label>
                         <input
                             type="text"
                             value={title}
                             disabled={loading}
                             onChange={e => setTitle(e.target.value)}
-                            placeholder="Enter a display title"
+                            placeholder={t('materials.edit.titlePlaceholder')}
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm disabled:bg-slate-50"
                             required
                             autoFocus
@@ -102,7 +108,7 @@ export function EditTitleModal({
                     </div>
                     <div className="mb-4">
                         <label className="block text-xs font-semibold text-slate-700 mb-1">
-                            Language / Ngôn ngữ
+                            {t('common.language')}
                         </label>
                         <select
                             value={language}
@@ -110,14 +116,14 @@ export function EditTitleModal({
                             onChange={e => setLanguage(e.target.value as 'vi' | 'en')}
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm disabled:bg-slate-50 bg-white"
                         >
-                            <option value="vi">🇻🇳 Tiếng Việt (vi)</option>
-                            <option value="en">🇬🇧 English (en)</option>
+                            <option value="vi">{t('common.contentLanguage.vi')}</option>
+                            <option value="en">{t('common.contentLanguage.en')}</option>
                         </select>
                     </div>
                     <div className="mt-6 flex justify-end gap-3">
                         <button type="button" onClick={onClose} disabled={loading}
                             className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors disabled:opacity-50">
-                            Cancel
+                            {t('common.cancel')}
                         </button>
                         <button type="submit" disabled={loading}
                             className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2">
@@ -127,7 +133,7 @@ export function EditTitleModal({
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
                             )}
-                            Save Changes
+                            {t('materials.edit.save')}
                         </button>
                     </div>
                 </form>
@@ -146,6 +152,7 @@ export function DeleteMaterialModal({
     onClose: () => void
     onDeleted: () => void
 }) {
+    const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -156,20 +163,20 @@ export function DeleteMaterialModal({
             await learningMaterialApi.delete(material.id)
             onDeleted()
         } catch (err: any) {
-            setError(err.response?.data?.message || err.message || 'Failed to delete material.')
+            setError(err.response?.data?.message || err.message || t('materials.delete.failed'))
         } finally {
             setLoading(false)
         }
     }
 
-    const displayName = material.title || material.fileName || `Material #${material.id}`
+    const displayName = material.title || material.fileName || t('materials.fallbackName', { id: material.id })
 
     return (
         <div className="fixed inset-0 z-50 flex overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4">
             <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                        Delete Material
+                        {t('materials.delete.title')}
                     </h2>
                     <button onClick={onClose} disabled={loading} className="text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -184,14 +191,17 @@ export function DeleteMaterialModal({
                         </div>
                     )}
                     <p className="text-sm text-slate-600">
-                        Are you sure you want to delete{' '}
-                        <span className="font-bold text-slate-800">"{displayName}"</span>?
+                        <Trans
+                            i18nKey="materials.delete.confirm"
+                            values={{ name: displayName }}
+                            components={{ b: <span className="font-bold text-slate-800" /> }}
+                        />
                     </p>
-                    <p className="mt-2 text-xs text-slate-500">This action cannot be undone.</p>
+                    <p className="mt-2 text-xs text-slate-500">{t('materials.delete.warning')}</p>
                     <div className="mt-6 flex justify-end gap-3">
                         <button type="button" onClick={onClose} disabled={loading}
                             className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors disabled:opacity-50">
-                            Cancel
+                            {t('common.cancel')}
                         </button>
                         <button type="button" onClick={handleDelete} disabled={loading}
                             className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2">
@@ -201,7 +211,7 @@ export function DeleteMaterialModal({
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
                             )}
-                            Delete
+                            {t('materials.delete.button')}
                         </button>
                     </div>
                 </div>
@@ -244,6 +254,7 @@ function FileIcon({ name }: { name?: string }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function LearningMaterials() {
+    const { t } = useTranslation()
     // Read once so later URL changes don't re-trigger subject selection
     const [searchParams] = useSearchParams()
     const [initialSubjectId] = useState(() => searchParams.get('subject'))
@@ -337,12 +348,12 @@ export default function LearningMaterials() {
 
         try {
             await learningMaterialApi.upload(formData, setUploadProgress)
-            setUploadSuccess(`"${file.name}" uploaded. It will appear below with its processing status.`)
+            setUploadSuccess(t('materials.upload.success', { name: file.name }))
             setUploadTitle('')
             if (fileInputRef.current) fileInputRef.current.value = ''
             await fetchMaterials(selectedSubject.id)
         } catch (err: any) {
-            setUploadError(err.response?.data?.message || err.message || 'Upload failed.')
+            setUploadError(err.response?.data?.message || err.message || t('materials.upload.failed'))
         } finally {
             setUploading(false)
         }
@@ -384,25 +395,25 @@ export default function LearningMaterials() {
             {/* Header */}
             <div className="mb-6">
                 <h1 className="text-xl font-bold text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                    Learning Materials
+                    {t('materials.page.title')}
                 </h1>
-                <p className="text-xs text-slate-500 mt-1">Upload and manage study materials organised by subject</p>
+                <p className="text-xs text-slate-500 mt-1">{t('materials.page.subtitle')}</p>
             </div>
 
             {/* ── Subject selector ─────────────────────────────────────────── */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-5 mb-5">
                 <div className="flex items-center gap-4 flex-wrap">
-                    <span className="text-sm font-semibold text-slate-700 shrink-0">Subject</span>
+                    <span className="text-sm font-semibold text-slate-700 shrink-0">{t('materials.page.subject')}</span>
 
                     {subjectsLoading ? (
                         <div className="h-9 w-72 bg-slate-100 animate-pulse rounded-lg" />
                     ) : subjectsError ? (
                         <div className="text-sm text-red-500 flex items-center gap-2">
-                            Failed to load subjects.
-                            <button onClick={fetchSubjects} className="text-blue-600 hover:underline font-semibold">Retry</button>
+                            {t('materials.page.subjectsFailed')}
+                            <button onClick={fetchSubjects} className="text-blue-600 hover:underline font-semibold">{t('common.retry')}</button>
                         </div>
                     ) : subjects.length === 0 ? (
-                        <span className="text-sm text-slate-400">You have not been assigned to any subject yet. Please contact an administrator.</span>
+                        <span className="text-sm text-slate-400">{t('materials.page.noAssignment')}</span>
                     ) : (
                         <select
                             value={selectedSubject?.id ?? ''}
@@ -424,7 +435,7 @@ export default function LearningMaterials() {
             {selectedSubject && (
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-5 mb-5">
                     <h2 className="text-sm font-semibold text-slate-700 mb-4" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                        Upload Material
+                        {t('materials.upload.title')}
                         <span className="ml-2 text-xs text-slate-400 font-normal">({selectedSubject.code})</span>
                     </h2>
 
@@ -445,7 +456,7 @@ export default function LearningMaterials() {
                             value={uploadTitle}
                             onChange={e => setUploadTitle(e.target.value)}
                             disabled={uploading}
-                            placeholder="Display title (optional)"
+                            placeholder={t('materials.upload.titlePlaceholder')}
                             className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm disabled:bg-slate-50"
                         />
                     </div>
@@ -475,7 +486,7 @@ export default function LearningMaterials() {
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={4} />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
-                                <p className="text-sm font-medium text-blue-600">Uploading… {uploadProgress}%</p>
+                                <p className="text-sm font-medium text-blue-600">{t('materials.upload.uploading', { progress: uploadProgress })}</p>
                                 <div className="w-48 h-1.5 bg-blue-100 rounded-full overflow-hidden">
                                     <div className="h-full bg-blue-500 transition-all" style={{ width: `${uploadProgress}%` }} />
                                 </div>
@@ -487,9 +498,9 @@ export default function LearningMaterials() {
                                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                                 </svg>
                                 <p className="text-sm font-medium text-slate-700">
-                                    {dragOver ? 'Drop to upload' : 'Click or drag file to upload'}
+                                    {dragOver ? t('materials.upload.drop') : t('materials.upload.click')}
                                 </p>
-                                <p className="text-xs text-slate-400">Accepted file types are validated by the server</p>
+                                <p className="text-xs text-slate-400">{t('materials.upload.hint')}</p>
                             </div>
                         )}
                     </div>
@@ -500,21 +511,21 @@ export default function LearningMaterials() {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 className="font-semibold text-slate-800 text-sm" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                        Materials
+                        {t('materials.list.title')}
                         {selectedSubject && (
                             <span className="ml-2 text-slate-400 font-normal text-xs">({selectedSubject.code})</span>
                         )}
                     </h2>
                     <div className="flex items-center gap-3">
                         {!materialsLoading && selectedSubject && (
-                            <span className="text-xs text-slate-400">{visibleMaterials.length} file{visibleMaterials.length !== 1 ? 's' : ''}</span>
+                            <span className="text-xs text-slate-400">{t('materials.list.fileCount', { count: visibleMaterials.length })}</span>
                         )}
                         <button
                             onClick={() => navigate('/lecturer/question-bank')}
                             className="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors"
-                            title="Generate questions from materials in the Question Bank"
+                            title={t('materials.list.generateTitle')}
                         >
-                            ✨ Generate Questions
+                            {t('materials.list.generate')}
                         </button>
                     </div>
                 </div>
@@ -524,7 +535,7 @@ export default function LearningMaterials() {
                             type="text"
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            placeholder="Search title or file name…"
+                            placeholder={t('materials.list.searchPlaceholder')}
                             className="flex-1 min-w-48 max-w-72 px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white"
                         />
                         <select
@@ -532,8 +543,8 @@ export default function LearningMaterials() {
                             onChange={e => setStatusFilter(e.target.value)}
                             className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-700 outline-none"
                         >
-                            <option value="">All statuses</option>
-                            {statusOptions.map(st => <option key={st} value={st}>{st}</option>)}
+                            <option value="">{t('materials.list.allStatuses')}</option>
+                            {statusOptions.map(st => <option key={st} value={st}>{t(`materials.status.${st.toUpperCase()}`, { defaultValue: st })}</option>)}
                         </select>
                     </div>
                 )}
@@ -544,7 +555,7 @@ export default function LearningMaterials() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                                 d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
-                        <p className="text-sm">Select a subject to view materials</p>
+                        <p className="text-sm">{t('materials.list.selectSubject')}</p>
                     </div>
                 ) : materialsLoading ? (
                     <div className="divide-y divide-slate-50">
@@ -560,12 +571,12 @@ export default function LearningMaterials() {
                     </div>
                 ) : materialsError ? (
                     <div className="px-6 py-12 text-center">
-                        <p className="text-sm text-red-500 mb-3">Failed to load materials.</p>
+                        <p className="text-sm text-red-500 mb-3">{t('materials.list.loadFailed')}</p>
                         <button
                             onClick={() => selectedSubject?.id && fetchMaterials(selectedSubject.id)}
                             className="px-4 py-1.5 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
                         >
-                            Retry
+                            {t('common.retry')}
                         </button>
                     </div>
                 ) : materials.length === 0 ? (
@@ -574,14 +585,14 @@ export default function LearningMaterials() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                                 d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <p className="text-sm">No materials uploaded yet for this subject.</p>
+                        <p className="text-sm">{t('materials.list.empty')}</p>
                     </div>
                 ) : visibleMaterials.length === 0 ? (
-                    <div className="px-6 py-12 text-center text-sm text-slate-400">No materials match your search.</div>
+                    <div className="px-6 py-12 text-center text-sm text-slate-400">{t('materials.list.noMatch')}</div>
                 ) : (
                     <div className="divide-y divide-slate-50">
                         {visibleMaterials.map(m => {
-                            const displayName = m.title || m.fileName || `Material #${m.id}`
+                            const displayName = m.title || m.fileName || t('materials.fallbackName', { id: m.id })
                             const fileName = m.fileName
                             return (
                                 <div key={m.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors group">
@@ -594,7 +605,7 @@ export default function LearningMaterials() {
                                         )}
                                         {m.createdAt && (
                                             <p className="text-xs text-slate-400 mt-0.5">
-                                                {new Date(m.createdAt).toLocaleDateString(undefined, {
+                                                {formatDate(m.createdAt, {
                                                     year: 'numeric', month: 'short', day: 'numeric'
                                                 })}
                                             </p>
@@ -602,12 +613,12 @@ export default function LearningMaterials() {
                                     </div>
 
                                     {m.language && (
-                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
                                             m.language === 'en'
                                                 ? 'bg-sky-50 text-sky-700 border-sky-200'
                                                 : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                         }`}>
-                                            {m.language === 'en' ? '🇬🇧 EN' : '🇻🇳 VI'}
+                                            <FlagIcon language={m.language} />{m.language === 'en' ? 'EN' : 'VI'}
                                         </span>
                                     )}
 
@@ -618,7 +629,7 @@ export default function LearningMaterials() {
                                         {isAdmin && (
                                             <button
                                                 onClick={() => setEditingMaterial(m)}
-                                                title="Edit title"
+                                                title={t('materials.list.editTitle')}
                                                 className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                                             >
                                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -632,7 +643,7 @@ export default function LearningMaterials() {
                                         {isAdmin && (
                                             <button
                                                 onClick={() => setDeletingMaterial(m)}
-                                                title="Delete material"
+                                                title={t('materials.list.deleteTitle')}
                                                 className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
                                             >
                                                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

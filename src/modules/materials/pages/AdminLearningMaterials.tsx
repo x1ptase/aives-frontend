@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import FlagIcon from '@/shared/components/common/FlagIcon'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/shared/i18n'
+import { formatDateTime } from '@/shared/i18n/format'
 import { subjectApi, SubjectResponse } from '@/modules/subjects'
 import { learningMaterialApi, MaterialResponse } from '../api'
 import { StatusBadge, EditTitleModal, DeleteMaterialModal } from './LearningMaterials'
@@ -16,6 +20,7 @@ const fileExt = (name?: string) => {
 }
 
 export default function AdminLearningMaterials() {
+  const { t } = useTranslation()
   const [subjects, setSubjects] = useState<SubjectResponse[]>([])
   const [materials, setMaterials] = useState<MaterialResponse[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,11 +61,11 @@ export default function AdminLearningMaterials() {
       })
       setMaterials(all)
       if (failed > 0) {
-        setPartialError(`Could not load materials for ${failed} of ${subjList.length} subject(s). The list may be incomplete.`)
+        setPartialError(i18n.t('materials.admin.partialError', { failed, total: subjList.length }))
       }
     } catch (err: any) {
       setMaterials([])
-      setError(err?.response?.data?.message || err?.message || 'Could not load learning materials.')
+      setError(err?.response?.data?.message || err?.message || i18n.t('materials.admin.loadFailedFallback'))
     } finally {
       setLoading(false)
     }
@@ -99,9 +104,9 @@ export default function AdminLearningMaterials() {
     <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#f1f5f9]">
       <div className="mb-6">
         <h1 className="text-xl font-bold text-slate-900 leading-tight" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-          Learning Materials
+          {t('materials.admin.title')}
         </h1>
-        <p className="text-sm text-slate-500 mt-1">All learning materials across subjects.</p>
+        <p className="text-sm text-slate-500 mt-1">{t('materials.admin.subtitle')}</p>
       </div>
 
       {partialError && (
@@ -114,31 +119,31 @@ export default function AdminLearningMaterials() {
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><SearchIcon /></span>
             <input
               type="text"
-              placeholder="Search title, file or subject…"
+              placeholder={t('materials.admin.searchPlaceholder')}
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1) }}
               className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:bg-white transition-all"
             />
           </div>
           <select value={subjectFilter} onChange={e => { setSubjectFilter(e.target.value); setPage(1) }} className={selectCls}>
-            <option value="">All subjects</option>
+            <option value="">{t('materials.admin.allSubjects')}</option>
             {subjects.map(s => <option key={s.id} value={String(s.id)}>{s.code} - {s.name}</option>)}
           </select>
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }} className={selectCls}>
-            <option value="">All statuses</option>
-            {statuses.map(s => <option key={s} value={s}>{s}</option>)}
+            <option value="">{t('materials.list.allStatuses')}</option>
+            {statuses.map(s => <option key={s} value={s}>{t(`materials.status.${s.toUpperCase()}`, { defaultValue: s })}</option>)}
           </select>
           <select value={languageFilter} onChange={e => { setLanguageFilter(e.target.value); setPage(1) }} className={selectCls}>
-            <option value="">All languages</option>
-            <option value="vi">🇻🇳 Tiếng Việt</option>
-            <option value="en">🇬🇧 English</option>
+            <option value="">{t('common.contentLanguage.all')}</option>
+            <option value="vi">{t('common.contentLanguage.vi')}</option>
+            <option value="en">{t('common.contentLanguage.en')}</option>
           </select>
           {hasFilters && (
             <button
               onClick={() => { setSearch(''); setSubjectFilter(''); setStatusFilter(''); setLanguageFilter(''); setPage(1) }}
               className="text-xs font-semibold text-blue-600 hover:text-blue-700"
             >
-              Clear filters
+              {t('materials.admin.clearFilters')}
             </button>
           )}
         </div>
@@ -149,15 +154,15 @@ export default function AdminLearningMaterials() {
           </div>
         ) : error ? (
           <div className="p-10 text-center">
-            <p className="text-sm font-semibold text-red-600">Could not load materials</p>
+            <p className="text-sm font-semibold text-red-600">{t('materials.admin.loadFailedTitle')}</p>
             <p className="text-xs text-slate-500 mt-1">{error}</p>
             <button onClick={load} className="mt-4 px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg">
-              Retry
+              {t('common.retry')}
             </button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-10 text-center text-sm text-slate-500">
-            {hasFilters ? 'No materials match your filters.' : 'No learning materials have been uploaded yet.'}
+            {hasFilters ? t('materials.admin.noMatch') : t('materials.admin.empty')}
           </div>
         ) : (
           <>
@@ -165,14 +170,14 @@ export default function AdminLearningMaterials() {
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 border-b border-slate-100">
                   <tr className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    <th className="px-4 py-3">ID</th>
-                    <th className="px-4 py-3">Title / File</th>
-                    <th className="px-4 py-3">Subject</th>
-                    <th className="px-4 py-3">Language</th>
-                    <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Created</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3">{t('materials.admin.colId')}</th>
+                    <th className="px-4 py-3">{t('materials.admin.colTitle')}</th>
+                    <th className="px-4 py-3">{t('materials.admin.colSubject')}</th>
+                    <th className="px-4 py-3">{t('materials.admin.colLanguage')}</th>
+                    <th className="px-4 py-3">{t('materials.admin.colType')}</th>
+                    <th className="px-4 py-3">{t('materials.admin.colStatus')}</th>
+                    <th className="px-4 py-3">{t('materials.admin.colCreated')}</th>
+                    <th className="px-4 py-3 text-right">{t('materials.admin.colActions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -182,7 +187,7 @@ export default function AdminLearningMaterials() {
                       <tr key={m.id} className="hover:bg-slate-50/60">
                         <td className="px-4 py-3 text-slate-400 font-mono text-xs">{m.id}</td>
                         <td className="px-4 py-3 max-w-xs">
-                          <p className="font-medium text-slate-800 truncate">{m.title || m.fileName || `Material #${m.id}`}</p>
+                          <p className="font-medium text-slate-800 truncate">{m.title || m.fileName || t('materials.fallbackName', { id: m.id })}</p>
                           {m.title && m.fileName && m.title !== m.fileName && (
                             <p className="text-xs text-slate-400 truncate">{m.fileName}</p>
                           )}
@@ -190,12 +195,12 @@ export default function AdminLearningMaterials() {
                         <td className="px-4 py-3">{subj ? `${subj.code} - ${subj.name}` : `#${m.subjectId}`}</td>
                         <td className="px-4 py-3">
                           {m.language ? (
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
                               m.language === 'en'
                                 ? 'bg-sky-50 text-sky-700 border-sky-200'
                                 : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             }`}>
-                              {m.language === 'en' ? '🇬🇧 EN' : '🇻🇳 VI'}
+                              <FlagIcon language={m.language} />{m.language === 'en' ? 'EN' : 'VI'}
                             </span>
                           ) : (
                             <span className="text-xs text-slate-400">—</span>
@@ -203,13 +208,13 @@ export default function AdminLearningMaterials() {
                         </td>
                         <td className="px-4 py-3 text-xs font-semibold text-slate-500">{fileExt(m.fileName)}</td>
                         <td className="px-4 py-3"><StatusBadge status={m.processingStatus} /></td>
-                        <td className="px-4 py-3 text-slate-500">{m.createdAt ? new Date(m.createdAt).toLocaleString() : '—'}</td>
+                        <td className="px-4 py-3 text-slate-500">{m.createdAt ? formatDateTime(m.createdAt) : '—'}</td>
                         <td className="px-4 py-3 text-right whitespace-nowrap">
                           <button onClick={() => setEditTarget(m)} className="inline-flex items-center gap-1 px-2.5 py-1.5 mr-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md transition-colors">
-                            <EditIcon /> Edit
+                            <EditIcon /> {t('materials.admin.edit')}
                           </button>
                           <button onClick={() => setDeleteTarget(m)} className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors">
-                            <TrashIcon /> Delete
+                            <TrashIcon /> {t('materials.admin.delete')}
                           </button>
                         </td>
                       </tr>
@@ -219,11 +224,11 @@ export default function AdminLearningMaterials() {
               </table>
             </div>
             <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>{filtered.length} material(s)</span>
+              <span>{t('materials.admin.total', { count: filtered.length })}</span>
               <div className="flex items-center gap-2">
-                <button disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)} className="px-3 py-1.5 border border-slate-200 rounded-md disabled:opacity-40 hover:bg-slate-50">Prev</button>
-                <span>Page {currentPage} / {pageCount}</span>
-                <button disabled={currentPage >= pageCount} onClick={() => setPage(currentPage + 1)} className="px-3 py-1.5 border border-slate-200 rounded-md disabled:opacity-40 hover:bg-slate-50">Next</button>
+                <button disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)} className="px-3 py-1.5 border border-slate-200 rounded-md disabled:opacity-40 hover:bg-slate-50">{t('materials.admin.prev')}</button>
+                <span>{t('materials.admin.page', { page: currentPage, total: pageCount })}</span>
+                <button disabled={currentPage >= pageCount} onClick={() => setPage(currentPage + 1)} className="px-3 py-1.5 border border-slate-200 rounded-md disabled:opacity-40 hover:bg-slate-50">{t('materials.admin.next')}</button>
               </div>
             </div>
           </>

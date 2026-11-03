@@ -1,0 +1,84 @@
+{
+  "status": {
+    "READY": "処理済み",
+    "COMPLETED": "処理済み",
+    "PROCESSING": "処理中…",
+    "PENDING": "処理待ち",
+    "FAILED": "失敗"
+  },
+  "fallbackName": "教材 #{{id}}",
+  "edit": {
+    "title": "教材を編集",
+    "file": "ファイル: {{name}}",
+    "unknownFile": "(不明)",
+    "displayTitle": "表示タイトル",
+    "titlePlaceholder": "表示タイトルを入力してください",
+    "titleRequired": "タイトルを入力してください。",
+    "failed": "教材を更新できませんでした。",
+    "save": "変更を保存"
+  },
+  "delete": {
+    "title": "教材を削除",
+    "confirm": "<b>「{{name}}」</b>を削除してもよろしいですか?",
+    "warning": "この操作は元に戻せません。",
+    "failed": "教材を削除できませんでした。",
+    "button": "削除"
+  },
+  "page": {
+    "title": "学習教材",
+    "subtitle": "科目ごとに学習教材をアップロード・管理します",
+    "subject": "科目",
+    "subjectsFailed": "科目を読み込めませんでした。",
+    "noAssignment": "担当の科目がまだありません。管理者にお問い合わせください。"
+  },
+  "upload": {
+    "title": "教材をアップロード",
+    "titlePlaceholder": "表示タイトル(任意)",
+    "success": "「{{name}}」をアップロードしました。処理状況とともに下に表示されます。",
+    "failed": "アップロードに失敗しました。",
+    "uploading": "アップロード中… {{progress}}%",
+    "drop": "ここにドロップしてアップロード",
+    "click": "クリックまたはドラッグしてファイルをアップロード",
+    "hint": "対応するファイル形式はサーバーが検証します"
+  },
+  "list": {
+    "title": "教材",
+    "fileCount_other": "{{count}} 件のファイル",
+    "generate": "✨ 問題を生成",
+    "generateTitle": "問題バンクで教材から問題を生成します",
+    "searchPlaceholder": "タイトルまたはファイル名で検索…",
+    "allStatuses": "すべての状態",
+    "selectSubject": "科目を選択すると教材が表示されます",
+    "loadFailed": "教材を読み込めませんでした。",
+    "empty": "この科目にはまだ教材がアップロードされていません。",
+    "noMatch": "検索に一致する教材はありません。",
+    "editTitle": "タイトルを編集",
+    "deleteTitle": "教材を削除"
+  },
+  "admin": {
+    "title": "学習教材",
+    "subtitle": "すべての科目の学習教材です。",
+    "partialError": "{{total}} 科目のうち {{failed}} 科目の教材を読み込めませんでした。一覧が不完全な可能性があります。",
+    "loadFailedFallback": "学習教材を読み込めませんでした。",
+    "searchPlaceholder": "タイトル、ファイル、科目で検索…",
+    "allSubjects": "すべての科目",
+    "clearFilters": "フィルターをクリア",
+    "loadFailedTitle": "教材を読み込めませんでした",
+    "noMatch": "フィルターに一致する教材はありません。",
+    "empty": "学習教材はまだアップロードされていません。",
+    "colId": "ID",
+    "colTitle": "タイトル / ファイル",
+    "colSubject": "科目",
+    "colLanguage": "言語",
+    "colType": "種類",
+    "colStatus": "状態",
+    "colCreated": "作成日",
+    "colActions": "操作",
+    "edit": "編集",
+    "delete": "削除",
+    "total": "{{count}} 件の教材",
+    "prev": "前へ",
+    "next": "次へ",
+    "page": "{{page}} / {{total}} ページ"
+  }
+}
