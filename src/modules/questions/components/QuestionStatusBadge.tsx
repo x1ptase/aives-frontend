@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { QuestionStatus } from '../api'
 
 export const QUESTION_STATUSES: QuestionStatus[] = ['DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED']
@@ -19,20 +20,22 @@ export const isDeletableStatus = (status?: string | null) => status === 'DRAFT'
 export const isApprovableStatus = (status?: string | null) => status !== 'APPROVED'
 
 export default function QuestionStatusBadge({ status }: { status?: string | null }) {
+  const { t } = useTranslation()
   const style = (status && STYLES[status as QuestionStatus]) || 'bg-slate-50 text-slate-500 border-slate-200'
   return (
     <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${style}`}>
-      {status ? status.replace('_', ' ') : 'UNCLASSIFIED'}
+      {status ? t(`questions.status.${status}`, { defaultValue: status.replace('_', ' ') }) : t('questions.status.UNCLASSIFIED')}
     </span>
   )
 }
 
 // Icon-only indicator: a clipboard with a check when the question has a grading rubric.
 export function RubricBadge({ hasRubric }: { hasRubric?: boolean }) {
+  const { t } = useTranslation()
   return hasRubric ? (
     <span
-      title="Has rubric"
-      aria-label="Has rubric"
+      title={t('questions.badge.hasRubric')}
+      aria-label={t('questions.badge.hasRubric')}
       className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200"
     >
       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -40,6 +43,6 @@ export function RubricBadge({ hasRubric }: { hasRubric?: boolean }) {
       </svg>
     </span>
   ) : (
-    <span title="No rubric" aria-label="No rubric" className="text-slate-300 text-sm">—</span>
+    <span title={t('questions.badge.noRubric')} aria-label={t('questions.badge.noRubric')} className="text-slate-300 text-sm">—</span>
   )
 }

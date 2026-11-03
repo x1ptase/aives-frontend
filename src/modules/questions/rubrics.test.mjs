@@ -2,6 +2,7 @@ import { after, before, beforeEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { createServer } from 'vite'
+import { initTestI18n } from '../../test-utils/i18n.mjs'
 import { AxiosError } from 'axios'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -21,6 +22,7 @@ before(async () => {
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: () => 'TEST_ONLY_TOKEN', removeItem() {} } })
   Object.defineProperty(globalThis, 'window', { configurable: true, value: { location: { pathname: '/lecturer/rubrics', href: '' } } })
   server = await createServer({ logLevel: 'silent', server: { middlewareMode: true, hmr: false, watch: null } })
+  await initTestI18n(server)
   api = (await server.ssrLoadModule('/src/modules/questions/api.ts')).subjectRubricApi
   helpers = await server.ssrLoadModule('/src/modules/questions/components/rubricHelpers.ts')
   Provider = (await server.ssrLoadModule('/src/shared/components/common/FeedbackProvider.tsx')).default
@@ -219,13 +221,13 @@ test('Page renders the assigned-subject selector and a non-global loading state'
 test('Navigation places Rubrics immediately after lecturer Learning Materials and routes to the module', async () => {
   const sidebar = await readFile(new URL('../../app/layout/Sidebar.tsx', import.meta.url), 'utf8')
   const nav = sidebar.split('const LECTURER_NAV')[1].split('const STUDENT_NAV')[0]
-  assert.ok(nav.indexOf('Learning Materials') < nav.indexOf('Rubrics'))
-  assert.ok(nav.indexOf('Rubrics') < nav.indexOf('Question Bank'))
+  assert.ok(nav.indexOf('layout.nav.learningMaterials') < nav.indexOf('layout.nav.rubrics'))
+  assert.ok(nav.indexOf('layout.nav.rubrics') < nav.indexOf('layout.nav.questionBank'))
   assert.match(nav, /path: '\/lecturer\/rubrics'/)
   const shell = await readFile(new URL('../../app/shells/LecturerApp.tsx', import.meta.url), 'utf8')
   assert.match(shell, /path="\/rubrics" element=\{<LecturerRubrics/)
   const header = await readFile(new URL('../../app/layout/TopHeader.tsx', import.meta.url), 'utf8')
-  assert.match(header, /label: 'Rubrics', icon: <IconClipboard \/>, path: '\/lecturer\/rubrics'/)
+  assert.match(header, /labelKey: 'layout.nav.rubrics', icon: <IconClipboard \/>, path: '\/lecturer\/rubrics'/)
 })
 
 test('Rubric actions use shared in-app dialogs without native browser alerts or confirmations', async () => {
