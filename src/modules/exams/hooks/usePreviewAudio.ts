@@ -1,3 +1,4 @@
+import i18n from '@/shared/i18n'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 /** Giọng đọc cục bộ cho bản mẫu; Gemini TTS sẽ được nối trong bước triển khai thật. */
@@ -11,7 +12,7 @@ export function usePreviewSpeech(text: string, language: 'vi' | 'en', enabled: b
     if (!enabled) return
     const setIssue = (message: string) => setFailure({ key, message })
     if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
-      setIssue('Thiết bị chưa hỗ trợ giọng đọc mẫu. Bạn vẫn có thể tiếp tục lượt nghe mô phỏng.')
+      setIssue(i18n.t('exams.audio.unsupported'))
       return
     }
     const synthesis = window.speechSynthesis
@@ -23,15 +24,15 @@ export function usePreviewSpeech(text: string, language: 'vi' | 'en', enabled: b
     const speak = () => {
       if (!active || spoken) return
       const voice = synthesis.getVoices().find(item => item.localService && item.lang.toLowerCase().startsWith(language))
-      if (!voice) { setIssue('Chưa có giọng đọc phù hợp trên thiết bị. Bạn có thể cài giọng Việt/Anh hoặc tiếp tục lượt nghe mô phỏng.'); return }
+      if (!voice) { setIssue(i18n.t('exams.audio.noVoice')); return }
       spoken = true
       setIssue('')
       utterance = new SpeechSynthesisUtterance(text)
       utterance.voice = voice; utterance.lang = language === 'vi' ? 'vi-VN' : 'en-US'; utterance.rate = 0.95
       utterance.onend = () => { if (active) callback.current(playbackId) }
-      utterance.onerror = () => { if (active) setIssue('Không phát được giọng đọc mẫu. Bấm thử phát lại hoặc tiếp tục mô phỏng.') }
+      utterance.onerror = () => { if (active) setIssue(i18n.t('exams.audio.playFailed')) }
       synthesis.speak(utterance)
-      watchdog = window.setTimeout(() => { if (active) setIssue('Giọng đọc chưa hoàn tất. Bạn có thể thử phát lại hoặc tiếp tục lượt nghe mô phỏng.') }, 45000)
+      watchdog = window.setTimeout(() => { if (active) setIssue(i18n.t('exams.audio.incomplete')) }, 45000)
     }
     synthesis.addEventListener('voiceschanged', speak)
     speak()
@@ -48,7 +49,7 @@ export function usePreviewSpeech(text: string, language: 'vi' | 'en', enabled: b
 /** Thử quyền mic trong 3 giây, chỉ kiểm tra thiết bị; không ghi âm hoặc gửi audio. */
 export function usePreviewMicrophone() {
   const [status, setStatus] = useState<'idle' | 'checking' | 'ready' | 'error'>('idle')
-  const [message, setMessage] = useState('Không cần quyền mic để thử luồng mô phỏng.')
+  const [message, setMessage] = useState(() => i18n.t('exams.audio.micIdle'))
   const requestId = useRef(0)
   const media = useRef<MediaStream | null>(null)
   const timer = useRef<number | undefined>(undefined)
@@ -63,10 +64,10 @@ export function usePreviewMicrophone() {
   const check = async () => {
     if (status === 'checking') return
     const id = ++requestId.current
-    release(); setStatus('checking'); setMessage('Đang kiểm tra mic; không ghi âm, không gửi dữ liệu.')
+    release(); setStatus('checking'); setMessage(i18n.t('exams.audio.micChecking'))
     timer.current = window.setTimeout(() => {
       if (requestId.current !== id) return
-      requestId.current += 1; release(); setStatus('error'); setMessage('Chưa nhận được quyền mic. Bạn vẫn có thể thử mô phỏng.')
+      requestId.current += 1; release(); setStatus('error'); setMessage(i18n.t('exams.audio.micTimeout'))
     }, 15000)
     try {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error('unsupported')
@@ -74,13 +75,13 @@ export function usePreviewMicrophone() {
       if (requestId.current !== id) { stream.getTracks().forEach(track => track.stop()); return }
       window.clearTimeout(timer.current)
       media.current = stream
-      setMessage('Đã mở được mic. Thiết bị sẽ được giải phóng sau 3 giây.')
+      setMessage(i18n.t('exams.audio.micOpened'))
       timer.current = window.setTimeout(() => {
-        release(); setStatus('ready'); setMessage('Đã kiểm tra quyền mic và giải phóng thiết bị. Bản thử dùng transcript mẫu, chưa có STT.')
+        release(); setStatus('ready'); setMessage(i18n.t('exams.audio.micReady'))
       }, 3000)
     } catch {
       if (requestId.current !== id) return
-      release(); setStatus('error'); setMessage('Không mở được mic. Kiểm tra quyền trình duyệt và thiết bị; bạn vẫn có thể dùng bản mô phỏng.')
+      release(); setStatus('error'); setMessage(i18n.t('exams.audio.micFailed'))
     }
   }
   return { status, message, check }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import i18n from '@/shared/i18n'
 import { OralAudioPlayer } from '../components/oralAudioPlayer'
 import { oralError } from '../components/oralExamHelpers'
 import { newOralId } from '../components/oralExamSession'
@@ -15,7 +16,7 @@ export function useOralSpeech(key: string, enabled: boolean, valid: () => boolea
   const play = useCallback(async () => {
     const generation = serial.current
     try { await player.current?.play(); if (alive.current && generation === serial.current) { setStatus('playing'); setError('') } }
-    catch { if (alive.current && generation === serial.current) { setStatus('ready'); setError('Trình duyệt chưa cho phát tự động. Bấm “Phát giọng đọc” và kiểm tra âm lượng của tab.') } }
+    catch { if (alive.current && generation === serial.current) { setStatus('ready'); setError(i18n.t('exams.oral.hook.autoplayBlocked')) } }
   }, [])
   /** Request chỉ tải WAV, không chứa prompt/đáp án hoặc khóa dịch vụ ở frontend. */
   const load = useCallback(async () => {
@@ -26,7 +27,7 @@ export function useOralSpeech(key: string, enabled: boolean, valid: () => boolea
     setStatus('loading'); setError('')
     try {
       const ready = await audio.load(bound.fetch, () => alive.current && generation === serial.current && bound.valid(),
-        () => { setStatus('idle'); bound.ended() }, () => { setStatus('error'); setError('Không phát được âm thanh. Hãy tải lại giọng đọc; hệ thống chưa xác nhận bạn đã nghe xong.') })
+        () => { setStatus('idle'); bound.ended() }, () => { setStatus('error'); setError(i18n.t('exams.oral.hook.playFailed')) })
       if (ready && alive.current && generation === serial.current) { setStatus('ready'); await play() }
     } catch (cause: any) {
       if (alive.current && generation === serial.current && cause?.code !== 'ERR_CANCELED' && cause?.name !== 'AbortError') {
@@ -44,7 +45,7 @@ export function useOralSpeech(key: string, enabled: boolean, valid: () => boolea
     const timer = window.setInterval(() => {
       if (!enabled) return
       const invalid = !callbacks.current.valid()
-      if (invalid && !stopped) { serial.current = newOralId(); activePlayer.stop(); setStatus('error'); setError('Lượt nghe hoặc quyền tương tác đã thay đổi. Hãy cập nhật tiến trình trước khi nghe tiếp.') }
+      if (invalid && !stopped) { serial.current = newOralId(); activePlayer.stop(); setStatus('error'); setError(i18n.t('exams.oral.hook.listenStale')) }
       stopped = invalid
     }, 250)
     return () => { alive.current = false; serial.current = newOralId(); activePlayer.stop(); player.current = null; window.clearInterval(timer) }

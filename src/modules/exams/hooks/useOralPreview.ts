@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import i18n from '@/shared/i18n'
 import { createOralPreview, oralPreviewReducer, restoreOralPreview, type OralPreviewState, type PreviewAction, type PreviewConfig } from '../components/oralPreviewMachine'
 
 /** Điều phối bản thử trong tab; không gọi Start/Finish hoặc lưu dữ liệu lên máy chủ. */
@@ -20,7 +21,7 @@ export function useOralPreview(userId: string) {
     if (!state) return
     let mounted = true
     try { sessionStorage.setItem(storageKey, JSON.stringify(state)) }
-    catch { queueMicrotask(() => { if (mounted) setStorageWarning('Trình duyệt không cho lưu bản thử trong tab. Tải lại trang sẽ mất tiến trình mô phỏng.') }) }
+    catch { queueMicrotask(() => { if (mounted) setStorageWarning(i18n.t('exams.oral.hook.storageWarning')) }) }
     return () => { mounted = false }
   }, [state, storageKey])
 

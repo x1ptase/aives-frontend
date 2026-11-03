@@ -1,4 +1,5 @@
 import axios from 'axios'
+import i18n from '@/shared/i18n'
 import type { OralAction, OralCommand, OralPhase, OralQuestionStatus, OralRuntime, OralState } from '../oralApi'
 import { examError, ExamUiError } from './examHelpers'
 
@@ -6,27 +7,8 @@ import { examError, ExamUiError } from './examHelpers'
 export const oralPhases: readonly OralPhase[] = ['PREPARING', 'SPEAKING', 'ANSWERING', 'TRANSCRIBING', 'DECIDING', 'REVIEW', 'PAUSED', 'TECHNICAL_ERROR', 'COMPLETED', 'EXPIRED']
 const questionStatuses: readonly OralQuestionStatus[] = ['PENDING', 'ACTIVE', 'DEFERRED', 'ANSWERED', 'NO_ANSWER', 'TECHNICAL_ERROR']
 const actions: readonly OralAction[] = ['PROMPT_FINISHED', 'REPLAY', 'DEFER', 'REVISIT', 'SUBMIT', 'PAUSE', 'RESUME', 'RETRY', 'FINISH', 'HEARTBEAT']
-/** Nội dung lỗi chỉ lấy từ mã đã biết, không hiện SQL hoặc phản hồi tiếng Anh của server. */
-const messages: Record<number, string> = {
-  1800: 'Bạn chưa bắt đầu tiến trình thi vấn đáp này.',
-  1801: 'Thao tác chưa phù hợp với bước thi hiện tại. Hãy cập nhật tiến trình.',
-  1802: 'Tiến trình đã thay đổi. Hãy kiểm tra câu hiện tại trước khi thao tác lại.',
-  1803: 'Quyền tương tác đã hết hạn hoặc lượt thi đang được điều khiển ở tab khác. Đóng tab cũ nếu có, rồi bấm tiếp tục để nhận lại quyền.',
-  1804: 'Lượt thi đã có hội thoại cũ. Vui lòng liên hệ giảng viên để kiểm tra.',
-  1805: 'Kết quả xử lý giọng nói hoặc hội thoại chưa hợp lệ. Vui lòng thử lại.',
-  1806: 'Database chưa được nâng cấp cho Feature 3. Vui lòng liên hệ người quản lý hệ thống.',
-  1807: 'Giọng đọc chưa sẵn sàng. Vui lòng kiểm tra cấu hình hoặc API key TTS ở backend.',
-  1808: 'Chưa tạo được giọng đọc. Hãy thử lại lượt hiện tại; bài thi chưa được cộng thêm thời gian.',
-  1809: 'Dịch vụ giọng đọc đang bận hoặc đã hết hạn mức. Vui lòng thử lại sau.',
-  1810: 'Nhận dạng giọng nói chưa sẵn sàng. Vui lòng kiểm tra cấu hình Groq ở backend.',
-  1811: 'Chưa nhận dạng được câu trả lời. Đây là lỗi kỹ thuật; hãy thử lại lượt xử lý.',
-  1812: 'Dịch vụ nhận dạng đang bận hoặc đã hết hạn mức. Vui lòng thử lại sau.',
-  1813: 'Bản ghi âm chưa hợp lệ. Hãy ghi lại bằng micro của trình duyệt.',
-  1814: 'Bản ghi của lượt xử lý đã được chốt, không thể thay bằng bản ghi khác.',
-  1815: 'AI hội thoại chưa sẵn sàng. Vui lòng kiểm tra cấu hình Gemini ở backend.',
-  1816: 'AI chưa quyết định được lượt hỏi tiếp theo. Transcript đã lưu; hãy thử lại lượt xử lý.',
-  1817: 'AI hội thoại đang bận hoặc đã hết hạn mức. Vui lòng thử lại sau.',
-}
+/** Nội dung lỗi chỉ lấy từ mã đã biết (khóa exams.oral.errors.<mã>), không hiện SQL hoặc phản hồi tiếng Anh của server. */
+const oralErrorCodes: ReadonlySet<number> = new Set([1800, 1801, 1802, 1803, 1804, 1805, 1806, 1807, 1808, 1809, 1810, 1811, 1812, 1813, 1814, 1815, 1816, 1817])
 /** Chỉ đọc mã lỗi từ envelope HTTP, không đoán theo chuỗi thông báo. */
 export function oralErrorCode(cause: unknown): number | undefined {
   return axios.isAxiosError(cause) && Number.isInteger(cause.response?.data?.code) ? cause.response?.data?.code : undefined
@@ -34,23 +16,23 @@ export function oralErrorCode(cause: unknown): number | undefined {
 /** Việt hóa lỗi nghiệp vụ và tái dùng lỗi chuẩn của Exam đã có. */
 export function oralError(cause: unknown): string {
   const code = oralErrorCode(cause)
-  return (code !== undefined && messages[code]) || examError(cause, 'Chưa kết nối được backend. Đồng hồ bài thi vẫn theo thời hạn máy chủ; hãy kiểm tra trạng thái trước khi gửi lại.')
+  return (code !== undefined && oralErrorCodes.has(code) && i18n.t(`exams.oral.errors.${code}`)) || examError(cause, i18n.t('exams.oral.errors.fallback'))
 }
 /** Mã STT trong state chỉ hiện lời đã kiểm soát, không dùng message thô của provider. */
-export function oralProcessingError(code: number): string { return messages[code] || 'Lượt xử lý gặp lỗi kỹ thuật. Hãy thử lại sau.' }
+export function oralProcessingError(code: number): string { return oralErrorCodes.has(code) ? i18n.t(`exams.oral.errors.${code}`) : i18n.t('exams.oral.errors.processing') }
 /** Mất kết nối/5xx không đủ để kết luận thao tác đã rollback; giữ payload cũ để retry. */
 export function uncertainOralWrite(cause: unknown): boolean {
   return !axios.isAxiosError(cause) || !cause.response || cause.response.status >= 500
 }
 /** UUID ổn định, không chấp nhận dữ liệu dùng để ghép URL hoặc chọn user. */
 export function oralUuid(value: unknown): asserts value is string {
-  if (typeof value !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) throw new ExamUiError('Mã lượt tương tác không hợp lệ.')
+  if (typeof value !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) throw new ExamUiError(i18n.t('exams.oral.errors.uuid'))
 }
 const object = (value: unknown): value is Record<string, any> => !!value && typeof value === 'object' && !Array.isArray(value)
 const integer = (value: unknown, min = 0): value is number => Number.isSafeInteger(value) && Number(value) >= min
 const time = (value: unknown): value is string => typeof value === 'string' && Number.isFinite(Date.parse(value))
 const remaining = (value: unknown): value is number | null => value == null || integer(value)
-const invalid = (): never => { throw new ExamUiError('Backend trả tiến trình chưa hợp lệ. Không thể tiếp tục cho đến khi tải lại thành công.') }
+const invalid = (): never => { throw new ExamUiError(i18n.t('exams.oral.errors.invalidState')) }
 /** Envelope bị hỏng không được hiển thị như một bài thi trống hoặc đã hoàn thành. */
 function result(value: unknown): Record<string, any> {
   if (!object(value) || value.code !== 1000 || !object(value.result)) return invalid()
@@ -109,7 +91,7 @@ export function parseOralState(value: unknown, expectedId: number): OralState {
 export function validateOralCommand(command: OralCommand): void {
   oralUuid(command.requestId); oralUuid(command.clientSessionId)
   if (command.turnId != null) oralUuid(command.turnId)
-  if (!integer(command.expectedRevision) || !actions.includes(command.action) || (command.action === 'REVISIT' ? !integer(command.targetQuestionOrder, 1) : command.targetQuestionOrder != null)) throw new ExamUiError('Thao tác thi chưa hợp lệ.')
+  if (!integer(command.expectedRevision) || !actions.includes(command.action) || (command.action === 'REVISIT' ? !integer(command.targetQuestionOrder, 1) : command.targetQuestionOrder != null)) throw new ExamUiError(i18n.t('exams.oral.errors.invalidCommand'))
 }
 /** Chỉ nội suy để hiển thị; quyết định hết giờ/chuyển câu luôn thuộc backend. */
 export function oralCountdown(state: OralState, elapsedMs: number): { slot: number; answer: number | null } {

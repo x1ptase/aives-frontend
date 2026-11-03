@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { studentExamApi, type StartedExam } from '../api'
 import { examError, ExamUiError, formatExamTime } from './examHelpers'
 import ExamDialog from './ExamDialog'
@@ -11,6 +12,7 @@ export default function ExamAttemptModal({ exam, title, onClose, onFinished }: {
   /** Đóng cửa sổ không đồng nghĩa nộp bài hoặc dừng đồng hồ. */ onClose: () => void
   /** Tải lại lịch sau khi máy chủ xác nhận hoàn thành. */ onFinished: () => void
 }) {
+  const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
   const feedback = useExamFeedback()
   const writing = useRef(false)
@@ -20,34 +22,34 @@ export default function ExamAttemptModal({ exam, title, onClose, onFinished }: {
     if (writing.current) return
     writing.current = true
     try {
-      if (!await feedback.confirm({ title: 'Hoàn thành bài thi?', message: 'Hệ thống chỉ chấp nhận khi Feature 3 đã lưu đủ câu trả lời. Sau khi hoàn thành, bạn không thể tiếp tục sửa bài.', confirmLabel: 'Hoàn thành bài thi' })) return
+      if (!await feedback.confirm({ title: t('exams.attempt.confirmTitle'), message: t('exams.attempt.confirmMessage'), confirmLabel: t('exams.attempt.confirmLabel') })) return
       setBusy(true)
       const { data } = await studentExamApi.finish(exam.attempt.id)
       if (data.code !== 1000 || data.result?.id !== exam.attempt.id || data.result.status !== 'COMPLETED' || !data.result.completedAt)
-        throw new ExamUiError('Phản hồi hoàn thành bài thi không hợp lệ. Vui lòng tải lại lịch thi để kiểm tra kết quả.')
-      feedback.notify({ title: 'Đã hoàn thành bài thi', message: 'Hệ thống đã ghi nhận thời điểm hoàn thành. Kết quả chấm điểm được xử lý ở luồng riêng.', tone: 'success' })
+        throw new ExamUiError(t('exams.attempt.invalidResponse'))
+      feedback.notify({ title: t('exams.attempt.doneTitle'), message: t('exams.attempt.doneMessage'), tone: 'success' })
       onFinished()
-    } catch (cause) { feedback.notify({ title: 'Chưa thể hoàn thành bài thi', message: examError(cause, 'Không thể hoàn thành bài thi. Vui lòng tải lại lịch thi để kiểm tra kết quả trước khi thử lại.'), tone: 'error' }) }
+    } catch (cause) { feedback.notify({ title: t('exams.attempt.failTitle'), message: examError(cause, t('exams.attempt.failFallback')), tone: 'error' }) }
     finally { writing.current = false; setBusy(false) }
   }
 
-  return <ExamDialog title={title} subtitle="Đề thi đã chốt — đang thực hiện" busy={busy} onClose={onClose}>
+  return <ExamDialog title={title} subtitle={t('exams.attempt.subtitle')} busy={busy} onClose={onClose}>
     <div className="space-y-5 p-6">
       <dl className="grid gap-3 text-sm sm:grid-cols-2">
-        <div><dt className="text-slate-500">Bắt đầu thực tế</dt><dd className="mt-1 font-semibold">{formatExamTime(exam.attempt.startedAt)}</dd></div>
-        <div><dt className="text-slate-500">Hạn hoàn thành</dt><dd className="mt-1 font-semibold">{formatExamTime(exam.attempt.deadlineAt)}</dd></div>
+        <div><dt className="text-slate-500">{t('exams.attempt.startedAt')}</dt><dd className="mt-1 font-semibold">{formatExamTime(exam.attempt.startedAt)}</dd></div>
+        <div><dt className="text-slate-500">{t('exams.attempt.deadline')}</dt><dd className="mt-1 font-semibold">{formatExamTime(exam.attempt.deadlineAt)}</dd></div>
       </dl>
-      <p className="text-sm text-slate-600">Vào muộn hoặc đóng cửa sổ này không gia hạn thời gian. Câu trả lời phải được Feature 3 lưu trước khi hoàn thành; màn hình này không nhập bài thay cho Feature 3.</p>
+      <p className="text-sm text-slate-600">{t('exams.attempt.notice')}</p>
       <ol className="divide-y divide-slate-200">
         {exam.questions.map(question => <li key={question.studentExamQuestionId} className="space-y-2 py-4">
-          <h3 className="text-sm font-semibold">Câu {question.questionOrder}</h3>
+          <h3 className="text-sm font-semibold">{t('exams.attempt.question', { order: question.questionOrder })}</h3>
           <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{question.content}</p>
-          {question.answerTimeLimitSeconds !== null && <p className="text-xs text-slate-500">Giới hạn riêng: {question.answerTimeLimitSeconds} giây; không vượt quá hạn hoàn thành.</p>}
+          {question.answerTimeLimitSeconds !== null && <p className="text-xs text-slate-500">{t('exams.attempt.limit', { seconds: question.answerTimeLimitSeconds })}</p>}
         </li>)}
       </ol>
       <div className="flex flex-wrap justify-end gap-3">
-        <button type="button" disabled={busy} onClick={onClose} className="rounded-lg border px-4 py-2 text-sm disabled:opacity-50">Quay lại lịch thi</button>
-        <button type="button" disabled={busy} onClick={finish} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? 'Đang xử lý…' : 'Hoàn thành bài thi'}</button>
+        <button type="button" disabled={busy} onClick={onClose} className="rounded-lg border px-4 py-2 text-sm disabled:opacity-50">{t('exams.attempt.back')}</button>
+        <button type="button" disabled={busy} onClick={finish} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy ? t('exams.attempt.processing') : t('exams.attempt.finish')}</button>
       </div>
     </div>
   </ExamDialog>

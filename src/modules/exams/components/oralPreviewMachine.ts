@@ -1,3 +1,4 @@
+import i18n from '@/shared/i18n'
 /** Hợp đồng mô phỏng độc lập với API thi thật; không chứa đáp án hay rubric. */
 export interface PreviewConfig {
   language: 'vi' | 'en' | 'mixed'
@@ -90,7 +91,7 @@ export function validPreviewConfig(value: unknown): value is PreviewConfig {
 
 /** Tạo phiên mô phỏng mới; thời hạn tuyệt đối không được đặt lại khi tiếp tục. */
 export function createOralPreview(config: PreviewConfig, now: number): OralPreviewState {
-  if (!validPreviewConfig(config)) throw new Error('Cấu hình mô phỏng không hợp lệ.')
+  if (!validPreviewConfig(config)) throw new Error(i18n.t('exams.preview.invalidConfig'))
   return { version: 1, config: { ...config }, phase: 'SPEAKING', current: 0, turn: 0, speechId: 1,
     followUpsUsed: 0, startedAt: now, deadline: now + config.slotMinutes * 60000, lastTick: now, clockOffset: 0,
     questions: Array.from({ length: config.mainCount }, (_, index) => ({ status: index ? 'PENDING' : 'ACTIVE', remainingMs: config.answerSeconds * 1000, followUps: 0, transcripts: [] })),
@@ -112,14 +113,14 @@ function advanceTime(state: OralPreviewState, now: number): OralPreviewState {
   const next = { ...state, lastTick: time, questions: state.questions.map(q => ({ ...q, transcripts: [...q.transcripts] })) }
   if (time >= state.deadline) {
     next.questions.forEach(q => { if (q.status !== 'ANSWERED') q.status = q.transcripts.length ? 'ANSWERED' : 'NO_ANSWER' })
-    return { ...next, phase: 'EXPIRED', pending: null, notice: 'Đã hết thời gian lượt thi mô phỏng. Các lượt trả lời đã lưu được giữ nguyên.' }
+    return { ...next, phase: 'EXPIRED', pending: null, notice: i18n.t('exams.preview.expired') }
   }
   if (state.phase === 'ANSWERING') {
     const question = next.questions[state.current]
     question.remainingMs = Math.max(0, question.remainingMs - (time - state.lastTick))
     if (question.remainingMs === 0) {
       question.status = question.transcripts.length ? 'ANSWERED' : 'NO_ANSWER'
-      return nextQuestion({ ...next, notice: 'Đã hết thời gian trả lời của câu trước. Không tạo transcript cho phần chưa trả lời.' })
+      return nextQuestion({ ...next, notice: i18n.t('exams.preview.answerExpired') })
     }
   }
   return next
@@ -139,7 +140,7 @@ export function oralPreviewReducer(previous: OralPreviewState, action: PreviewAc
     case 'SPOKEN': return state.phase === 'SPEAKING' && action.speechId === state.speechId ? { ...state, phase: 'ANSWERING', notice: '' } : state
     case 'SUBMIT':
       if (state.phase !== 'ANSWERING') return state
-      if (action.style === 'empty') return { ...state, notice: 'Âm thanh mẫu rỗng: chưa có câu trả lời. Bạn có thể thử lại hoặc tạm bỏ qua; đồng hồ vẫn chạy.' }
+      if (action.style === 'empty') return { ...state, notice: i18n.t('exams.preview.emptyAudio') }
       return { ...state, phase: 'PROCESSING', pending: action.style, notice: '' }
     case 'PROCESSED': {
       if (state.phase !== 'PROCESSING' || !state.pending || action.speechId !== state.speechId) return state
@@ -158,7 +159,7 @@ export function oralPreviewReducer(previous: OralPreviewState, action: PreviewAc
     case 'DEFER':
       if (state.phase !== 'ANSWERING' || state.turn || question.transcripts.length) return state
       question.status = 'DEFERRED'
-      return nextQuestion({ ...state, notice: 'Đã tạm bỏ qua; thời gian trả lời còn lại của câu được giữ nguyên.' })
+      return nextQuestion({ ...state, notice: i18n.t('exams.preview.skipped') })
     case 'REVISIT':
       if (state.phase !== 'REVIEW' || state.questions[action.index]?.status !== 'DEFERRED') return state
       state.questions[action.index].status = 'ACTIVE'
@@ -171,7 +172,7 @@ export function oralPreviewReducer(previous: OralPreviewState, action: PreviewAc
     case 'FAIL':
       if (!['ANSWERING', 'SPEAKING', 'PROCESSING'].includes(state.phase)) return state
       return { ...state, resumePhase: state.phase as OralPreviewState['resumePhase'], phase: 'PAUSED',
-        notice: action.type === 'FAIL' ? action.message : 'Tiến trình đã được giữ lại trong tab này. Thời hạn lượt thi vẫn tiếp tục.' }
+        notice: action.type === 'FAIL' ? action.message : i18n.t('exams.preview.paused') }
     case 'RESUME':
       return state.phase === 'PAUSED' ? { ...state, phase: state.resumePhase === 'PROCESSING' ? 'PROCESSING' : 'SPEAKING', speechId: state.speechId + 1, notice: '' } : state
   }
@@ -201,7 +202,7 @@ export function restoreOralPreview(raw: string | null, now: number): OralPreview
       if (state.questions[state.current].status !== 'ACTIVE' || (state.phase === 'PROCESSING' && !state.pending)) return null
       state.resumePhase = state.phase === 'PROCESSING' || (state.phase === 'PAUSED' && state.resumePhase === 'PROCESSING') ? 'PROCESSING' : 'SPEAKING'
       state.phase = 'PAUSED'
-      state.notice = 'Đã khôi phục bản mô phỏng. Bấm tiếp tục để nghe lại câu hiện tại; không được cộng thêm thời gian.'
+      state.notice = i18n.t('exams.preview.restored')
     }
     // Không coi thời gian đóng mic trong lúc tải lại trang là thời gian trả lời.
     state.lastTick = Math.max(state.lastTick, now + state.clockOffset)
