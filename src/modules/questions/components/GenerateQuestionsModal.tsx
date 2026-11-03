@@ -347,7 +347,7 @@ export default function GenerateQuestionsModal({
                           ? 'bg-sky-50 text-sky-700 border-sky-200'
                           : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       }`}>
-                        {m.language === 'en' ? 'EN' : 'VI'}
+                        {m.language.toUpperCase()}
                       </span>
                     )}
                     {m.processingStatus && <span className="text-[10px] text-slate-400">{t(`materials.status.${m.processingStatus.toUpperCase()}`, { defaultValue: m.processingStatus })}</span>}

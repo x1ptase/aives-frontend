@@ -48,7 +48,9 @@ export function EditTitleModal({
 }) {
     const { t } = useTranslation()
     const [title, setTitle] = useState(material.title || material.fileName || '')
-    const [language, setLanguage] = useState<'vi' | 'en'>(material.language === 'en' ? 'en' : 'vi')
+    const [language, setLanguage] = useState<'vi' | 'en'>(
+        material.language === 'en' ? 'en' : 'vi'
+    )
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
