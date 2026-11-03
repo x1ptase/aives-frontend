@@ -1,4 +1,5 @@
 import axiosInstance from '@/shared/api/axios'
+import i18n from '@/shared/i18n'
 import type { BackendUserResponse } from '@/shared/types'
 
 export interface UserUpdatePayload {
@@ -36,10 +37,10 @@ export const userApi = {
     axiosInstance.delete<{ code: number; result: string }>(`/users/${id}`),
 
   changePassword: (_data: any) =>
-    Promise.reject(new Error("Password change API endpoint is not yet implemented by the backend contract. UI is ready.")),
+    Promise.reject(new Error(i18n.t('users.api.changePasswordNotImplemented'))),
 
   googleLink: (_token: string) =>
-    Promise.reject(new Error("Google Linking API endpoint is not yet implemented by the backend contract.")),
+    Promise.reject(new Error(i18n.t('users.api.googleLinkNotImplemented'))),
 }
 
 // Exam, exam-session and student-exam endpoints are not implemented by the backend yet.

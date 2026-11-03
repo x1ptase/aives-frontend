@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { adminApi } from '../api'
 import { useAuthStore } from '@/modules/auth'
 
@@ -17,10 +18,8 @@ type AiConfigResponse = {
   evaluator?: AiServiceConfig
 }
 
-const SERVICE_META: Record<string, { name: string, description: string, accent: string, iconColor: string, icon: React.ReactNode }> = {
+const SERVICE_META: Record<string, { accent: string, iconColor: string, icon: React.ReactNode }> = {
   stt: {
-    name: 'Speech-to-Text',
-    description: 'Converts student speech to text during viva sessions.',
     accent: '#eff6ff',
     iconColor: '#2563eb',
     icon: (
@@ -33,8 +32,6 @@ const SERVICE_META: Record<string, { name: string, description: string, accent: 
     ),
   },
   tts: {
-    name: 'Text-to-Speech',
-    description: 'Reads AI questions aloud during viva sessions.',
     accent: '#f0fdf4',
     iconColor: '#15803d',
     icon: (
@@ -46,8 +43,6 @@ const SERVICE_META: Record<string, { name: string, description: string, accent: 
     ),
   },
   embedding: {
-    name: 'RAG / Embedding',
-    description: 'Generates embeddings for learning materials and RAG retrieval.',
     accent: '#fff7ed',
     iconColor: '#ea580c',
     icon: (
@@ -59,8 +54,6 @@ const SERVICE_META: Record<string, { name: string, description: string, accent: 
     ),
   },
   evaluator: {
-    name: 'AI Evaluator',
-    description: 'Evaluates student answers and generates scores and feedback.',
     accent: '#faf5ff',
     iconColor: '#7c3aed',
     icon: (
@@ -77,28 +70,30 @@ const SERVICE_META: Record<string, { name: string, description: string, accent: 
 }
 
 function StatusPill({ status }: { status: 'Active' | 'Inactive' | 'Not configured' }) {
+  const { t } = useTranslation()
   if (status === 'Active') {
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Active
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>{t('aiConfig.status.active')}
       </span>
     )
   }
   if (status === 'Inactive') {
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
-        <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Inactive
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>{t('aiConfig.status.inactive')}
       </span>
     )
   }
   return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-red-50 text-red-600 border border-red-100">
-      <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>Not configured
+      <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>{t('aiConfig.status.notConfigured')}
     </span>
   )
 }
 
 export default function AiConfigPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuthStore()
 
@@ -140,10 +135,10 @@ export default function AiConfigPage() {
       <div className="flex items-center justify-between mb-7">
         <div>
           <h1 className="text-xl font-bold text-slate-900 leading-tight" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-            AI & API Configuration
+            {t('aiConfig.page.title')}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Read-only view of AI services and API connections used by the AIVES platform.
+            {t('aiConfig.page.subtitle')}
           </p>
         </div>
         <button
@@ -154,7 +149,7 @@ export default function AiConfigPage() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Refresh
+          {t('aiConfig.page.refresh')}
         </button>
       </div>
 
@@ -163,19 +158,19 @@ export default function AiConfigPage() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-8 h-8 animate-spin mb-3">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <p className="text-sm font-medium">Loading AI configuration...</p>
+          <p className="text-sm font-medium">{t('aiConfig.page.loading')}</p>
         </div>
       ) : error && !config ? (
         <div className="flex flex-col items-center justify-center py-20 text-slate-500">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-8 h-8 text-red-500 mb-3">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <p className="text-sm font-medium mb-4 text-slate-600">Unable to load AI configuration. Please try again.</p>
+          <p className="text-sm font-medium mb-4 text-slate-600">{t('aiConfig.page.loadFailed')}</p>
           <button
             onClick={fetchConfig}
             className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors"
           >
-            Retry
+            {t('aiConfig.page.retry')}
           </button>
         </div>
       ) : (
@@ -198,27 +193,27 @@ export default function AiConfigPage() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-0.5">
-                      <h2 className="text-sm font-bold text-slate-900" style={{ fontFamily: 'DM Sans, sans-serif' }}>{meta.name}</h2>
+                      <h2 className="text-sm font-bold text-slate-900" style={{ fontFamily: 'DM Sans, sans-serif' }}>{t(`aiConfig.services.${key}.name`)}</h2>
                       <StatusPill status={statusLabel} />
                     </div>
-                    <p className="text-xs text-slate-400 mb-6">{meta.description}</p>
+                    <p className="text-xs text-slate-400 mb-6">{t(`aiConfig.services.${key}.description`)}</p>
 
                     {/* Read-Only Fields */}
                     <div className="flex items-start gap-12 flex-wrap">
                       <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Provider</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('aiConfig.page.provider')}</span>
                         <div className="text-sm font-medium text-slate-800">
                           {isConfigured ? svcData.provider : '—'}
                         </div>
                       </div>
                       <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Model / Engine</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('aiConfig.page.model')}</span>
                         <div className="text-sm font-medium text-slate-800">
                           {isConfigured && svcData.model ? svcData.model : '—'}
                         </div>
                       </div>
                       <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">API Key</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('aiConfig.page.apiKey')}</span>
                         <div className="text-sm font-medium flex items-center h-[20px]">
                           {isConfigured && svcData.apiKeyMasked ? (
                             <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-500 tracking-widest" style={{ fontFamily: 'JetBrains Mono, monospace' }}>

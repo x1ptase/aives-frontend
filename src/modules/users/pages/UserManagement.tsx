@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { User, Role } from '@/shared/types'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/shared/i18n'
 import { userApi } from '../api'
 import HeaderActionBar from '../components/HeaderActionBar'
 import DataTable from '../components/DataTable'
@@ -33,6 +35,7 @@ function getInitials(name: string): string {
 const PAGE_SIZE = 8
 
 export default function UserManagement() {
+    const { t } = useTranslation()
     const [usersList, setUsersList] = useState<User[]>([])
     const [search, setSearch] = useState('')
     const [roleFilter, setRoleFilter] = useState<'All' | Role>('All')
@@ -62,7 +65,7 @@ export default function UserManagement() {
                 }
             } catch (err) {
                 console.warn('Could not load users from backend API:', err)
-                setLoadError('Could not load users. Please check your connection or try again.')
+                setLoadError(i18n.t('users.page.loadFailed'))
             }
         }
         fetchUsers()
@@ -153,7 +156,7 @@ export default function UserManagement() {
                 createdAt: created.createdAt ? new Date(created.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             }
             setUsersList(prev => [mapped, ...prev])
-            setSuccessMessage(`Account "${mapped.username}" created successfully! An email with credentials has been sent to ${mapped.email}.`)
+            setSuccessMessage(t('users.page.created', { username: mapped.username, email: mapped.email }))
             setTimeout(() => setSuccessMessage(''), 8000)
         }
     }
@@ -162,19 +165,19 @@ export default function UserManagement() {
      * Admin can delete user accounts — this is a system-level operation supported by the API.
      */
     const handleDeleteUser = async (id: string | number) => {
-        if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return
+        if (!window.confirm(t('users.page.confirmDelete'))) return
         try {
             await userApi.delete(id)
             setUsersList(prev => prev.filter(u => u.id !== id))
             setSelected(prev => { const s = new Set(prev); s.delete(id); return s })
         } catch (err: unknown) {
-            let msg = 'Failed to delete user.'
+            let msg = t('users.page.deleteFailed')
             if (typeof err === 'object' && err !== null && 'response' in err) {
                 const res = (err as { response?: { data?: { message?: string } } }).response
                 msg = res?.data?.message || msg
             }
             if (typeof msg === 'string' && (msg.includes('foreign key constraint') || msg.includes('violates foreign key'))) {
-                msg = 'Cannot delete this user because they are linked to existing subjects or system records. Please reassign or remove linked data first.'
+                msg = t('users.page.deleteLinked')
             }
             alert(msg)
         }

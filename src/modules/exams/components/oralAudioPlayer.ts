@@ -1,3 +1,4 @@
+import i18n from '@/shared/i18n'
 /** Trình phát WAV có hủy yêu cầu/thu hồi Blob URL; không dùng speechSynthesis hoặc lộ nội dung đề. */
 export class OralAudioPlayer {
   private serial = 0
@@ -13,7 +14,7 @@ export class OralAudioPlayer {
     this.url = null
   }
   /** Browser có thể chặn autoplay; giữ audio để Student chủ động bấm phát, không báo đã nghe xong. */
-  async play() { if (!this.audio) throw new Error('Chưa có audio.'); await this.audio.play() }
+  async play() { if (!this.audio) throw new Error(i18n.t('exams.oral.player.noAudio')); await this.audio.play() }
   /** Mỗi lần tải có generation riêng, response đến muộn không được phát cho turn mới. */
   async load(fetch: (signal: AbortSignal) => Promise<Blob>, valid: () => boolean, ended: () => void, failed: () => void) {
     this.stop(); const serial = this.serial

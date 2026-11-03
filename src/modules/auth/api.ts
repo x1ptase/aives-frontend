@@ -1,4 +1,5 @@
 import axiosInstance from '@/shared/api/axios'
+import i18n from '@/shared/i18n'
 import type { BackendUserResponse, User } from '@/shared/types'
 
 export interface LoginPayload {
@@ -35,8 +36,8 @@ export const authApi = {
   getProfile: () => axiosInstance.get<{ status: number; user: User }>('/auth/profile'),
 
   googleSignIn: (_token: string) =>
-    Promise.reject(new Error("Google Sign In API endpoint is not yet implemented by the backend contract.")),
+    Promise.reject(new Error(i18n.t('auth.googleSignInNotImplemented'))),
 
   googleSignUp: (_token: string) =>
-    Promise.reject(new Error("Google Sign Up API endpoint is not yet implemented by the backend contract.")),
+    Promise.reject(new Error(i18n.t('auth.googleSignUpNotImplemented'))),
 }

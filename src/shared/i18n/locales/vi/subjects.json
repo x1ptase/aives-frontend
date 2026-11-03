@@ -1,0 +1,117 @@
+{
+  "management": {
+    "title": "Quản lý môn học",
+    "subtitle": "Tạo và duy trì các môn học dùng cho tài liệu và câu hỏi.",
+    "searchPlaceholder": "Tìm theo mã, tên hoặc mô tả…",
+    "create": "Tạo môn học",
+    "loadFailed": "Không thể tải môn học.",
+    "loadFailedTitle": "Không thể tải môn học",
+    "noMatch": "Không có môn học nào khớp với tìm kiếm.",
+    "empty": "Chưa có môn học nào. Nhấn \"Tạo môn học\" để thêm.",
+    "code": "Mã",
+    "name": "Tên",
+    "description": "Mô tả",
+    "actions": "Thao tác",
+    "details": "Chi tiết",
+    "edit": "Sửa",
+    "delete": "Xóa"
+  },
+  "my": {
+    "title": "Môn học của tôi",
+    "subtitle": "Các môn học được quản trị viên phân công cho bạn",
+    "assigned": "{{count}} môn được phân công",
+    "loadFailed": "Không thể tải môn học của bạn.",
+    "loadFailedTitle": "Không thể tải môn học của bạn",
+    "empty": "Bạn chưa được phân công môn học nào.",
+    "emptyDesc": "Vui lòng liên hệ quản trị viên.",
+    "learningMaterials": "Tài liệu học tập",
+    "questionBank": "Ngân hàng câu hỏi"
+  },
+  "form": {
+    "codeLabel": "Mã môn học",
+    "nameLabel": "Tên môn học",
+    "descLabel": "Mô tả",
+    "optional": "(không bắt buộc)",
+    "codePlaceholder": "VD: SWD392",
+    "namePlaceholder": "VD: Kiến trúc và thiết kế phần mềm",
+    "descPlaceholder": "Mô tả ngắn về môn học này",
+    "codeRequired": "Vui lòng nhập mã môn học.",
+    "nameRequired": "Vui lòng nhập tên môn học.",
+    "cancel": "Hủy"
+  },
+  "create": {
+    "title": "Tạo môn học",
+    "submit": "Tạo môn học",
+    "failed": "Không thể tạo môn học."
+  },
+  "edit": {
+    "title": "Sửa môn học",
+    "submit": "Lưu thay đổi",
+    "failed": "Không thể cập nhật môn học."
+  },
+  "detail": {
+    "title": "Chi tiết môn học",
+    "loadFailed": "Không thể tải chi tiết môn học.",
+    "loadFailedTitle": "Không thể tải môn học",
+    "tryAgain": "Thử lại",
+    "noDescription": "Chưa có mô tả.",
+    "id": "ID môn học: {{id}}",
+    "close": "Đóng",
+    "edit": "Sửa môn học"
+  },
+  "delete": {
+    "title": "Xóa môn học",
+    "confirm": "Bạn có chắc muốn xóa <b>{{name}}</b>?",
+    "warning": "Hành động này không thể hoàn tác. Các câu hỏi, tài liệu học tập hoặc phiên thi liên quan có thể ngăn việc xóa hoặc bị ảnh hưởng.",
+    "failed": "Không thể xóa môn học.",
+    "linked": "Không thể xóa môn học này vì nó đang liên kết với câu hỏi, tài liệu học tập hoặc phiên thi hiện có. Vui lòng xóa các mục liên quan trước."
+  },
+  "assignments": {
+    "title": "Phân công môn học",
+    "subtitle": "Phân công giảng viên cho môn học. Chỉ giảng viên được phân công mới có thể tạo câu hỏi cho môn học.",
+    "assignLecturer": "Phân công giảng viên",
+    "needLoaded": "Cần tải xong danh sách giảng viên và môn học trước",
+    "searchPlaceholder": "Tìm theo tên đăng nhập, giảng viên hoặc môn học…",
+    "allLecturers": "Tất cả giảng viên",
+    "allSubjects": "Tất cả môn học",
+    "clearFilters": "Xóa bộ lọc",
+    "loadFailedTitle": "Không thể tải danh sách phân công",
+    "retry": "Thử lại",
+    "noMatch": "Không có phân công nào khớp với bộ lọc.",
+    "empty": "Chưa có phân công nào. Nhấn \"Phân công giảng viên\" để tạo.",
+    "cols": {
+      "username": "Tên đăng nhập giảng viên",
+      "name": "Tên giảng viên",
+      "code": "Mã môn học",
+      "subject": "Tên môn học",
+      "actions": "Thao tác"
+    },
+    "remove": "Gỡ",
+    "removeTitle": "Gỡ phân công?",
+    "removeBody": "<b>{{lecturer}}</b> ({{username}}) sẽ không còn được phân công cho môn <b>{{subject}}</b>.",
+    "removeNote": "Không có câu hỏi, rubric hay tài liệu nào bị xóa. Tuy nhiên, giảng viên sẽ mất quyền truy cập vào tất cả Câu hỏi trong môn học này, kể cả những câu do họ tạo.",
+    "cancel": "Hủy",
+    "removing": "Đang gỡ…",
+    "loadAssignmentsFailed": "Không thể tải danh sách phân công môn học.",
+    "loadLecturersFailed": "Không thể tải danh sách giảng viên.",
+    "loadSubjectsFailed": "Không thể tải danh sách môn học.",
+    "removeFailed": "Không thể gỡ phân công."
+  },
+  "assign": {
+    "title": "Phân công giảng viên",
+    "lecturer": "Giảng viên",
+    "selectLecturer": "Chọn giảng viên…",
+    "subjects": "Môn học",
+    "selected": "Đã chọn {{count}}",
+    "searchPlaceholder": "Tìm theo mã hoặc tên môn học…",
+    "noSubjects": "Không có môn học nào.",
+    "noMatch": "Không có môn học nào khớp với tìm kiếm.",
+    "alreadyAssigned": "Đã được phân công",
+    "cancel": "Hủy",
+    "submit": "Phân công",
+    "submitting": "Đang phân công…",
+    "pickLecturer": "Vui lòng chọn giảng viên.",
+    "pickSubject": "Vui lòng chọn ít nhất một môn học.",
+    "failed": "Không thể phân công giảng viên."
+  }
+}

@@ -1,12 +1,15 @@
+import { useTranslation } from 'react-i18next'
+
 interface ErrorStateProps {
   title: string
   message: string
   onRetry?: () => void
-  /** Nhãn nút thử lại theo ngôn ngữ của màn hình; mặc định giữ giao diện hiện có. */
+  /** Nhãn nút thử lại theo ngôn ngữ của màn hình; mặc định lấy từ common.retry theo ngôn ngữ giao diện. */
   retryLabel?: string
 }
 
-export default function ErrorState({ title, message, onRetry, retryLabel = 'Retry' }: ErrorStateProps) {
+export default function ErrorState({ title, message, onRetry, retryLabel }: ErrorStateProps) {
+  const { t } = useTranslation()
   return (
     <div className="py-8 text-center">
       <p className="text-sm font-semibold text-red-600">{title}</p>
@@ -16,7 +19,7 @@ export default function ErrorState({ title, message, onRetry, retryLabel = 'Retr
           onClick={onRetry}
           className="mt-4 px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg"
         >
-          {retryLabel}
+          {retryLabel ?? t('common.retry')}
         </button>
       )}
     </div>

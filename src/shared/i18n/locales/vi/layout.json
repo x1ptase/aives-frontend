@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "dashboard": "Bảng điều khiển",
+    "users": "Quản lý người dùng",
+    "subjects": "Quản lý môn học",
+    "subjectAssignments": "Phân công môn học",
+    "learningMaterials": "Tài liệu học tập",
+    "questionBank": "Ngân hàng câu hỏi",
+    "aiConfig": "Cấu hình AI & API",
+    "rubrics": "Rubric",
+    "myExams": "Kỳ thi của tôi",
+    "examHistory": "Lịch sử thi",
+    "navigation": "Điều hướng"
+  },
+  "portal": {
+    "admin": "Cổng quản trị",
+    "lecturer": "Cổng giảng viên",
+    "student": "Cổng sinh viên"
+  },
+  "toggleSidebar": "Bật/tắt thanh bên",
+  "fallback": {
+    "admin": {
+      "name": "Quản trị viên",
+      "role": "Quản trị hệ thống"
+    },
+    "lecturer": {
+      "name": "Giảng viên",
+      "role": "Giảng viên"
+    },
+    "student": {
+      "name": "Sinh viên",
+      "role": "Sinh viên"
+    }
+  },
+  "myAccount": "Tài khoản của tôi",
+  "logout": "Đăng xuất",
+  "examRoomTitle": "AIVES - Phòng thi Viva"
+}

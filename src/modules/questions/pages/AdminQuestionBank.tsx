@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/shared/i18n'
+import { formatDateTime } from '@/shared/i18n/format'
 import { questionApi, BloomLevel, QuestionItem, QuestionStatus, QuestionSummary } from '../api'
 import { subjectApi, SubjectResponse } from '@/modules/subjects'
 import GenerateQuestionsModal from '../components/GenerateQuestionsModal'
@@ -20,6 +23,7 @@ const unwrapList = <T,>(data: any): T[] =>
 const errMsg = (err: any, fallback: string) => err?.response?.data?.message || err?.message || fallback
 
 export default function AdminQuestionBank() {
+  const { t } = useTranslation()
   const [questions, setQuestions] = useState<QuestionSummary[]>([])
   const [totalElements, setTotalElements] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
@@ -87,7 +91,7 @@ export default function AdminQuestionBank() {
       .catch(err => {
         if (cancelled) return
         setQuestions([])
-        setError(errMsg(err, 'Could not load questions.'))
+        setError(errMsg(err, i18n.t('questions.admin.loadFailed')))
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -115,7 +119,7 @@ export default function AdminQuestionBank() {
       const res = await questionApi.getById(q.id)
       setDetail(res.data?.result || q)
     } catch (err) {
-      setActionError(questionErrorMessage(err, 'Could not load question details.'))
+      setActionError(questionErrorMessage(err, t('questions.admin.detailFailed')))
     }
   }
 
@@ -128,7 +132,7 @@ export default function AdminQuestionBank() {
       setDeleteTarget(null)
       await load()
     } catch (err) {
-      setDeleteError(questionErrorMessage(err, 'Failed to delete question.'))
+      setDeleteError(questionErrorMessage(err, t('questions.admin.deleteFailed')))
     } finally {
       setDeleteLoading(false)
     }
@@ -138,11 +142,11 @@ export default function AdminQuestionBank() {
     setActionError('')
     try {
       await questionApi.approve(id)
-      setBanner('Question approved successfully!')
+      setBanner(t('questions.admin.approved'))
       setTimeout(() => setBanner(''), 6000)
       load()
     } catch (err) {
-      setActionError(questionErrorMessage(err, 'Failed to approve question.'))
+      setActionError(questionErrorMessage(err, t('questions.admin.approveFailed')))
     }
   }
 
@@ -161,17 +165,17 @@ export default function AdminQuestionBank() {
       <div className="flex items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 leading-tight" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-            Question Bank
+            {t('questions.admin.title')}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Questions across all subjects.</p>
+          <p className="text-sm text-slate-500 mt-1">{t('questions.admin.subtitle')}</p>
         </div>
         <button
           onClick={() => { setGenSubjectId(''); setPickingSubject(true) }}
           disabled={subjects.length === 0}
-          title={subjects.length === 0 ? 'No subjects exist yet. Create one in Subject Management first.' : undefined}
+          title={subjects.length === 0 ? t('questions.admin.noSubjects') : undefined}
           className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          ✨ Generate Questions
+          {t('questions.admin.generate')}
         </button>
       </div>
 
@@ -179,25 +183,25 @@ export default function AdminQuestionBank() {
       {actionError && <div className="mb-4 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm">{actionError}</div>}
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <QuestionTabs value={tab} onChange={t => { setTab(t); reset() }} />
+        <QuestionTabs value={tab} onChange={next => { setTab(next); reset() }} />
         <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3 flex-wrap">
           <div className="relative flex-1 min-w-52 max-w-80">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><SearchIcon /></span>
             <input
               type="text"
-              placeholder="Search question…"
+              placeholder={t('questions.admin.searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:bg-white transition-all"
             />
           </div>
           <select value={subjectFilter} onChange={e => { setSubjectFilter(e.target.value); reset() }} className={selectCls}>
-            <option value="">All subjects</option>
+            <option value="">{t('questions.admin.allSubjects')}</option>
             {subjects.map(s => <option key={s.id} value={String(s.id)}>{s.code} - {s.name}</option>)}
           </select>
           <select value={bloomFilter} onChange={e => { setBloomFilter(e.target.value as BloomLevel | ''); reset() }} className={selectCls}>
-            <option value="">All Bloom levels</option>
-            {BLOOM_LEVELS.map(b => <option key={b} value={b}>{b}</option>)}
+            <option value="">{t('questions.admin.allBloom')}</option>
+            {BLOOM_LEVELS.map(b => <option key={b} value={b}>{t(`questions.bloom.${b}`)}</option>)}
           </select>
           <select value={languageFilter} onChange={e => { setLanguageFilter(e.target.value as 'vi' | 'en' | ''); reset() }} className={selectCls}>
             <option value="">All languages</option>
@@ -206,8 +210,8 @@ export default function AdminQuestionBank() {
           </select>
           {tab === 'ALL' && (
             <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as QuestionStatus | ''); reset() }} className={selectCls}>
-              <option value="">All statuses</option>
-              {QUESTION_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+              <option value="">{t('questions.admin.allStatuses')}</option>
+              {QUESTION_STATUSES.map(s => <option key={s} value={s}>{t(`questions.status.${s}`)}</option>)}
             </select>
           )}
           {hasFilters && (
@@ -215,7 +219,7 @@ export default function AdminQuestionBank() {
               onClick={() => { setSearch(''); setDebouncedSearch(''); setSubjectFilter(''); setBloomFilter(''); setLanguageFilter(''); setStatusFilter(''); reset() }}
               className="text-xs font-semibold text-blue-600 hover:text-blue-700"
             >
-              Clear filters
+              {t('questions.admin.clearFilters')}
             </button>
           )}
         </div>
@@ -226,15 +230,15 @@ export default function AdminQuestionBank() {
           </div>
         ) : error ? (
           <div className="p-10 text-center">
-            <p className="text-sm font-semibold text-red-600">Could not load questions</p>
+            <p className="text-sm font-semibold text-red-600">{t('questions.admin.loadFailedTitle')}</p>
             <p className="text-xs text-slate-500 mt-1">{error}</p>
             <button onClick={load} className="mt-4 px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg">
-              Retry
+              {t('questions.admin.retry')}
             </button>
           </div>
         ) : questions.length === 0 ? (
           <div className="p-10 text-center text-sm text-slate-500">
-            {hasFilters ? 'No questions match your filters.' : emptyTabMessage(tab) ?? 'No questions yet. Use "Generate Questions" to create some.'}
+            {hasFilters ? t('questions.admin.noMatch') : emptyTabMessage(tab) ?? t('questions.admin.emptyDefault')}
           </div>
         ) : (
           <>
@@ -242,16 +246,16 @@ export default function AdminQuestionBank() {
               <table className="w-full text-left text-sm min-w-[900px]">
                 <thead className="bg-slate-50 border-b border-slate-100">
                   <tr className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    <th className="px-4 py-3 w-16">ID</th>
-                    <th className="px-4 py-3 min-w-[260px]">Question</th>
-                    <th className="px-4 py-3">Subject</th>
-                    <th className="px-4 py-3">Bloom</th>
+                    <th className="px-4 py-3 w-16">{t('questions.admin.colId')}</th>
+                    <th className="px-4 py-3 min-w-[260px]">{t('questions.admin.colQuestion')}</th>
+                    <th className="px-4 py-3">{t('questions.admin.colSubject')}</th>
+                    <th className="px-4 py-3">{t('questions.admin.colBloom')}</th>
                     <th className="px-4 py-3">Language</th>
-                    <th className="px-4 py-3">Source</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Rubric</th>
-                    <th className="px-4 py-3">Created</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3">{t('questions.admin.colSource')}</th>
+                    <th className="px-4 py-3">{t('questions.admin.colStatus')}</th>
+                    <th className="px-4 py-3">{t('questions.admin.colRubric')}</th>
+                    <th className="px-4 py-3">{t('questions.admin.colCreated')}</th>
+                    <th className="px-4 py-3 text-right">{t('questions.admin.colActions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -260,7 +264,7 @@ export default function AdminQuestionBank() {
                       <td className="px-4 py-3 text-slate-400 font-mono text-xs">{q.id}</td>
                       <td className="px-4 py-3 min-w-[260px] max-w-sm"><p className="line-clamp-2 text-slate-800">{q.contentPreview}</p></td>
                       <td className="px-4 py-3">{subjectLabel(q)}</td>
-                      <td className="px-4 py-3 text-xs font-semibold">{q.bloomLevel || '—'}</td>
+                      <td className="px-4 py-3 text-xs font-semibold">{q.bloomLevel ? t(`questions.bloom.${q.bloomLevel}`, { defaultValue: q.bloomLevel }) : '—'}</td>
                       <td className="px-4 py-3">
                         {q.language ? (
                           <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
@@ -274,26 +278,26 @@ export default function AdminQuestionBank() {
                           <span className="text-xs text-slate-400">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs">{q.sourceType || '—'}</td>
+                      <td className="px-4 py-3 text-xs">{q.sourceType ? t(`questions.source.${q.sourceType}`, { defaultValue: q.sourceType }) : '—'}</td>
                       <td className="px-4 py-3"><QuestionStatusBadge status={q.status} /></td>
                       <td className="px-4 py-3"><RubricBadge hasRubric={q.hasRubric} /></td>
-                      <td className="px-4 py-3 text-slate-500">{q.createdAt ? new Date(q.createdAt).toLocaleString() : '—'}</td>
+                      <td className="px-4 py-3 text-slate-500">{q.createdAt ? formatDateTime(q.createdAt) : '—'}</td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <button onClick={() => openDetail(q)} className="px-2.5 py-1.5 mr-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors">
-                          View
+                          {t('questions.admin.view')}
                         </button>
                         {isApprovableStatus(q.status) && (
                           <button
                             onClick={() => handleApprove(q.id)}
                             className="px-2.5 py-1.5 mr-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors"
-                            title="Approve question into official bank"
+                            title={t('questions.admin.approveTitle')}
                           >
-                            Approve
+                            {t('questions.admin.approve')}
                           </button>
                         )}
                         {isDeletableStatus(q.status) && (
                           <button onClick={() => { setDeleteTarget(q); setDeleteError('') }} className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors">
-                            <TrashIcon /> Delete
+                            <TrashIcon /> {t('questions.admin.delete')}
                           </button>
                         )}
                       </td>
@@ -303,11 +307,11 @@ export default function AdminQuestionBank() {
               </table>
             </div>
             <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>{totalElements} question(s)</span>
+              <span>{t('questions.admin.total', { count: totalElements })}</span>
               <div className="flex items-center gap-2">
-                <button disabled={page <= 0} onClick={() => setPage(page - 1)} className="px-3 py-1.5 border border-slate-200 rounded-md disabled:opacity-40 hover:bg-slate-50">Prev</button>
-                <span>Page {page + 1} / {Math.max(1, totalPages)}</span>
-                <button disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)} className="px-3 py-1.5 border border-slate-200 rounded-md disabled:opacity-40 hover:bg-slate-50">Next</button>
+                <button disabled={page <= 0} onClick={() => setPage(page - 1)} className="px-3 py-1.5 border border-slate-200 rounded-md disabled:opacity-40 hover:bg-slate-50">{t('questions.admin.prev')}</button>
+                <span>{t('questions.admin.page', { page: page + 1, total: Math.max(1, totalPages) })}</span>
+                <button disabled={page >= totalPages - 1} onClick={() => setPage(page + 1)} className="px-3 py-1.5 border border-slate-200 rounded-md disabled:opacity-40 hover:bg-slate-50">{t('questions.admin.next')}</button>
               </div>
             </div>
           </>
@@ -327,15 +331,15 @@ export default function AdminQuestionBank() {
       {pickingSubject && (
         <div className="fixed inset-0 z-50 flex overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4">
           <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>Choose a subject</h2>
-            <p className="text-sm text-slate-500 mt-1">Questions are generated from a subject's learning materials.</p>
+            <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>{t('questions.admin.chooseSubject')}</h2>
+            <p className="text-sm text-slate-500 mt-1">{t('questions.admin.chooseSubjectDesc')}</p>
             <select value={genSubjectId} onChange={e => setGenSubjectId(e.target.value)} className={`${selectCls} w-full mt-4`}>
-              <option value="">Select a subject…</option>
+              <option value="">{t('questions.admin.selectSubject')}</option>
               {subjects.map(s => <option key={s.id} value={String(s.id)}>{s.code} - {s.name}</option>)}
             </select>
             <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setPickingSubject(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg">Cancel</button>
-              <button onClick={startGenerate} disabled={!genSubjectId} className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50">Continue</button>
+              <button onClick={() => setPickingSubject(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg">{t('questions.admin.cancel')}</button>
+              <button onClick={startGenerate} disabled={!genSubjectId} className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-50">{t('questions.admin.continue')}</button>
             </div>
           </div>
         </div>
@@ -347,7 +351,7 @@ export default function AdminQuestionBank() {
           onClose={() => setGenSubject(null)}
           onGenerated={generated => {
             setGenSubject(null)
-            setBanner(`Generated ${generated.length} question(s).`)
+            setBanner(t('questions.admin.generated', { count: generated.length }))
             setTimeout(() => setBanner(''), 8000)
             load()
           }}
@@ -357,14 +361,14 @@ export default function AdminQuestionBank() {
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex overflow-y-auto bg-slate-900/40 backdrop-blur-sm p-4">
           <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>Delete question?</h2>
+            <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>{t('questions.admin.deleteTitle')}</h2>
             <p className="text-sm text-slate-600 mt-2 line-clamp-3">{deleteTarget.contentPreview}</p>
-            <p className="mt-2 text-xs text-slate-500">This action cannot be undone.</p>
+            <p className="mt-2 text-xs text-slate-500">{t('questions.admin.deleteWarning')}</p>
             {deleteError && <div className="mt-3 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm">{deleteError}</div>}
             <div className="mt-6 flex justify-end gap-3">
-              <button onClick={() => setDeleteTarget(null)} disabled={deleteLoading} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg">Cancel</button>
+              <button onClick={() => setDeleteTarget(null)} disabled={deleteLoading} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg">{t('questions.admin.cancel')}</button>
               <button onClick={handleDelete} disabled={deleteLoading} className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg disabled:opacity-70">
-                {deleteLoading ? 'Deleting…' : 'Delete'}
+                {deleteLoading ? t('questions.admin.deleting') : t('questions.admin.deleteBtn')}
               </button>
             </div>
           </div>

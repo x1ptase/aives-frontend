@@ -1,0 +1,14 @@
+{
+  "language": "Ngôn ngữ",
+  "retry": "Thử lại",
+  "close": "Đóng",
+  "closeWindow": "Đóng cửa sổ",
+  "cancel": "Hủy",
+  "confirm": "Xác nhận",
+  "understood": "Đã hiểu",
+  "roles": {
+    "admin": "Quản trị viên",
+    "lecturer": "Giảng viên",
+    "student": "Sinh viên"
+  }
+}

@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/shared/i18n'
+import { normalizeName } from '@/shared/i18n/format'
 import { examSessionApi, examPage } from '@/modules/exams'
 import { useAuthStore } from '@/modules/auth'
 import PageContainer from '@/shared/components/common/PageContainer'
@@ -14,6 +17,7 @@ type State =
     | { status: 'loaded'; count: number }
 
 export default function LecturerDashboard() {
+    const { t } = useTranslation()
     const user = useAuthStore(s => s.user)
     const [exams, setExams] = useState<State>({ status: 'loading' })
 
@@ -25,7 +29,7 @@ export default function LecturerDashboard() {
         } catch (err: any) {
             setExams({
                 status: 'error',
-                message: err?.response?.data?.message || err?.message || 'Could not load exams.',
+                message: err?.response?.data?.message || err?.message || i18n.t('dashboard.lecturer.loadExamsFailed'),
             })
         }
     }, [])
@@ -35,19 +39,19 @@ export default function LecturerDashboard() {
     }, [loadExams])
 
     return (
-        <PageContainer title={`Welcome${user?.name ? `, ${user.name}` : ''}`} subtitle="Your teaching workspace.">
+        <PageContainer title={user?.name ? t('dashboard.welcomeName', { name: normalizeName(user.name) }) : t('dashboard.welcome')} subtitle={t('dashboard.lecturer.subtitle')}>
             <MySubjectsCard />
 
-            <SectionCard title="Exams & Grading">
+            <SectionCard title={t('dashboard.lecturer.examsGrading')}>
                 {exams.status === 'loading' && <LoadingState />}
                 {exams.status === 'error' && (
-                    <ErrorState title="Exams are unavailable" message={exams.message} onRetry={loadExams} />
+                    <ErrorState title={t('dashboard.lecturer.examsUnavailable')} message={exams.message} onRetry={loadExams} />
                 )}
                 {exams.status === 'loaded' && (
                     <EmptyState
                         message={exams.count === 0
-                            ? 'No exams yet.'
-                            : `${exams.count} exam session(s). Open My Exams to manage sessions and student schedules.`}
+                            ? t('dashboard.lecturer.noExams')
+                            : t('dashboard.lecturer.examCount', { count: exams.count })}
                     />
                 )}
             </SectionCard>

@@ -1,6 +1,7 @@
 import { after, before, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createServer } from 'vite'
+import { initTestI18n } from '../../test-utils/i18n.mjs'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { MemoryRouter } from 'react-router-dom'
@@ -10,6 +11,7 @@ let server, machine, Room, Setup
 const now = 1800000000000
 before(async () => {
   server = await createServer({ logLevel: 'silent', server: { middlewareMode: true, hmr: false, watch: null } })
+  await initTestI18n(server)
   machine = await server.ssrLoadModule('/src/modules/exams/components/oralPreviewMachine.ts')
   Room = (await server.ssrLoadModule('/src/modules/exams/components/OralPreviewRoom.tsx')).default
   Setup = (await server.ssrLoadModule('/src/modules/exams/components/OralPreviewSetup.tsx')).default
@@ -243,6 +245,6 @@ test('trang con phòng thử vẫn chọn My Exams ở sidebar và breadcrumb', 
   const Header = (await server.ssrLoadModule('/src/app/layout/TopHeader.tsx')).default
   const html = renderToStaticMarkup(createElement(MemoryRouter, { initialEntries: ['/student/exams/oral-preview'] },
     createElement(Sidebar, { role: 'student', open: false, onClose() {} }), createElement(Header, { role: 'student' })))
-  assert.match(html, /aria-label="My Exams"[^>]*bg-\[#EFF6FF\]/)
-  assert.match(html, /text-slate-700 font-medium truncate">My Exams/)
+  assert.match(html, /aria-label="Kỳ thi của tôi"[^>]*bg-\[#EFF6FF\]/)
+  assert.match(html, /text-slate-700 font-medium truncate">Kỳ thi của tôi/)
 })

@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "users": "User Management",
+    "subjects": "Subject Management",
+    "subjectAssignments": "Subject Assignment",
+    "learningMaterials": "Learning Materials",
+    "questionBank": "Question Bank",
+    "aiConfig": "AI & API Configuration",
+    "rubrics": "Rubrics",
+    "myExams": "My Exams",
+    "examHistory": "Exam History",
+    "navigation": "Navigation"
+  },
+  "portal": {
+    "admin": "Admin Portal",
+    "lecturer": "Lecturer Portal",
+    "student": "Student Portal"
+  },
+  "toggleSidebar": "Toggle sidebar",
+  "fallback": {
+    "admin": {
+      "name": "Administrator",
+      "role": "System Administrator"
+    },
+    "lecturer": {
+      "name": "Lecturer",
+      "role": "Lecturer"
+    },
+    "student": {
+      "name": "Student",
+      "role": "Student"
+    }
+  },
+  "myAccount": "My Account",
+  "logout": "Logout",
+  "examRoomTitle": "AIVES - Viva Exam Room"
+}

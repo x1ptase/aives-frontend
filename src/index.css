@@ -2,9 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Một nơi duy nhất định nghĩa font. Font Latin có glyph tiếng Việt luôn đứng TRƯỚC font JP,
+   để chữ Việt có dấu không bị rơi sang font CJK (dấu lệch). Cùng stack với tailwind.config.js. */
+:root {
+  --font-sans: 'Inter', 'DM Sans', 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans CJK JP', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'DM Sans', 'Inter', 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans CJK JP', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Inter', 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans CJK JP', ui-monospace, monospace;
+}
+/* DM Sans không chắc đủ glyph tiếng Việt: với vi/ja, Inter đứng trước cho tiêu đề. */
+html[lang='vi'], html[lang='ja'] {
+  --font-display: 'Inter', 'DM Sans', 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans CJK JP', ui-sans-serif, system-ui, sans-serif;
+}
+
 @layer base {
   html {
-    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
 }
+
+/* Nhiều component (cả file đang được người khác sửa) còn style={{ fontFamily: 'DM Sans, sans-serif' }}
+   hoặc 'JetBrains Mono, monospace' inline. Ghi đè tập trung tại đây thay vì sửa từng file. */
+[style*='DM Sans'] { font-family: var(--font-display) !important; }
+[style*='JetBrains Mono'] { font-family: var(--font-mono) !important; }

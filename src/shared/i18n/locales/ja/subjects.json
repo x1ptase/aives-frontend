@@ -1,0 +1,117 @@
+{
+  "management": {
+    "title": "科目管理",
+    "subtitle": "資料や問題で使用する科目を作成・管理します。",
+    "searchPlaceholder": "コード・名前・説明で検索…",
+    "create": "科目を作成",
+    "loadFailed": "科目を読み込めませんでした。",
+    "loadFailedTitle": "科目を読み込めません",
+    "noMatch": "検索に一致する科目がありません。",
+    "empty": "科目はまだありません。「科目を作成」をクリックして追加してください。",
+    "code": "コード",
+    "name": "名前",
+    "description": "説明",
+    "actions": "操作",
+    "details": "詳細",
+    "edit": "編集",
+    "delete": "削除"
+  },
+  "my": {
+    "title": "担当科目",
+    "subtitle": "管理者があなたに割り当てた科目",
+    "assigned": "{{count}}件割り当て済み",
+    "loadFailed": "担当科目を読み込めませんでした。",
+    "loadFailedTitle": "担当科目を読み込めません",
+    "empty": "まだ科目が割り当てられていません。",
+    "emptyDesc": "管理者にお問い合わせください。",
+    "learningMaterials": "学習資料",
+    "questionBank": "問題バンク"
+  },
+  "form": {
+    "codeLabel": "科目コード",
+    "nameLabel": "科目名",
+    "descLabel": "説明",
+    "optional": "（任意）",
+    "codePlaceholder": "例：SWD392",
+    "namePlaceholder": "例：ソフトウェアアーキテクチャと設計",
+    "descPlaceholder": "この科目の簡単な説明",
+    "codeRequired": "科目コードを入力してください。",
+    "nameRequired": "科目名を入力してください。",
+    "cancel": "キャンセル"
+  },
+  "create": {
+    "title": "科目を作成",
+    "submit": "科目を作成",
+    "failed": "科目を作成できませんでした。"
+  },
+  "edit": {
+    "title": "科目を編集",
+    "submit": "変更を保存",
+    "failed": "科目を更新できませんでした。"
+  },
+  "detail": {
+    "title": "科目の詳細",
+    "loadFailed": "科目の詳細を読み込めませんでした。",
+    "loadFailedTitle": "科目を読み込めません",
+    "tryAgain": "再試行",
+    "noDescription": "説明はありません。",
+    "id": "科目ID：{{id}}",
+    "close": "閉じる",
+    "edit": "科目を編集"
+  },
+  "delete": {
+    "title": "科目を削除",
+    "confirm": "<b>{{name}}</b> を削除してもよろしいですか？",
+    "warning": "この操作は元に戻せません。関連する問題・学習資料・試験セッションがある場合、削除できないか影響を受ける可能性があります。",
+    "failed": "科目を削除できませんでした。",
+    "linked": "この科目は既存の問題・学習資料・試験セッションに紐づいているため削除できません。先に関連項目を削除してください。"
+  },
+  "assignments": {
+    "title": "科目の割り当て",
+    "subtitle": "講師を科目に割り当てます。割り当てられた講師のみがその科目の問題を生成できます。",
+    "assignLecturer": "講師を割り当て",
+    "needLoaded": "先に講師と科目の読み込みが必要です",
+    "searchPlaceholder": "ユーザー名・講師・科目で検索…",
+    "allLecturers": "すべての講師",
+    "allSubjects": "すべての科目",
+    "clearFilters": "フィルターをクリア",
+    "loadFailedTitle": "割り当てを読み込めません",
+    "retry": "再試行",
+    "noMatch": "フィルターに一致する割り当てがありません。",
+    "empty": "割り当てはまだありません。「講師を割り当て」をクリックして作成してください。",
+    "cols": {
+      "username": "講師ユーザー名",
+      "name": "講師名",
+      "code": "科目コード",
+      "subject": "科目名",
+      "actions": "操作"
+    },
+    "remove": "解除",
+    "removeTitle": "割り当てを解除しますか？",
+    "removeBody": "<b>{{lecturer}}</b>（{{username}}）は <b>{{subject}}</b> に割り当てられなくなります。",
+    "removeNote": "問題・ルーブリック・資料は削除されません。ただし、講師は自分が作成したものを含め、この科目のすべての問題にアクセスできなくなります。",
+    "cancel": "キャンセル",
+    "removing": "解除中…",
+    "loadAssignmentsFailed": "科目の割り当てを読み込めませんでした。",
+    "loadLecturersFailed": "講師を読み込めませんでした。",
+    "loadSubjectsFailed": "科目を読み込めませんでした。",
+    "removeFailed": "割り当てを解除できませんでした。"
+  },
+  "assign": {
+    "title": "講師を割り当て",
+    "lecturer": "講師",
+    "selectLecturer": "講師を選択…",
+    "subjects": "科目",
+    "selected": "{{count}}件選択中",
+    "searchPlaceholder": "科目コードまたは名前で検索…",
+    "noSubjects": "利用可能な科目がありません。",
+    "noMatch": "検索に一致する科目がありません。",
+    "alreadyAssigned": "割り当て済み",
+    "cancel": "キャンセル",
+    "submit": "割り当てる",
+    "submitting": "割り当て中…",
+    "pickLecturer": "講師を選択してください。",
+    "pickSubject": "科目を1つ以上選択してください。",
+    "failed": "講師を割り当てできませんでした。"
+  }
+}

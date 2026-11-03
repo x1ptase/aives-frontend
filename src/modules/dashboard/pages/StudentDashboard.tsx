@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/shared/i18n'
+import { formatDate, normalizeName } from '@/shared/i18n/format'
 import { BackendUserResponse } from '@/shared/types'
 import { studentExamApi, examPage } from '@/modules/exams'
 import { userApi } from '@/modules/users'
@@ -22,6 +25,7 @@ const errMsg = (err: any, fallback: string) => err?.response?.data?.message || e
 //  - GET /student-exams/me (lịch riêng từ JWT, có phân trang)
 // Điểm và dữ liệu chấm vẫn chưa có trong hợp đồng lịch thi.
 export default function StudentDashboard() {
+    const { t } = useTranslation()
     const authUser = useAuthStore(s => s.user)
     const [profile, setProfile] = useState<Load<BackendUserResponse>>({ status: 'loading' })
     const [exams, setExams] = useState<Load<number>>({ status: 'loading' })
@@ -32,7 +36,7 @@ export default function StudentDashboard() {
             const res = await userApi.getMyInfo()
             setProfile({ status: 'loaded', data: res.data.result })
         } catch (err) {
-            setProfile({ status: 'error', message: errMsg(err, 'Could not load your profile.') })
+            setProfile({ status: 'error', message: errMsg(err, i18n.t('dashboard.student.loadProfileFailed')) })
         }
     }, [])
 
@@ -42,7 +46,7 @@ export default function StudentDashboard() {
             const res = await studentExamApi.getAll({ size: 1 })
             setExams({ status: 'loaded', data: examPage(res.data).totalElements })
         } catch (err) {
-            setExams({ status: 'error', message: errMsg(err, 'Could not load your exams.') })
+            setExams({ status: 'error', message: errMsg(err, i18n.t('dashboard.student.loadExamsFailed')) })
         }
     }, [])
 
@@ -51,48 +55,48 @@ export default function StudentDashboard() {
         loadExams()
     }, [loadProfile, loadExams])
 
-    const name = profile.status === 'loaded' ? profile.data.fullName || profile.data.username : authUser?.name
+    const name = profile.status === 'loaded' ? normalizeName(profile.data.fullName || profile.data.username) : normalizeName(authUser?.name)
 
     return (
-        <PageContainer title={`Welcome${name ? `, ${name}` : ''}`} subtitle="Your account and exam overview.">
+        <PageContainer title={name ? t('dashboard.welcomeName', { name }) : t('dashboard.welcome')} subtitle={t('dashboard.student.subtitle')}>
 
             {exams.status === 'loaded' && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
-                    <StatCard label="Exams returned by server" value={String(exams.data)} />
+                    <StatCard label={t('dashboard.student.examsReturned')} value={String(exams.data)} />
                 </div>
             )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                <SectionCard title="My Account">
+                <SectionCard title={t('dashboard.student.myAccount')}>
                     {profile.status === 'loading' && <LoadingState />}
                     {profile.status === 'error' && (
-                        <ErrorState title="Profile unavailable" message={profile.message} onRetry={loadProfile} />
+                        <ErrorState title={t('dashboard.student.profileUnavailable')} message={profile.message} onRetry={loadProfile} />
                     )}
                     {profile.status === 'loaded' && (
                         <dl className="grid grid-cols-3 gap-y-3 text-sm">
-                            <dt className="text-slate-400">Full name</dt>
+                            <dt className="text-slate-400">{t('dashboard.student.fullName')}</dt>
                             <dd className="col-span-2 text-slate-800 font-medium">{profile.data.fullName || '—'}</dd>
-                            <dt className="text-slate-400">Username</dt>
+                            <dt className="text-slate-400">{t('dashboard.student.username')}</dt>
                             <dd className="col-span-2 text-slate-800">{profile.data.username}</dd>
-                            <dt className="text-slate-400">Email</dt>
+                            <dt className="text-slate-400">{t('dashboard.student.email')}</dt>
                             <dd className="col-span-2 text-slate-800 break-all">{profile.data.email}</dd>
-                            <dt className="text-slate-400">Role</dt>
-                            <dd className="col-span-2 text-slate-800">{profile.data.role}</dd>
-                            <dt className="text-slate-400">Member since</dt>
+                            <dt className="text-slate-400">{t('dashboard.student.role')}</dt>
+                            <dd className="col-span-2 text-slate-800">{t(`common.roles.${String(profile.data.role).toLowerCase()}`, { defaultValue: profile.data.role })}</dd>
+                            <dt className="text-slate-400">{t('dashboard.student.memberSince')}</dt>
                             <dd className="col-span-2 text-slate-800">
-                                {profile.data.createdAt ? new Date(profile.data.createdAt).toLocaleDateString() : '—'}
+                                {profile.data.createdAt ? formatDate(profile.data.createdAt) : '—'}
                             </dd>
                         </dl>
                     )}
                 </SectionCard>
 
-                <SectionCard title="My Exams">
+                <SectionCard title={t('dashboard.student.myExams')}>
                     {exams.status === 'loading' && <LoadingState />}
                     {exams.status === 'error' && (
-                        <ErrorState title="Exams are unavailable" message={exams.message} onRetry={loadExams} />
+                        <ErrorState title={t('dashboard.student.examsUnavailable')} message={exams.message} onRetry={loadExams} />
                     )}
                     {exams.status === 'loaded' && (
-                        <EmptyState message={exams.data === 0 ? 'You have no exams yet.' : `${exams.data} exam assignment(s). Open My Exams to view your schedule.`} />
+                        <EmptyState message={exams.data === 0 ? t('dashboard.student.noExams') : t('dashboard.student.examCount', { count: exams.data })} />
                     )}
                 </SectionCard>
             </div>

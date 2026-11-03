@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/modules/auth'
+import { normalizeName } from '@/shared/i18n/format'
 
 type PortalRole = 'admin' | 'lecturer' | 'student'
 
-const FALLBACK: Record<PortalRole, { initials: string; name: string; roleLabel: string; gradient: string }> = {
-  admin: { initials: 'AD', name: 'Administrator', roleLabel: 'System Administrator', gradient: 'linear-gradient(135deg,#2563eb,#7c3aed)' },
-  lecturer: { initials: 'LE', name: 'Lecturer', roleLabel: 'Lecturer', gradient: 'linear-gradient(135deg,#0369a1,#2563eb)' },
-  student: { initials: 'ST', name: 'Student', roleLabel: 'Student', gradient: 'linear-gradient(135deg,#059669,#10b981)' },
+const FALLBACK: Record<PortalRole, { initials: string; gradient: string }> = {
+  admin: { initials: 'AD', gradient: 'linear-gradient(135deg,#2563eb,#7c3aed)' },
+  lecturer: { initials: 'LE', gradient: 'linear-gradient(135deg,#0369a1,#2563eb)' },
+  student: { initials: 'ST', gradient: 'linear-gradient(135deg,#059669,#10b981)' },
 }
 
 interface UserMenuProps {
@@ -21,6 +23,7 @@ interface UserMenuProps {
 }
 
 export default function UserMenu({ role, placement = 'down', compact = false, collapsed = false }: UserMenuProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const authUser = useAuthStore(state => state.user)
   const logout = useAuthStore(state => state.logout)
@@ -45,8 +48,8 @@ export default function UserMenu({ role, placement = 'down', compact = false, co
     }
   }, [open])
 
-  const displayName = authUser?.name || fallback.name
-  const secondary = authUser?.username || authUser?.role || fallback.roleLabel
+  const displayName = normalizeName(authUser?.name) || t(`layout.fallback.${role}.name`)
+  const secondary = authUser?.username || authUser?.role || t(`layout.fallback.${role}.role`)
   const initials =
     displayName
       .trim()
@@ -111,7 +114,7 @@ export default function UserMenu({ role, placement = 'down', compact = false, co
                 <circle cx="12" cy="10" r="3" />
                 <path d="M6.2 18.5a7 7 0 0 1 11.6 0" />
               </svg>
-              My Account
+              {t('layout.myAccount')}
             </button>
             <button
               role="menuitem"
@@ -123,7 +126,7 @@ export default function UserMenu({ role, placement = 'down', compact = false, co
                 <polyline points="16 17 21 12 16 7" />
                 <line x1="21" y1="12" x2="9" y2="12" />
               </svg>
-              Logout
+              {t('layout.logout')}
             </button>
           </div>
         </div>

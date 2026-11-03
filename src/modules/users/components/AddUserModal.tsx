@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Role } from '@/shared/types'
 
 interface AddUserModalProps {
@@ -7,6 +8,7 @@ interface AddUserModalProps {
 }
 
 export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
+  const { t } = useTranslation()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
@@ -19,11 +21,11 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
     e.preventDefault()
     setError('')
     if (!name.trim() || !email.trim() || !username.trim()) {
-      setError('Please fill in all required fields.')
+      setError(t('users.add.fillRequired'))
       return
     }
     if (username.trim().length < 3) {
-      setError('Username must be at least 3 characters long.')
+      setError(t('users.add.usernameTooShort'))
       return
     }
 
@@ -38,7 +40,7 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
       })
       onClose()
     } catch (err: unknown) {
-      let msg = 'Failed to create user.'
+      let msg = t('users.add.createFailed')
       if (typeof err === 'object' && err !== null && 'response' in err) {
         const res = (err as { response?: { data?: { message?: string; result?: { message?: string } } } }).response
         msg = res?.data?.message || res?.data?.result?.message || msg
@@ -47,9 +49,9 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
       }
 
       if (msg.includes('USER_EXISTED') || msg.toLowerCase().includes('user already')) {
-        setError('Username already exists. Please choose another username.')
+        setError(t('users.add.usernameExists'))
       } else if (msg.includes('EMAIL_EXISTED') || msg.toLowerCase().includes('email already')) {
-        setError('Email already exists. Please use another email.')
+        setError(t('users.add.emailExists'))
       } else {
         setError(msg)
       }
@@ -63,8 +65,8 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
       <div className="m-auto bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'DM Sans, sans-serif' }}>Create User Account</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Admin can create Lecturer or Student accounts</p>
+            <h2 className="text-lg font-bold text-slate-900" style={{ fontFamily: 'DM Sans, sans-serif' }}>{t('users.add.title')}</h2>
+            <p className="text-xs text-slate-500 mt-0.5">{t('users.add.subtitle')}</p>
           </div>
           <button onClick={onClose} disabled={loading} className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 disabled:opacity-50">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5"><path d="M18 6L6 18M6 6l12 12" /></svg>
@@ -79,7 +81,7 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Full Name <span className="text-red-500">*</span>
+              {t('users.add.fullName')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -88,13 +90,13 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
               value={name}
               onChange={e => setName(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50"
-              placeholder="e.g. Nguyen Van An"
+              placeholder={t('users.add.fullNamePlaceholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Username <span className="text-red-500">*</span>
+              {t('users.add.username')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -103,13 +105,13 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
               value={username}
               onChange={e => setUsername(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50"
-              placeholder="e.g. annguyenvan2005"
+              placeholder={t('users.add.usernamePlaceholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Email Address <span className="text-red-500">*</span>
+              {t('users.add.email')} <span className="text-red-500">*</span>
             </label>
             <input
               type="email"
@@ -118,13 +120,13 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
               value={email}
               onChange={e => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50"
-              placeholder="e.g. annguyenvan2005@gmail.com"
+              placeholder={t('users.add.emailPlaceholder')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Role <span className="text-red-500">*</span>
+              {t('users.add.role')} <span className="text-red-500">*</span>
             </label>
             <select
               disabled={loading}
@@ -132,14 +134,14 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
               onChange={e => setRole(e.target.value as Role)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50 bg-white"
             >
-              <option value="Lecturer">Lecturer</option>
-              <option value="Student">Student</option>
+              <option value="Lecturer">{t('common.roles.lecturer')}</option>
+              <option value="Student">{t('common.roles.student')}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Password <span className="text-slate-400 font-normal">(optional)</span>
+              {t('users.add.password')} <span className="text-slate-400 font-normal">{t('users.add.optional')}</span>
             </label>
             <input
               type="password"
@@ -147,10 +149,10 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
               value={password}
               onChange={e => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50"
-              placeholder="Leave blank to auto-generate 8-character password"
+              placeholder={t('users.add.passwordPlaceholder')}
             />
             <p className="mt-1 text-[11px] text-slate-500">
-              ✉️ An email with login credentials will be automatically sent to the user upon creation.
+              {t('users.add.emailNote')}
             </p>
           </div>
 
@@ -161,7 +163,7 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
               disabled={loading}
               className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
             >
-              Cancel
+              {t('users.add.cancel')}
             </button>
             <button
               type="submit"
@@ -174,7 +176,7 @@ export default function AddUserModal({ onClose, onAdd }: AddUserModalProps) {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               )}
-              {loading ? 'Creating...' : 'Create Account'}
+              {loading ? t('users.add.submitting') : t('users.add.submit')}
             </button>
           </div>
         </form>
