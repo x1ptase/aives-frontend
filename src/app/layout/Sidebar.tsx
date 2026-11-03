@@ -3,39 +3,40 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import {
   IconGrid, IconUsers, IconCpu, IconShield, IconFile, IconBook, IconClipboard, IconChevronRight
 } from '@/shared/components/common/Icons'
+import { useTranslation } from 'react-i18next'
 import aivesLogo from '@/assets/logo/logo-aives.jpg'
 import UserMenu from './UserMenu'
 
-type NavItem = { id: string; label: string; icon: ReactNode; path: string; badge?: string }
+type NavItem = { id: string; labelKey: string; icon: ReactNode; path: string; badge?: string }
 
 const ADMIN_NAV: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/admin' },
-  { id: 'users', label: 'User Management', icon: <IconUsers />, path: '/admin/users' },
-  { id: 'subjects', label: 'Subject Management', icon: <IconBook />, path: '/admin/subjects' },
-  { id: 'subject-assignments', label: 'Subject Assignment', icon: <IconShield />, path: '/admin/subject-assignments' },
-  { id: 'learning-materials', label: 'Learning Materials', icon: <IconBook />, path: '/admin/learning-materials' },
-  { id: 'question-bank', label: 'Question Bank', icon: <IconFile />, path: '/admin/question-bank' },
-  { id: 'ai-config', label: 'AI & API Configuration', icon: <IconCpu />, path: '/admin/ai-config' },
+  { id: 'dashboard', labelKey: 'layout.nav.dashboard', icon: <IconGrid />, path: '/admin' },
+  { id: 'users', labelKey: 'layout.nav.users', icon: <IconUsers />, path: '/admin/users' },
+  { id: 'subjects', labelKey: 'layout.nav.subjects', icon: <IconBook />, path: '/admin/subjects' },
+  { id: 'subject-assignments', labelKey: 'layout.nav.subjectAssignments', icon: <IconShield />, path: '/admin/subject-assignments' },
+  { id: 'learning-materials', labelKey: 'layout.nav.learningMaterials', icon: <IconBook />, path: '/admin/learning-materials' },
+  { id: 'question-bank', labelKey: 'layout.nav.questionBank', icon: <IconFile />, path: '/admin/question-bank' },
+  { id: 'ai-config', labelKey: 'layout.nav.aiConfig', icon: <IconCpu />, path: '/admin/ai-config' },
 ]
 
 const LECTURER_NAV: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/lecturer' },
-  { id: 'learning-materials', label: 'Learning Materials', icon: <IconBook />, path: '/lecturer/learning-materials' },
-  { id: 'rubrics', label: 'Rubrics', icon: <IconClipboard />, path: '/lecturer/rubrics' },
-  { id: 'question-bank', label: 'Question Bank', icon: <IconFile />, path: '/lecturer/question-bank' },
-  { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/lecturer/exams' },
+  { id: 'dashboard', labelKey: 'layout.nav.dashboard', icon: <IconGrid />, path: '/lecturer' },
+  { id: 'learning-materials', labelKey: 'layout.nav.learningMaterials', icon: <IconBook />, path: '/lecturer/learning-materials' },
+  { id: 'rubrics', labelKey: 'layout.nav.rubrics', icon: <IconClipboard />, path: '/lecturer/rubrics' },
+  { id: 'question-bank', labelKey: 'layout.nav.questionBank', icon: <IconFile />, path: '/lecturer/question-bank' },
+  { id: 'exams', labelKey: 'layout.nav.myExams', icon: <IconClipboard />, path: '/lecturer/exams' },
 ]
 
 const STUDENT_NAV: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/student' },
-  { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/student/exams' },
-  { id: 'history', label: 'Exam History', icon: <IconFile />, path: '/student/history' },
+  { id: 'dashboard', labelKey: 'layout.nav.dashboard', icon: <IconGrid />, path: '/student' },
+  { id: 'exams', labelKey: 'layout.nav.myExams', icon: <IconClipboard />, path: '/student/exams' },
+  { id: 'history', labelKey: 'layout.nav.examHistory', icon: <IconFile />, path: '/student/history' },
 ]
 
-const PORTAL_LABEL = {
-  admin: 'Admin Portal',
-  lecturer: 'Lecturer Portal',
-  student: 'Student Portal',
+const PORTAL_LABEL_KEY = {
+  admin: 'layout.portal.admin',
+  lecturer: 'layout.portal.lecturer',
+  student: 'layout.portal.student',
 }
 
 interface SidebarProps {
@@ -47,6 +48,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ role, open, onClose, collapsed = false }: SidebarProps) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -86,7 +88,7 @@ export default function Sidebar({ role, open, onClose, collapsed = false }: Side
           )}
           <div className={`min-w-0 ${collapsed ? 'lg:hidden' : ''}`}>
             <div className="text-[#1F2937] font-semibold text-xs leading-tight tracking-wide" style={{ fontFamily: 'DM Sans, sans-serif' }}>AIVES</div>
-            <div className="text-[10px] text-[#6B7280]">{PORTAL_LABEL[role]}</div>
+            <div className="text-[10px] text-[#6B7280]">{t(PORTAL_LABEL_KEY[role])}</div>
           </div>
         </div>
       </div>
@@ -94,7 +96,7 @@ export default function Sidebar({ role, open, onClose, collapsed = false }: Side
       {/* Nav */}
       <nav className={`flex-1 px-3 py-4 space-y-1 overflow-y-auto overflow-x-hidden ${collapsed ? 'lg:px-2' : ''}`}>
         <div className={`mb-2 px-3 ${collapsed ? 'lg:hidden' : ''}`}>
-          <span className="text-[10px] font-semibold uppercase tracking-widest text-[#9CA3AF]">Navigation</span>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-[#9CA3AF]">{t('layout.nav.navigation')}</span>
         </div>
         {navItems.map(item => {
           const active = activeId === item.id
@@ -102,15 +104,15 @@ export default function Sidebar({ role, open, onClose, collapsed = false }: Side
             <button
               key={item.id}
               onClick={() => navigate(item.path)}
-              title={collapsed ? item.label : undefined}
-              aria-label={item.label}
+              title={collapsed ? t(item.labelKey) : undefined}
+              aria-label={t(item.labelKey)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 text-left ${collapsed ? 'lg:justify-center lg:px-0' : ''} ${active
                 ? 'bg-[#EFF6FF] text-[#2563EB] font-medium shadow-xs'
                 : 'text-[#4B5563] hover:text-[#1F2937] hover:bg-[#F3F4F6]'
                 }`}
             >
               <span className={active ? 'text-[#2563EB]' : 'text-[#6B7280]'}>{item.icon}</span>
-              <span className={`flex-1 truncate ${collapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+              <span className={`flex-1 truncate ${collapsed ? 'lg:hidden' : ''}`}>{t(item.labelKey)}</span>
               {item.badge && (
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200 leading-none ${collapsed ? 'lg:hidden' : ''}`}>
                   {item.badge}

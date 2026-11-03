@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
+import i18n from '@/shared/i18n'
 import { subjectApi, SubjectResponse } from '../api'
 
 type Subject = SubjectResponse
@@ -11,6 +13,7 @@ export function CreateSubjectModal({
     onClose: () => void
     onCreated: (subject: Subject) => void
 }) {
+    const { t } = useTranslation()
     const [code, setCode] = useState('')
     const [name, setName] = useState('')
     const [description, setDescription] = useState('')
@@ -20,8 +23,8 @@ export function CreateSubjectModal({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
-        if (!code.trim()) return setError('Subject Code is required.')
-        if (!name.trim()) return setError('Subject Name is required.')
+        if (!code.trim()) return setError(t('subjects.form.codeRequired'))
+        if (!name.trim()) return setError(t('subjects.form.nameRequired'))
 
         try {
             setLoading(true)
@@ -34,7 +37,7 @@ export function CreateSubjectModal({
             const created = ((res.data as { result?: Subject })?.result || res.data) as Subject
             onCreated(created)
         } catch (err: any) {
-            const msg = err.response?.data?.message || err.message || 'Failed to create subject.'
+            const msg = err.response?.data?.message || err.message || t('subjects.create.failed')
             setError(msg)
         } finally {
             setLoading(false)
@@ -46,7 +49,7 @@ export function CreateSubjectModal({
             <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                        Create Subject
+                        {t('subjects.create.title')}
                     </h2>
                     <button onClick={onClose} disabled={loading} className="text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -63,41 +66,41 @@ export function CreateSubjectModal({
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                Subject Code <span className="text-red-500">*</span>
+                                {t('subjects.form.codeLabel')} <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={code}
                                 disabled={loading}
                                 onChange={e => setCode(e.target.value)}
-                                placeholder="e.g. SWD392"
+                                placeholder={t('subjects.form.codePlaceholder')}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm disabled:bg-slate-50"
                                 required
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                Subject Name <span className="text-red-500">*</span>
+                                {t('subjects.form.nameLabel')} <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={name}
                                 disabled={loading}
                                 onChange={e => setName(e.target.value)}
-                                placeholder="e.g. Software Architecture and Design"
+                                placeholder={t('subjects.form.namePlaceholder')}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm disabled:bg-slate-50"
                                 required
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                Description <span className="text-slate-400 font-normal">(optional)</span>
+                                {t('subjects.form.descLabel')} <span className="text-slate-400 font-normal">{t('subjects.form.optional')}</span>
                             </label>
                             <textarea
                                 value={description}
                                 disabled={loading}
                                 onChange={e => setDescription(e.target.value)}
-                                placeholder="Brief description of this subject"
+                                placeholder={t('subjects.form.descPlaceholder')}
                                 rows={3}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm resize-none disabled:bg-slate-50"
                             />
@@ -110,7 +113,7 @@ export function CreateSubjectModal({
                             disabled={loading}
                             className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors disabled:opacity-50"
                         >
-                            Cancel
+                            {t('subjects.form.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -123,7 +126,7 @@ export function CreateSubjectModal({
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
                             )}
-                            Create Subject
+                            {t('subjects.create.submit')}
                         </button>
                     </div>
                 </form>
@@ -142,6 +145,7 @@ export function EditSubjectModal({
     onClose: () => void
     onUpdated: (subject: Subject) => void
 }) {
+    const { t } = useTranslation()
     const [code, setCode] = useState(subject.code || '')
     const [name, setName] = useState(subject.name || '')
     const [description, setDescription] = useState(subject.description || '')
@@ -151,8 +155,8 @@ export function EditSubjectModal({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
-        if (!code.trim()) return setError('Subject Code is required.')
-        if (!name.trim()) return setError('Subject Name is required.')
+        if (!code.trim()) return setError(t('subjects.form.codeRequired'))
+        if (!name.trim()) return setError(t('subjects.form.nameRequired'))
 
         try {
             setLoading(true)
@@ -164,7 +168,7 @@ export function EditSubjectModal({
             const updated = ((res.data as { result?: Subject })?.result || res.data || { ...subject, code: code.trim(), name: name.trim(), description: description.trim() }) as Subject
             onUpdated(updated)
         } catch (err: any) {
-            const msg = err.response?.data?.message || err.message || 'Failed to update subject.'
+            const msg = err.response?.data?.message || err.message || t('subjects.edit.failed')
             setError(msg)
         } finally {
             setLoading(false)
@@ -176,7 +180,7 @@ export function EditSubjectModal({
             <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                        Edit Subject
+                        {t('subjects.edit.title')}
                     </h2>
                     <button onClick={onClose} disabled={loading} className="text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -193,41 +197,41 @@ export function EditSubjectModal({
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                Subject Code <span className="text-red-500">*</span>
+                                {t('subjects.form.codeLabel')} <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={code}
                                 disabled={loading}
                                 onChange={e => setCode(e.target.value)}
-                                placeholder="e.g. SWD392"
+                                placeholder={t('subjects.form.codePlaceholder')}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm disabled:bg-slate-50"
                                 required
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                Subject Name <span className="text-red-500">*</span>
+                                {t('subjects.form.nameLabel')} <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
                                 value={name}
                                 disabled={loading}
                                 onChange={e => setName(e.target.value)}
-                                placeholder="e.g. Software Architecture and Design"
+                                placeholder={t('subjects.form.namePlaceholder')}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm disabled:bg-slate-50"
                                 required
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                Description <span className="text-slate-400 font-normal">(optional)</span>
+                                {t('subjects.form.descLabel')} <span className="text-slate-400 font-normal">{t('subjects.form.optional')}</span>
                             </label>
                             <textarea
                                 value={description}
                                 disabled={loading}
                                 onChange={e => setDescription(e.target.value)}
-                                placeholder="Brief description of this subject"
+                                placeholder={t('subjects.form.descPlaceholder')}
                                 rows={3}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm resize-none disabled:bg-slate-50"
                             />
@@ -240,7 +244,7 @@ export function EditSubjectModal({
                             disabled={loading}
                             className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors disabled:opacity-50"
                         >
-                            Cancel
+                            {t('subjects.form.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -253,7 +257,7 @@ export function EditSubjectModal({
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
                             )}
-                            Save Changes
+                            {t('subjects.edit.submit')}
                         </button>
                     </div>
                 </form>
@@ -272,6 +276,7 @@ export function SubjectDetailModal({
     onClose: () => void
     onEdit: () => void
 }) {
+    const { t } = useTranslation()
     const [subject, setSubject] = useState<Subject | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
@@ -284,7 +289,7 @@ export function SubjectDetailModal({
             const data = ((res.data as { result?: Subject })?.result || res.data) as Subject
             setSubject(data)
         } catch (err: any) {
-            setError(err.response?.data?.message || err.message || 'Failed to load subject details.')
+            setError(err.response?.data?.message || err.message || i18n.t('subjects.detail.loadFailed'))
         } finally {
             setLoading(false)
         }
@@ -299,7 +304,7 @@ export function SubjectDetailModal({
             <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                        Subject Details
+                        {t('subjects.detail.title')}
                     </h2>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -317,19 +322,19 @@ export function SubjectDetailModal({
                         </div>
                     ) : error ? (
                         <div className="p-4 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm">
-                            <p className="font-semibold mb-1">Failed to load subject</p>
+                            <p className="font-semibold mb-1">{t('subjects.detail.loadFailedTitle')}</p>
                             <p>{error}</p>
                             <button
                                 onClick={fetchDetail}
                                 className="mt-3 px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
                             >
-                                Try Again
+                                {t('subjects.detail.tryAgain')}
                             </button>
                         </div>
                     ) : subject ? (
                         <div className="space-y-4">
                             <div>
-                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Subject Code</span>
+                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('subjects.form.codeLabel')}</span>
                                 <div className="mt-1">
                                     <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
                                         {subject.code}
@@ -337,17 +342,17 @@ export function SubjectDetailModal({
                                 </div>
                             </div>
                             <div>
-                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Subject Name</span>
+                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('subjects.form.nameLabel')}</span>
                                 <p className="mt-1 text-base font-semibold text-slate-800">{subject.name}</p>
                             </div>
                             <div>
-                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Description</span>
+                                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t('subjects.form.descLabel')}</span>
                                 <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap bg-slate-50 border border-slate-100 rounded-lg p-3">
-                                    {subject.description || 'No description provided.'}
+                                    {subject.description || t('subjects.detail.noDescription')}
                                 </p>
                             </div>
                             <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-100">
-                                Subject ID: {subject.id}
+                                {t('subjects.detail.id', { id: subject.id })}
                             </div>
                         </div>
                     ) : null}
@@ -358,7 +363,7 @@ export function SubjectDetailModal({
                             onClick={onClose}
                             className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors"
                         >
-                            Close
+                            {t('subjects.detail.close')}
                         </button>
                         {subject && (
                             <button
@@ -369,7 +374,7 @@ export function SubjectDetailModal({
                                 }}
                                 className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
                             >
-                                Edit Subject
+                                {t('subjects.detail.edit')}
                             </button>
                         )}
                     </div>
@@ -389,6 +394,7 @@ export function DeleteSubjectModal({
     onClose: () => void
     onDeleted: () => void
 }) {
+    const { t } = useTranslation()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -399,9 +405,9 @@ export function DeleteSubjectModal({
             await subjectApi.delete(subject.id)
             onDeleted()
         } catch (err: any) {
-            let msg = err.response?.data?.message || err.message || 'Failed to delete subject.'
+            let msg = err.response?.data?.message || err.message || t('subjects.delete.failed')
             if (typeof msg === 'string' && (msg.includes('foreign key constraint') || msg.includes('violates foreign key'))) {
-                msg = 'Cannot delete this subject because it is linked to existing questions, learning materials, or exam sessions. Please delete linked items first.'
+                msg = t('subjects.delete.linked')
             }
             setError(msg)
         } finally {
@@ -414,7 +420,7 @@ export function DeleteSubjectModal({
             <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                        Delete Subject
+                        {t('subjects.delete.title')}
                     </h2>
                     <button onClick={onClose} disabled={loading} className="text-slate-400 hover:text-slate-600 transition-colors disabled:opacity-50">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -429,10 +435,14 @@ export function DeleteSubjectModal({
                         </div>
                     )}
                     <p className="text-sm text-slate-600">
-                        Are you sure you want to delete <span className="font-bold text-slate-800">{subject.code} - {subject.name}</span>?
+                        <Trans
+                            i18nKey="subjects.delete.confirm"
+                            values={{ name: `${subject.code} - ${subject.name}` }}
+                            components={{ b: <span className="font-bold text-slate-800" /> }}
+                        />
                     </p>
                     <p className="mt-2 text-xs text-slate-500">
-                        This action cannot be undone. Any linked questions, learning materials, or exam sessions may prevent deletion or be affected.
+                        {t('subjects.delete.warning')}
                     </p>
                     <div className="mt-6 flex justify-end gap-3">
                         <button
@@ -441,7 +451,7 @@ export function DeleteSubjectModal({
                             disabled={loading}
                             className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors disabled:opacity-50"
                         >
-                            Cancel
+                            {t('subjects.form.cancel')}
                         </button>
                         <button
                             type="button"
@@ -455,7 +465,7 @@ export function DeleteSubjectModal({
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
                             )}
-                            Delete Subject
+                            {t('subjects.delete.title')}
                         </button>
                     </div>
                 </div>

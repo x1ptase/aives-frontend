@@ -1,0 +1,69 @@
+{
+  "welcome": "ようこそ",
+  "welcomeName": "ようこそ、{{name}}さん",
+  "lecturer": {
+    "subtitle": "あなたの教育ワークスペースです。",
+    "examsGrading": "試験と採点",
+    "examsUnavailable": "試験を取得できません",
+    "loadExamsFailed": "試験を読み込めませんでした。",
+    "noExams": "試験はまだありません。",
+    "examCount": "試験セッションが{{count}}件あります。「マイ試験」からセッションと学生のスケジュールを管理できます。"
+  },
+  "student": {
+    "subtitle": "アカウントと試験の概要です。",
+    "examsReturned": "サーバーが返した試験数",
+    "myAccount": "マイアカウント",
+    "profileUnavailable": "プロフィールを取得できません",
+    "loadProfileFailed": "プロフィールを読み込めませんでした。",
+    "loadExamsFailed": "試験を読み込めませんでした。",
+    "fullName": "氏名",
+    "username": "ユーザー名",
+    "email": "メールアドレス",
+    "role": "役割",
+    "memberSince": "登録日",
+    "myExams": "マイ試験",
+    "examsUnavailable": "試験を取得できません",
+    "noExams": "試験はまだありません。",
+    "examCount": "試験の割り当てが{{count}}件あります。「マイ試験」でスケジュールを確認できます。"
+  },
+  "stats": {
+    "failed": "統計を読み込めませんでした。",
+    "retryLater": "しばらくしてからもう一度お試しください。",
+    "totalUsers": "総ユーザー数",
+    "totalUsersSub": "登録済みアカウント",
+    "lecturers": "講師",
+    "lecturersSub": "講師の役割を持つアカウント",
+    "students": "学生",
+    "studentsSub": "学生の役割を持つアカウント",
+    "subjects": "科目",
+    "subjectsSub": "システムに登録済み"
+  },
+  "activity": {
+    "title": "最近のアクティビティ",
+    "subtitle": "AIVES全体の最新の主なアクティビティ",
+    "failed": "最近のアクティビティを読み込めませんでした。",
+    "empty": "最近のアクティビティはありません",
+    "cols": {
+      "timestamp": "日時",
+      "user": "ユーザー",
+      "action": "操作",
+      "detail": "詳細",
+      "status": "ステータス"
+    },
+    "viewDetails": "詳細を見る",
+    "detailsTitle": "アクティビティの詳細",
+    "user": "ユーザー：",
+    "action": "操作：",
+    "timestamp": "日時：",
+    "status": "ステータス：",
+    "detail": "詳細：",
+    "notRecorded": "記録なし",
+    "unknown": "不明",
+    "createdQuestion": "問題を作成",
+    "createdQuestionSource": "問題を作成（{{source}}）",
+    "uploadedMaterial": "学習資料をアップロード",
+    "questionId": "問題ID：{{id}}",
+    "materialId": "資料ID：{{id}}",
+    "success": "成功"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "services": {
+    "stt": {
+      "name": "Speech-to-Text",
+      "description": "Converts student speech to text during viva sessions."
+    },
+    "tts": {
+      "name": "Text-to-Speech",
+      "description": "Reads AI questions aloud during viva sessions."
+    },
+    "embedding": {
+      "name": "RAG / Embedding",
+      "description": "Generates embeddings for learning materials and RAG retrieval."
+    },
+    "evaluator": {
+      "name": "AI Evaluator",
+      "description": "Evaluates student answers and generates scores and feedback."
+    }
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "notConfigured": "Not configured"
+  },
+  "page": {
+    "title": "AI & API Configuration",
+    "subtitle": "Read-only view of AI services and API connections used by the AIVES platform.",
+    "refresh": "Refresh",
+    "loading": "Loading AI configuration...",
+    "loadFailed": "Unable to load AI configuration. Please try again.",
+    "retry": "Retry",
+    "provider": "Provider",
+    "model": "Model / Engine",
+    "apiKey": "API Key"
+  },
+  "card": {
+    "title": "AI Service Status",
+    "view": "View AI Configuration"
+  }
+}

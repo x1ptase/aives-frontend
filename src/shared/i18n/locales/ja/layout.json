@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "users": "ユーザー管理",
+    "subjects": "科目管理",
+    "subjectAssignments": "科目の割り当て",
+    "learningMaterials": "学習資料",
+    "questionBank": "問題バンク",
+    "aiConfig": "AI・API設定",
+    "rubrics": "ルーブリック",
+    "myExams": "マイ試験",
+    "examHistory": "受験履歴",
+    "navigation": "ナビゲーション"
+  },
+  "portal": {
+    "admin": "管理者ポータル",
+    "lecturer": "講師ポータル",
+    "student": "学生ポータル"
+  },
+  "toggleSidebar": "サイドバーの切り替え",
+  "fallback": {
+    "admin": {
+      "name": "管理者",
+      "role": "システム管理者"
+    },
+    "lecturer": {
+      "name": "講師",
+      "role": "講師"
+    },
+    "student": {
+      "name": "学生",
+      "role": "学生"
+    }
+  },
+  "myAccount": "マイアカウント",
+  "logout": "ログアウト",
+  "examRoomTitle": "AIVES - 口頭試問ルーム"
+}

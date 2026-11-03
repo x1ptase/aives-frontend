@@ -1,4 +1,5 @@
 import axiosInstance from '@/shared/api/axios'
+import i18n from '@/shared/i18n'
 import { examIdentifier } from './components/examHelpers'
 import { parseOralRuntime, parseOralState, validateOralCommand, oralUuid } from './components/oralExamHelpers'
 
@@ -50,7 +51,7 @@ async function speech(path: string, body: object, signal?: AbortSignal): Promise
   try {
     const response = await axiosInstance.post(path, body, { responseType: 'blob', timeout: 45000, signal })
     const blob = response.data
-    if (!(blob instanceof Blob) || !['audio/wav', 'audio/x-wav'].includes(blob.type.split(';')[0]) || blob.size < 46 || blob.size > 8 * 1024 * 1024) throw new Error('Audio chưa hợp lệ.')
+    if (!(blob instanceof Blob) || !['audio/wav', 'audio/x-wav'].includes(blob.type.split(';')[0]) || blob.size < 46 || blob.size > 8 * 1024 * 1024) throw new Error(i18n.t('exams.oral.api.audioInvalid'))
     return blob
   } catch (cause: any) {
     // Axios giữ lỗi JSON ở dạng Blob khi responseType=blob; chỉ đọc envelope nhỏ, không hiện nội dung thô.
@@ -77,7 +78,7 @@ export const oralApi = {
     const r = envelope?.result
     if (envelope?.code !== 1000 || typeof r?.serverTime !== 'string' || !Number.isFinite(Date.parse(r.serverTime))
       || r.terminal !== undefined && typeof r.terminal !== 'boolean'
-      || (r.terminal === true ? r.leaseUntil !== null : typeof r.leaseUntil !== 'string' || !Number.isFinite(Date.parse(r.leaseUntil)) || Date.parse(r.leaseUntil) <= Date.parse(r.serverTime))) throw new Error('Kết quả giữ quyền chưa hợp lệ.')
+      || (r.terminal === true ? r.leaseUntil !== null : typeof r.leaseUntil !== 'string' || !Number.isFinite(Date.parse(r.leaseUntil)) || Date.parse(r.leaseUntil) <= Date.parse(r.serverTime))) throw new Error(i18n.t('exams.oral.api.leaseInvalid'))
     return { serverTime: r.serverTime, leaseUntil: r.leaseUntil, terminal: r.terminal === true }
   },
   uploadAudio: async (id: number, submissionId: string, metadata: { clientSessionId: string; turnId: string }, blob: Blob, signal?: AbortSignal): Promise<OralState> => {
@@ -89,20 +90,20 @@ export const oralApi = {
       { signal, timeout: 20000, headers: { 'Content-Type': undefined } })).data, examId)
   },
   previewTranscription: async (language: 'vi' | 'en', blob: Blob, signal?: AbortSignal): Promise<string> => {
-    if (!['vi', 'en'].includes(language)) throw new Error('Ngôn ngữ chưa được hỗ trợ.')
+    if (!['vi', 'en'].includes(language)) throw new Error(i18n.t('exams.oral.api.languageUnsupported'))
     const form = audioForm(blob); form.append('language', language)
     const envelope = (await axiosInstance.post('/oral-examination/transcription-preview', form, { signal, timeout: 45000, headers: { 'Content-Type': undefined } })).data
     const r = envelope?.result
-    if (envelope?.code !== 1000 || !r || r.language !== language || typeof r.transcript !== 'string' || r.transcript.length > 20000 || r.hasSpeech !== !!r.transcript.trim()) throw new Error('Kết quả nhận dạng chưa hợp lệ.')
+    if (envelope?.code !== 1000 || !r || r.language !== language || typeof r.transcript !== 'string' || r.transcript.length > 20000 || r.hasSpeech !== !!r.transcript.trim()) throw new Error(i18n.t('exams.oral.api.recognitionInvalid'))
     return r.transcript
   },
   speech: async (id: number, request: Pick<OralCommand, 'clientSessionId' | 'turnId' | 'expectedRevision'>, signal?: AbortSignal): Promise<Blob> => {
     oralUuid(request.clientSessionId); oralUuid(request.turnId)
-    if (!Number.isSafeInteger(request.expectedRevision) || request.expectedRevision < 0) throw new Error('Phiên bản lượt hỏi không hợp lệ.')
+    if (!Number.isSafeInteger(request.expectedRevision) || request.expectedRevision < 0) throw new Error(i18n.t('exams.oral.api.revisionInvalid'))
     return speech(`/student-exams/${examIdentifier(id)}/oral-examination/speech`, { clientSessionId: request.clientSessionId, turnId: request.turnId, expectedRevision: request.expectedRevision }, signal)
   },
   previewSpeech: (language: 'vi' | 'en', signal?: AbortSignal): Promise<Blob> => {
-    if (!['vi', 'en'].includes(language)) return Promise.reject(new Error('Ngôn ngữ chưa được hỗ trợ.'))
+    if (!['vi', 'en'].includes(language)) return Promise.reject(new Error(i18n.t('exams.oral.api.languageUnsupported')))
     return speech('/oral-examination/speech-preview', { language }, signal)
   },
   runtime: async (signal?: AbortSignal): Promise<OralRuntime> => parseOralRuntime((await axiosInstance.get('/oral-examination/runtime', { signal })).data),
@@ -121,9 +122,9 @@ export const oralApi = {
     return parseOralState((await axiosInstance.post(`/student-exams/${examId}/oral-examination/actions`, body)).data, examId)
   },
   chooseDemoScenario: async (id: number, turnId: string, scenario: OralDemoScenario, runtime: OralRuntime): Promise<void> => {
-    if (!isLocalOralDemo(runtime)) throw new Error('Công cụ mô phỏng chỉ dùng với backend test cục bộ.')
+    if (!isLocalOralDemo(runtime)) throw new Error(i18n.t('exams.oral.api.demoLocalOnly'))
     oralUuid(turnId)
-    if (!['CLEAR', 'BRIEF', 'EMPTY', 'TECHNICAL_ERROR'].includes(scenario)) throw new Error('Tình huống mẫu không hợp lệ.')
+    if (!['CLEAR', 'BRIEF', 'EMPTY', 'TECHNICAL_ERROR'].includes(scenario)) throw new Error(i18n.t('exams.oral.api.scenarioInvalid'))
     await axiosInstance.post(`/_oral-demo/student-exams/${examIdentifier(id)}/scenario`, { turnId, scenario })
   },
 }
@@ -132,6 +133,6 @@ export const oralApi = {
 function audioForm(blob: Blob): FormData {
   const type = blob?.type?.split(';')[0]
   const extension = ({ 'audio/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'mp4', 'audio/wav': 'wav' } as Record<string,string>)[type]
-  if (!(blob instanceof Blob) || !extension || blob.size < 128 || blob.size > 8 * 1024 * 1024) throw new Error('Bản ghi âm không hợp lệ hoặc vượt quá 8 MiB.')
+  if (!(blob instanceof Blob) || !extension || blob.size < 128 || blob.size > 8 * 1024 * 1024) throw new Error(i18n.t('exams.oral.api.recordingInvalid'))
   const form = new FormData(); form.append('audio', blob, `answer.${extension}`); return form
 }

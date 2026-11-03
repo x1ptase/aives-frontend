@@ -1,6 +1,7 @@
 import { after, before, beforeEach, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createServer } from 'vite'
+import { initTestI18n } from '../../test-utils/i18n.mjs'
 import { AxiosError } from 'axios'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -21,6 +22,7 @@ before(async () => {
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: () => 'TEST_ONLY_TOKEN', removeItem() {} } })
   Object.defineProperty(globalThis, 'window', { configurable: true, value: { location: { pathname: '/lecturer/exams', href: '' } } })
   server = await createServer({ logLevel: 'silent', server: { middlewareMode: true, hmr: false, watch: null } })
+  await initTestI18n(server)
   api = await server.ssrLoadModule('/src/modules/exams/api.ts')
   helpers = await server.ssrLoadModule('/src/modules/exams/components/examHelpers.ts')
   FeedbackProvider = (await server.ssrLoadModule('/src/modules/exams/components/ExamFeedbackProvider.tsx')).default
@@ -248,7 +250,7 @@ test('Create form renders both schedule inputs and does not offer a writable sta
     subjects: [{ id: 1, code: 'JAVA', name: 'Java' }], onClose() {}, onSaved() {} })
   assert.equal((html.match(/type="datetime-local"/g) ?? []).length, 2)
   assert.match(html, /<form[^>]*no[Vv]alidate/i)
-  assert.match(html, /Minutes per student/)
+  assert.match(html, /Số phút mỗi sinh viên/)
   assert.match(html, /JAVA - Java/)
   assert.doesNotMatch(html, /<option[^>]*>ONGOING/)
   assert.doesNotMatch(html, /lecturerId|referenceAnswer|rubricSnapshot/)
@@ -268,8 +270,8 @@ test('Revoked or non-UPCOMING session hides all batch-assignment controls', asyn
 test('Pagination disables next when the current page is the last server page', async () => {
   const Pagination = (await server.ssrLoadModule('/src/modules/exams/components/ExamPagination.tsx')).default
   const html = renderToStaticMarkup(createElement(Pagination, { page: 2, totalPages: 3, totalElements: 41, busy: false, onChange() {} }))
-  assert.match(html, /41 record/)
-  assert.match(html, /<button[^>]*disabled[^>]*>Next/)
+  assert.match(html, /41 bản ghi/)
+  assert.match(html, /<button[^>]*disabled[^>]*>Sau/)
 })
 
 test('Error state supports Vietnamese retry text without changing defaults on other screens', async () => {
@@ -280,7 +282,8 @@ test('Error state supports Vietnamese retry text without changing defaults on ot
   assert.match(translated, />Thử lại<\/button>/)
   assert.doesNotMatch(translated, /Retry|Exams unavailable/)
   const unchanged = renderToStaticMarkup(createElement(ErrorState, props))
-  assert.match(unchanged, />Retry<\/button>/)
+  // Mặc định lấy từ common.retry theo ngôn ngữ giao diện (test chạy ở 'vi').
+  assert.match(unchanged, />Thử lại<\/button>/)
 })
 
 /** Form bỏ popup theo ngôn ngữ trình duyệt nhưng vẫn kiểm tra đầy đủ các trường bắt buộc. */

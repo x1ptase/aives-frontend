@@ -1,5 +1,6 @@
 import axiosInstance from '@/shared/api/axios'
 import type { PageResult } from '@/shared/api/types'
+import i18n from '@/shared/i18n'
 
 /** Envelope chuẩn của backend, không đồng nhất result phân trang với một mảng. */
 export interface ExamApiResponse<T> {
@@ -126,15 +127,15 @@ export interface MyStudentExam {
 
 // These reject locally (no network call) so callers fall into their existing error/empty handling.
 const unsupported = (feature: string): Promise<{ data: any }> =>
-  Promise.reject(new Error(`${feature} is not supported by the backend yet.`))
+  Promise.reject(new Error(i18n.t('exams.errors.unsupported', { feature })))
 
 // ===== Exams =====
 export const examApi = {
-  getAll: () => unsupported('Exams'),
-  getById: (_id: string) => unsupported('Exams'),
-  create: (_data: unknown) => unsupported('Exams'),
-  update: (_id: string, _data: unknown) => unsupported('Exams'),
-  delete: (_id: string) => unsupported('Exams'),
+  getAll: () => unsupported(i18n.t('exams.errors.featureExams')),
+  getById: (_id: string) => unsupported(i18n.t('exams.errors.featureExams')),
+  create: (_data: unknown) => unsupported(i18n.t('exams.errors.featureExams')),
+  update: (_id: string, _data: unknown) => unsupported(i18n.t('exams.errors.featureExams')),
+  delete: (_id: string) => unsupported(i18n.t('exams.errors.featureExams')),
 }
 
 // ===== Students =====

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import i18n from '@/shared/i18n'
 import { subjectAssignmentApi, type SubjectResponse } from '@/modules/subjects'
 import { subjectRubricApi, type SubjectRubric, type SubjectRubricCreatePayload, type SubjectRubricUpdatePayload } from '../api'
 
@@ -23,17 +24,17 @@ export interface RubricForm {
 /** ID dùng an toàn trong JavaScript; không nhận số lẻ hoặc ID ngoài miền biểu diễn chính xác. */
 export function rubricIdentifier(value: unknown): number {
   if ((typeof value !== 'number' && typeof value !== 'string') || !/^\d+$/.test(String(value))
-    || !Number.isSafeInteger(Number(value)) || Number(value) <= 0) throw new RubricUiError('Mã môn học hoặc rubric không hợp lệ. Vui lòng tải lại trang.')
+    || !Number.isSafeInteger(Number(value)) || Number(value) <= 0) throw new RubricUiError(i18n.t('questions.rubricErrors.invalidId'))
   return Number(value)
 }
 
 /** Đổi chính xác về đơn vị 0,01 điểm, nhận dấu phẩy thập phân khi nhập tiếng Việt. */
 function pointUnits(value: string): number {
   const normalized = value.trim().replace(',', '.')
-  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) throw new RubricUiError('Điểm mỗi tiêu chí phải có tối đa 2 chữ số thập phân.')
+  if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) throw new RubricUiError(i18n.t('questions.rubricErrors.decimals'))
   const [whole, fraction = ''] = normalized.split('.')
   const units = Number(whole) * 100 + Number(fraction.padEnd(2, '0'))
-  if (!Number.isSafeInteger(units) || units < 1 || units > 1000) throw new RubricUiError('Điểm mỗi tiêu chí phải từ 0,01 đến 10.')
+  if (!Number.isSafeInteger(units) || units < 1 || units > 1000) throw new RubricUiError(i18n.t('questions.rubricErrors.range'))
   return units
 }
 
@@ -55,19 +56,19 @@ export function rubricForm(subject: SubjectResponse, rubric: SubjectRubric | nul
 /** Kiểm tra nội dung và thang điểm, whitelist payload; BE vẫn là lớp bảo vệ cuối cùng. */
 export function rubricUpdatePayload(form: RubricForm): SubjectRubricUpdatePayload {
   const title = form.title.trim()
-  if (!title || title.length > 255 || title.includes('\0')) throw new RubricUiError('Tên rubric không được trống, vượt quá 255 ký tự hoặc chứa ký tự không hợp lệ.')
-  if (form.description.includes('\0')) throw new RubricUiError('Mô tả không được chứa ký tự không hợp lệ.')
-  if (!form.criteria.length) throw new RubricUiError('Rubric phải có ít nhất một tiêu chí.')
+  if (!title || title.length > 255 || title.includes('\0')) throw new RubricUiError(i18n.t('questions.rubricErrors.titleInvalid'))
+  if (form.description.includes('\0')) throw new RubricUiError(i18n.t('questions.rubricErrors.descInvalid'))
+  if (!form.criteria.length) throw new RubricUiError(i18n.t('questions.rubricErrors.noCriteria'))
   let total = 0
   const criteria = form.criteria.map((criterion, index) => {
     const text = criterion.text.trim()
-    if (!text || text.includes('\0')) throw new RubricUiError(`Vui lòng nhập nội dung hợp lệ cho tiêu chí ${index + 1}.`)
-    if (typeof criterion.mandatory !== 'boolean') throw new RubricUiError('Cờ bắt buộc của tiêu chí không hợp lệ.')
+    if (!text || text.includes('\0')) throw new RubricUiError(i18n.t('questions.rubricErrors.criterionText', { n: index + 1 }))
+    if (typeof criterion.mandatory !== 'boolean') throw new RubricUiError(i18n.t('questions.rubricErrors.mandatoryFlag'))
     const units = pointUnits(criterion.points)
     total += units
     return { criterionText: text, pointWeight: units / 100, isMandatory: criterion.mandatory, displayOrder: index + 1 }
   })
-  if (total !== 1000) throw new RubricUiError('Tổng điểm các tiêu chí phải bằng 10.')
+  if (total !== 1000) throw new RubricUiError(i18n.t('questions.rubricErrors.totalMustBe10'))
   return { title, description: form.description.trim(), criteria }
 }
 
@@ -94,7 +95,7 @@ export function isRubricReady(rubric: SubjectRubric): boolean {
 
 /** Parse kết quả thực, không biến payload lỗi thành trạng thái môn chưa có rubric. */
 export function parseSubjectRubric(data: unknown, subjectId: number): SubjectRubric {
-  const fail = (): never => { throw new RubricUiError('Dữ liệu rubric trả về không hợp lệ. Vui lòng tải lại để kiểm tra kết quả.') }
+  const fail = (): never => { throw new RubricUiError(i18n.t('questions.rubricErrors.responseInvalid')) }
   if (!data || typeof data !== 'object') return fail()
   const envelope = data as { code?: unknown; result?: unknown }
   if (envelope.code !== 1000 || !envelope.result || typeof envelope.result !== 'object') return fail()
@@ -136,10 +137,10 @@ export async function loadRubricSubjects(signal?: AbortSignal): Promise<SubjectR
       || !Number.isSafeInteger(result.totalPages) || result.totalPages < 0 || result.totalPages > 1_000_001
       || !Number.isSafeInteger(result.totalElements) || result.totalElements < 0 || !Number.isSafeInteger(result.size)
       || result.size < 1 || result.size > 100 || result.items.length > result.size)
-      throw new RubricUiError('Dữ liệu phân công môn học không hợp lệ. Vui lòng tải lại.')
+      throw new RubricUiError(i18n.t('questions.rubricErrors.assignmentInvalid'))
     totalPages = result.totalPages
     for (const subject of result.items) {
-      if (!subject || typeof subject.code !== 'string' || typeof subject.name !== 'string') throw new RubricUiError('Thông tin môn học không hợp lệ.')
+      if (!subject || typeof subject.code !== 'string' || typeof subject.name !== 'string') throw new RubricUiError(i18n.t('questions.rubricErrors.subjectInvalid'))
       const id = rubricIdentifier(subject.id)
       subjects.set(id, { ...subject, id })
     }
@@ -152,21 +153,13 @@ export async function loadRubricSubjects(signal?: AbortSignal): Promise<SubjectR
 export function rubricError(error: unknown, fallback: string): string {
   if (error instanceof RubricUiError) return error.message
   if (axios.isAxiosError(error)) {
-    if (!error.response) return 'Chưa thể xác nhận kết quả từ máy chủ. Vui lòng tải lại để kiểm tra trước khi thử lại.'
-    const messages: Partial<Record<number, string>> = {
-      1002: 'Dữ liệu rubric không hợp lệ. Vui lòng kiểm tra các trường đã nhập.', 1003: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
-      1004: 'Bạn không có quyền thực hiện thao tác này.', 1016: 'Môn học không còn tồn tại.', 1101: 'Bạn không còn được phân công môn học này. Vui lòng tải lại danh sách môn.',
-      1600: 'Rubric không còn tồn tại. Vui lòng tải lại danh sách.', 1601: 'Môn học đã có rubric. Vui lòng tải lại và sử dụng chức năng sửa.',
-      1602: 'Điểm mỗi tiêu chí phải dương và tổng điểm các tiêu chí phải bằng 10.', 1603: 'Rubric phải có ít nhất một tiêu chí.',
-      1604: 'Rubric đang được sử dụng nên không thể xóa.',
-    }
+    if (!error.response) return i18n.t('questions.rubricErrors.noResponse')
     const code = error.response.data?.code
-    const translated = typeof code === 'number' ? messages[code] : undefined
-    if (translated) return translated
-    if (error.response.status === 401) return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'
-    if (error.response.status === 403) return 'Bạn không có quyền thực hiện thao tác này.'
-    if (error.response.status === 409) return 'Dữ liệu rubric đã thay đổi. Vui lòng tải lại trước khi thử lại.'
-    if (error.response.status >= 500) return 'Máy chủ chưa thể xử lý yêu cầu. Vui lòng tải lại để kiểm tra kết quả trước khi thử lại.'
+    if (typeof code === 'number' && [1002, 1003, 1004, 1016, 1101, 1600, 1601, 1602, 1603, 1604].includes(code)) return i18n.t(`questions.rubricErrors.${code}`)
+    if (error.response.status === 401) return i18n.t('questions.rubricErrors.http401')
+    if (error.response.status === 403) return i18n.t('questions.rubricErrors.http403')
+    if (error.response.status === 409) return i18n.t('questions.rubricErrors.http409')
+    if (error.response.status >= 500) return i18n.t('questions.rubricErrors.http5xx')
   }
   return fallback
 }

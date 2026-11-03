@@ -5,6 +5,7 @@ import { IDBFactory } from 'fake-indexeddb'
 import { createElement, act, useLayoutEffect } from 'react'
 import { AxiosError } from 'axios'
 import { createServer } from 'vite'
+import { initTestI18n } from '../../test-utils/i18n.mjs'
 
 /** Mount hook React thật với DOM/IndexedDB test; không gọi backend, mic hoặc dịch vụ AI thật. */
 let server, useExam, useSpeech, Provider, client, draft, session, root, host, latest, speech, adapter
@@ -27,6 +28,7 @@ before(async()=>{
   globalThis.IS_REACT_ACT_ENVIRONMENT=true
   createRoot=(await import('react-dom/client')).createRoot
   server=await createServer({logLevel:'silent',server:{middlewareMode:true,hmr:false,watch:null}})
+  await initTestI18n(server)
   useExam=(await server.ssrLoadModule('/src/modules/exams/hooks/useOralExam.ts')).useOralExam
   useSpeech=(await server.ssrLoadModule('/src/modules/exams/hooks/useOralSpeech.ts')).useOralSpeech
   Provider=(await server.ssrLoadModule('/src/shared/components/common/FeedbackProvider.tsx')).default

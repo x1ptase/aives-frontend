@@ -53,7 +53,7 @@ export default function DashboardLayout({ role, children }: DashboardLayoutProps
     }, [navOpen])
 
     return (
-        <div className="flex h-dvh overflow-hidden" style={{ fontFamily: 'Inter, sans-serif', backgroundColor: '#f1f5f9' }}>
+        <div className="flex h-dvh overflow-hidden" style={{ backgroundColor: '#f1f5f9' }}>
             <Sidebar role={role} open={navOpen} onClose={() => setNavOpen(false)} collapsed={collapsed} />
             <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
                 <TopHeader role={role} onMenuClick={toggleSidebar} />

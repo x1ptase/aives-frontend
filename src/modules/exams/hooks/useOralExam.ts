@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import i18n from '@/shared/i18n'
 import axiosInstance from '@/shared/api/axios'
 import { useFeedback } from '@/shared/components/common/feedback'
 import { oralApi, isLocalOralDemo, type OralAction, type OralCommand, type OralDemoScenario, type OralRuntime, type OralState } from '../oralApi'
@@ -95,7 +96,7 @@ export function useOralExam(examId: number, userId: string) {
       if (oralErrorCode(cause) === 1803) { controlledRef.current = false; if (alive.current) setControlled(false) }
       if (alive.current) {
         const message = oralError(cause); setIssue(message)
-        if (!quiet) feedback.notify({ title: 'Chưa thể thực hiện thao tác', message, tone: 'error' })
+        if (!quiet) feedback.notify({ title: i18n.t('exams.oral.hook.actionFailedTitle'), message, tone: 'error' })
       }
     } finally { if (locked) inFlight.current = false; queuedWrite.current = false; if (alive.current) setBusy(false) }
     if (!ok) await refresh()
@@ -151,7 +152,7 @@ export function useOralExam(examId: number, userId: string) {
       controlledRef.current = false
       if (alive.current) {
         setControlled(false); const message = oralError(cause); setIssue(message)
-        feedback.notify({ title: 'Không thể mở phòng thi', message, tone: 'error' })
+        feedback.notify({ title: i18n.t('exams.oral.hook.openFailedTitle'), message, tone: 'error' })
       }
     } finally { if (locked) inFlight.current = false; queuedWrite.current = false; if (alive.current) setBusy(false) }
     if (replay && alive.current) await send(replay)
@@ -233,12 +234,12 @@ export function useOralExam(examId: number, userId: string) {
       apply(response); if (response.audioReceived || response.phase !== 'TRANSCRIBING') await forgetAudio()
     } catch (cause) {
       if (oralErrorCode(cause)===1803) { controlledRef.current=false; if (alive.current) setControlled(false) }
-      if (alive.current) { const message = oralError(cause); setIssue(message); feedback.notify({ title: 'Chưa xác nhận đã nhận bản ghi', message, tone: 'error' }) }
+      if (alive.current) { const message = oralError(cause); setIssue(message); feedback.notify({ title: i18n.t('exams.oral.hook.uploadUnconfirmedTitle'), message, tone: 'error' }) }
     } finally { uploadLock.current = false; if (alive.current) setUploading(false) }
   }, [examId, identity.id, apply, forgetAudio, feedback, remember])
   /** Lưu Blob bền trước SUBMIT; không nhận transcript gõ tay và không gửi câu đã đổi lượt. */
   const submitRecording = async (turnId: string, blob: Blob) => {
-    if (!recordingCurrent(turnId) || pendingRef.current || queuedWrite.current || uploadLock.current || draftRef.current) throw new Error('Lượt trả lời chưa sẵn sàng.')
+    if (!recordingCurrent(turnId) || pendingRef.current || queuedWrite.current || uploadLock.current || draftRef.current) throw new Error(i18n.t('exams.oral.hook.turnNotReady'))
     const next = current.current!
     const draft: OralAudioDraft = { blob, command: { requestId: newOralId(), clientSessionId: identity.id, expectedRevision: next.revision, turnId, action: 'SUBMIT' } }
     await saveAudioDraft(draftKey, draft); draftRef.current = draft; if (alive.current) setAudioDraft(draft)
@@ -265,7 +266,7 @@ export function useOralExam(examId: number, userId: string) {
       const revised = { ...draft, command: { ...draft.command, requestId: newOralId(), expectedRevision: next.revision } }
       await saveAudioDraft(draftKey, revised); draftRef.current = revised; if (alive.current) setAudioDraft(revised)
       ok = await send(revised.command)
-    } else if (!ok && alive.current) feedback.notify({ title: 'Chưa thể nộp bản ghi', message: lastWriteMessage.current || 'Bản ghi vẫn được giữ. Kiểm tra tiến trình và nhận lại quyền của tab trước khi gửi tiếp.', tone: 'error' })
+    } else if (!ok && alive.current) feedback.notify({ title: i18n.t('exams.oral.hook.submitFailedTitle'), message: lastWriteMessage.current || i18n.t('exams.oral.hook.submitKept'), tone: 'error' })
     if (ok) {
       if (current.current?.phase === 'ANSWERING' && current.current.currentTurnId === draft.command.turnId) await forgetAudio()
       else await uploadDraft()
@@ -297,7 +298,7 @@ export function useOralExam(examId: number, userId: string) {
   /** Tải audio có thể chậm; poll/heartbeat vẫn tiếp tục, không giữ khóa giao diện suốt lúc gọi TTS. */
   const speech = async (turnId: string, signal: AbortSignal) => {
     const next = current.current
-    if (!next || !speechCurrent(turnId)) throw new Error('Lượt nghe đã thay đổi.')
+    if (!next || !speechCurrent(turnId)) throw new Error(i18n.t('exams.oral.hook.listenChanged'))
     const blob = await oralApi.speech(examId, { clientSessionId: identity.id, turnId, expectedRevision: next.revision }, signal)
     await refresh(); return blob
   }

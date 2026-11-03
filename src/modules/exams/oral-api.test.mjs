@@ -1,6 +1,7 @@
 import { before, beforeEach, after, test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createServer } from 'vite'
+import { initTestI18n } from '../../test-utils/i18n.mjs'
 import { AxiosError } from 'axios'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -30,6 +31,7 @@ before(async () => {
   Object.defineProperty(globalThis, 'sessionStorage', { configurable: true, value: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) } })
   Object.defineProperty(globalThis, 'window', { configurable: true, value: { location: { pathname: '/student/exams/7/oral' } } })
   server = await createServer({ logLevel: 'silent', server: { middlewareMode: true, hmr: false, watch: null } })
+  await initTestI18n(server)
   api = await server.ssrLoadModule('/src/modules/exams/oralApi.ts')
   helper = await server.ssrLoadModule('/src/modules/exams/components/oralExamHelpers.ts')
   session = await server.ssrLoadModule('/src/modules/exams/components/oralExamSession.ts')

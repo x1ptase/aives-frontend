@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/shared/i18n'
 import { subjectApi, SubjectResponse } from '../api'
 import {
   CreateSubjectModal,
@@ -13,6 +15,7 @@ import ErrorState from '@/shared/components/common/ErrorState'
 import { SearchIcon, PlusIcon, EditIcon, TrashIcon } from '@/shared/components/common/Icons'
 
 export default function SubjectManagement() {
+  const { t } = useTranslation()
   const [subjects, setSubjects] = useState<SubjectResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -32,7 +35,7 @@ export default function SubjectManagement() {
       setSubjects(Array.isArray(d) ? d : d?.result ?? [])
     } catch (err: any) {
       setSubjects([])
-      setError(err?.response?.data?.message || err?.message || 'Could not load subjects.')
+      setError(err?.response?.data?.message || err?.message || i18n.t('subjects.management.loadFailed'))
     } finally {
       setLoading(false)
     }
@@ -50,14 +53,14 @@ export default function SubjectManagement() {
   }, [subjects, search])
 
   return (
-    <PageContainer title="Subject Management" subtitle="Create and maintain the subjects used by materials and questions.">
+    <PageContainer title={t('subjects.management.title')} subtitle={t('subjects.management.subtitle')}>
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
           <div className="relative flex-1 min-w-52 max-w-80">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><SearchIcon /></span>
             <input
               type="text"
-              placeholder="Search code, name or description…"
+              placeholder={t('subjects.management.searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:bg-white transition-all"
@@ -67,7 +70,7 @@ export default function SubjectManagement() {
             onClick={() => setShowCreate(true)}
             className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors"
           >
-            <PlusIcon /> Create Subject
+            <PlusIcon /> {t('subjects.management.create')}
           </button>
         </div>
 
@@ -75,18 +78,18 @@ export default function SubjectManagement() {
           {loading ? (
             <LoadingState rows={4} />
           ) : error ? (
-            <ErrorState title="Could not load subjects" message={error} onRetry={load} />
+            <ErrorState title={t('subjects.management.loadFailedTitle')} message={error} onRetry={load} />
           ) : filtered.length === 0 ? (
-            <EmptyState message={search ? 'No subjects match your search.' : 'No subjects yet. Click "Create Subject" to add one.'} />
+            <EmptyState message={search ? t('subjects.management.noMatch') : t('subjects.management.empty')} />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="border-b border-slate-100">
                   <tr className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                    <th className="px-4 py-3">Code</th>
-                    <th className="px-4 py-3">Name</th>
-                    <th className="px-4 py-3">Description</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
+                    <th className="px-4 py-3">{t('subjects.management.code')}</th>
+                    <th className="px-4 py-3">{t('subjects.management.name')}</th>
+                    <th className="px-4 py-3">{t('subjects.management.description')}</th>
+                    <th className="px-4 py-3 text-right">{t('subjects.management.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -97,13 +100,13 @@ export default function SubjectManagement() {
                       <td className="px-4 py-3 text-slate-500 max-w-xs truncate">{s.description || '—'}</td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
                         <button onClick={() => setDetailId(s.id)} className="px-2.5 py-1.5 mr-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors">
-                          Details
+                          {t('subjects.management.details')}
                         </button>
                         <button onClick={() => setEditTarget(s)} className="inline-flex items-center gap-1 px-2.5 py-1.5 mr-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md transition-colors">
-                          <EditIcon /> Edit
+                          <EditIcon /> {t('subjects.management.edit')}
                         </button>
                         <button onClick={() => setDeleteTarget(s)} className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors">
-                          <TrashIcon /> Delete
+                          <TrashIcon /> {t('subjects.management.delete')}
                         </button>
                       </td>
                     </tr>

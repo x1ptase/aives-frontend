@@ -1,3 +1,4 @@
+import i18n from '@/shared/i18n'
 /** Bản ghi thô của browser, không tự tạo transcript hoặc điểm. */
 export interface OralRecording { blob: Blob; hasSpeech: boolean | null; durationMs: number }
 
@@ -19,14 +20,14 @@ export class OralAudioRecorder {
     this.serial++
     if (this.recorder) { this.recorder.ondataavailable = null; this.recorder.onstop = null; this.recorder.onerror = null; if (this.recorder.state !== 'inactive') this.recorder.stop() }
     this.recorder = null; this.release(); this.chunks = []; this.bytes = 0
-    this.reject?.(new DOMException('Đã hủy bản ghi.', 'AbortError')); this.reject = null
+    this.reject?.(new DOMException(i18n.t('exams.oral.recorder.cancelled'), 'AbortError')); this.reject = null
   }
   /** Chỉ gọi sau thao tác bật mic rõ ràng; không mở micro khi mount/refresh. */
   async start(valid: () => boolean, limit: () => void, failed: (message: string) => void, maxMs = 300000) {
     this.cancel(); const serial = this.serial
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') throw new Error('Trình duyệt chưa hỗ trợ ghi âm. Hãy dùng Chrome/Edge và HTTPS hoặc localhost.')
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') throw new Error(i18n.t('exams.oral.recorder.unsupported'))
     const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg;codecs=opus'].find(type => MediaRecorder.isTypeSupported(type))
-    if (!mimeType) throw new Error('Trình duyệt không có định dạng ghi âm được hỗ trợ.')
+    if (!mimeType) throw new Error(i18n.t('exams.oral.recorder.noMime'))
     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: false })
     if (serial !== this.serial || !valid()) { stream.getTracks().forEach(track => track.stop()); return false }
     this.stream = stream; this.voiced = 0; this.measured = false; this.started = performance.now()
@@ -44,13 +45,13 @@ export class OralAudioRecorder {
       recorder.ondataavailable = event => {
         if (serial !== this.serial) return
         this.bytes += event.data.size
-        if (this.bytes > 8 * 1024 * 1024) { this.cancel(); failed('Bản ghi vượt quá 8 MiB. Hãy ghi lại câu trả lời ngắn hơn.'); return }
+        if (this.bytes > 8 * 1024 * 1024) { this.cancel(); failed(i18n.t('exams.oral.recorder.tooLarge')); return }
         if (event.data.size) this.chunks.push(event.data)
       }
-      recorder.onerror = () => { if (serial === this.serial) { this.cancel(); failed('Micro gặp lỗi kỹ thuật. Hãy kiểm tra thiết bị rồi ghi lại.') } }
+      recorder.onerror = () => { if (serial === this.serial) { this.cancel(); failed(i18n.t('exams.oral.recorder.micError')) } }
       this.timer = setInterval(() => {
         if (serial !== this.serial) return
-        if (!valid()) { this.cancel(); failed('Đã hết thời gian hoặc lượt trả lời đã thay đổi. Bản ghi chưa gửi đã được dừng.'); return }
+        if (!valid()) { this.cancel(); failed(i18n.t('exams.oral.recorder.expired')); return }
         if (analyser && samples && this.context?.state === 'running') {
           analyser.getFloatTimeDomainData(samples); this.measured = true
           const rms = Math.sqrt(samples.reduce((sum, value) => sum + value * value, 0) / samples.length)
@@ -64,7 +65,7 @@ export class OralAudioRecorder {
   /** Thu Blob sau dataavailable cuối cùng, rồi đóng micro; không tự gọi SUBMIT. */
   finish(): Promise<OralRecording> {
     const recorder = this.recorder, serial = this.serial
-    if (!recorder || recorder.state !== 'recording') return Promise.reject(new Error('Chưa có bản ghi đang thực hiện.'))
+    if (!recorder || recorder.state !== 'recording') return Promise.reject(new Error(i18n.t('exams.oral.recorder.notRecording')))
     return new Promise((resolve, reject) => {
       this.reject = reject
       recorder.onstop = () => {
@@ -86,8 +87,8 @@ export class OralAudioRecorder {
 /** Không hiển thị thông báo lỗi tiếng Anh từ browser hoặc tên thiết bị người dùng. */
 export function oralMicrophoneError(cause: unknown): string {
   const name = cause && typeof cause === 'object' && 'name' in cause ? cause.name : ''
-  if (name === 'NotAllowedError' || name === 'SecurityError') return 'Bạn chưa cho phép dùng micro. Hãy cấp quyền micro cho trang rồi thử lại.'
-  if (name === 'NotFoundError') return 'Không tìm thấy micro. Hãy kết nối thiết bị ghi âm rồi thử lại.'
-  if (name === 'NotReadableError') return 'Không mở được micro. Thiết bị có thể đang được ứng dụng khác sử dụng.'
-  return 'Chưa ghi âm được. Hãy kiểm tra micro và dùng Chrome/Edge trên HTTPS hoặc localhost.'
+  if (name === 'NotAllowedError' || name === 'SecurityError') return i18n.t('exams.oral.recorder.denied')
+  if (name === 'NotFoundError') return i18n.t('exams.oral.recorder.notFound')
+  if (name === 'NotReadableError') return i18n.t('exams.oral.recorder.notReadable')
+  return i18n.t('exams.oral.recorder.generic')
 }
