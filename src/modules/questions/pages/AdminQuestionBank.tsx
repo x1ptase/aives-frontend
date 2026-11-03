@@ -32,6 +32,7 @@ export default function AdminQuestionBank() {
   const [search, setSearch] = useState('')
   const [subjectFilter, setSubjectFilter] = useState('')
   const [bloomFilter, setBloomFilter] = useState<BloomLevel | ''>('')
+  const [languageFilter, setLanguageFilter] = useState<'vi' | 'en' | ''>('')
   const [statusFilter, setStatusFilter] = useState<QuestionStatus | ''>('')
   const [tab, setTab] = useState<QuestionTab>('DRAFT')
   const effectiveStatus = tabStatus(tab, statusFilter)
@@ -74,6 +75,7 @@ export default function AdminQuestionBank() {
         ...(debouncedSearch ? { keyword: debouncedSearch } : {}),
         ...(bloomFilter ? { bloomLevel: bloomFilter } : {}),
         ...(effectiveStatus ? { status: effectiveStatus } : {}),
+        ...(languageFilter ? { language: languageFilter } : {}),
       })
       .then(res => {
         if (cancelled) return
@@ -91,7 +93,7 @@ export default function AdminQuestionBank() {
         if (!cancelled) setLoading(false)
       })
     return () => { cancelled = true }
-  }, [page, subjectFilter, debouncedSearch, bloomFilter, effectiveStatus, reloadKey])
+  }, [page, subjectFilter, debouncedSearch, bloomFilter, languageFilter, effectiveStatus, reloadKey])
 
   const load = () => setReloadKey(k => k + 1)
 
@@ -104,7 +106,7 @@ export default function AdminQuestionBank() {
     [subjects]
   )
 
-  const hasFilters = !!(debouncedSearch || subjectFilter || bloomFilter || (tab === 'ALL' && statusFilter))
+  const hasFilters = !!(debouncedSearch || subjectFilter || bloomFilter || languageFilter || (tab === 'ALL' && statusFilter))
   const reset = () => setPage(0)
 
   const openDetail = async (q: QuestionSummary) => {
@@ -197,6 +199,11 @@ export default function AdminQuestionBank() {
             <option value="">All Bloom levels</option>
             {BLOOM_LEVELS.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
+          <select value={languageFilter} onChange={e => { setLanguageFilter(e.target.value as 'vi' | 'en' | ''); reset() }} className={selectCls}>
+            <option value="">All languages</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="en">🇬🇧 English</option>
+          </select>
           {tab === 'ALL' && (
             <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as QuestionStatus | ''); reset() }} className={selectCls}>
               <option value="">All statuses</option>
@@ -205,7 +212,7 @@ export default function AdminQuestionBank() {
           )}
           {hasFilters && (
             <button
-              onClick={() => { setSearch(''); setDebouncedSearch(''); setSubjectFilter(''); setBloomFilter(''); setStatusFilter(''); reset() }}
+              onClick={() => { setSearch(''); setDebouncedSearch(''); setSubjectFilter(''); setBloomFilter(''); setLanguageFilter(''); setStatusFilter(''); reset() }}
               className="text-xs font-semibold text-blue-600 hover:text-blue-700"
             >
               Clear filters
@@ -239,6 +246,7 @@ export default function AdminQuestionBank() {
                     <th className="px-4 py-3 min-w-[260px]">Question</th>
                     <th className="px-4 py-3">Subject</th>
                     <th className="px-4 py-3">Bloom</th>
+                    <th className="px-4 py-3">Language</th>
                     <th className="px-4 py-3">Source</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Rubric</th>
@@ -253,6 +261,19 @@ export default function AdminQuestionBank() {
                       <td className="px-4 py-3 min-w-[260px] max-w-sm"><p className="line-clamp-2 text-slate-800">{q.contentPreview}</p></td>
                       <td className="px-4 py-3">{subjectLabel(q)}</td>
                       <td className="px-4 py-3 text-xs font-semibold">{q.bloomLevel || '—'}</td>
+                      <td className="px-4 py-3">
+                        {q.language ? (
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                            q.language === 'en'
+                              ? 'bg-sky-50 text-sky-700 border-sky-200'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          }`}>
+                            {q.language === 'en' ? '🇬🇧 EN' : '🇻🇳 VI'}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-xs">{q.sourceType || '—'}</td>
                       <td className="px-4 py-3"><QuestionStatusBadge status={q.status} /></td>
                       <td className="px-4 py-3"><RubricBadge hasRubric={q.hasRubric} /></td>
