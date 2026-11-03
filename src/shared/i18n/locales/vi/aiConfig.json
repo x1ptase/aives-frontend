@@ -1,0 +1,40 @@
+{
+  "services": {
+    "stt": {
+      "name": "Chuyển giọng nói thành văn bản",
+      "description": "Chuyển giọng nói của sinh viên thành văn bản trong các phiên vấn đáp."
+    },
+    "tts": {
+      "name": "Chuyển văn bản thành giọng nói",
+      "description": "Đọc to câu hỏi của AI trong các phiên vấn đáp."
+    },
+    "embedding": {
+      "name": "RAG / Embedding",
+      "description": "Tạo embedding cho tài liệu học tập và truy xuất RAG."
+    },
+    "evaluator": {
+      "name": "AI chấm điểm",
+      "description": "Đánh giá câu trả lời của sinh viên, tạo điểm số và nhận xét."
+    }
+  },
+  "status": {
+    "active": "Hoạt động",
+    "inactive": "Không hoạt động",
+    "notConfigured": "Chưa cấu hình"
+  },
+  "page": {
+    "title": "Cấu hình AI & API",
+    "subtitle": "Xem (chỉ đọc) các dịch vụ AI và kết nối API mà nền tảng AIVES sử dụng.",
+    "refresh": "Làm mới",
+    "loading": "Đang tải cấu hình AI...",
+    "loadFailed": "Không thể tải cấu hình AI. Vui lòng thử lại.",
+    "retry": "Thử lại",
+    "provider": "Nhà cung cấp",
+    "model": "Mô hình / Engine",
+    "apiKey": "API Key"
+  },
+  "card": {
+    "title": "Trạng thái dịch vụ AI",
+    "view": "Xem cấu hình AI"
+  }
+}

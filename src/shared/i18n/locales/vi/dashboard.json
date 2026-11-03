@@ -1,0 +1,69 @@
+{
+  "welcome": "Xin chào",
+  "welcomeName": "Xin chào, {{name}}",
+  "lecturer": {
+    "subtitle": "Không gian giảng dạy của bạn.",
+    "examsGrading": "Kỳ thi & chấm điểm",
+    "examsUnavailable": "Không thể tải kỳ thi",
+    "loadExamsFailed": "Không thể tải danh sách kỳ thi.",
+    "noExams": "Chưa có kỳ thi nào.",
+    "examCount": "{{count}} phiên thi. Mở Kỳ thi của tôi để quản lý phiên thi và lịch của sinh viên."
+  },
+  "student": {
+    "subtitle": "Tổng quan tài khoản và kỳ thi của bạn.",
+    "examsReturned": "Số kỳ thi máy chủ trả về",
+    "myAccount": "Tài khoản của tôi",
+    "profileUnavailable": "Không thể tải hồ sơ",
+    "loadProfileFailed": "Không thể tải hồ sơ của bạn.",
+    "loadExamsFailed": "Không thể tải kỳ thi của bạn.",
+    "fullName": "Họ và tên",
+    "username": "Tên đăng nhập",
+    "email": "Email",
+    "role": "Vai trò",
+    "memberSince": "Tham gia từ",
+    "myExams": "Kỳ thi của tôi",
+    "examsUnavailable": "Không thể tải kỳ thi",
+    "noExams": "Bạn chưa có kỳ thi nào.",
+    "examCount": "{{count}} lượt phân công kỳ thi. Mở Kỳ thi của tôi để xem lịch thi."
+  },
+  "stats": {
+    "failed": "Không thể tải thống kê.",
+    "retryLater": "Vui lòng thử lại sau.",
+    "totalUsers": "Tổng người dùng",
+    "totalUsersSub": "Tài khoản đã đăng ký",
+    "lecturers": "Giảng viên",
+    "lecturersSub": "Tài khoản có vai trò Giảng viên",
+    "students": "Sinh viên",
+    "studentsSub": "Tài khoản có vai trò Sinh viên",
+    "subjects": "Môn học",
+    "subjectsSub": "Đã định nghĩa trong hệ thống"
+  },
+  "activity": {
+    "title": "Hoạt động gần đây",
+    "subtitle": "Các hoạt động quan trọng mới nhất trên AIVES",
+    "failed": "Không thể tải hoạt động gần đây.",
+    "empty": "Chưa có hoạt động gần đây",
+    "cols": {
+      "timestamp": "Thời gian",
+      "user": "Người dùng",
+      "action": "Hành động",
+      "detail": "Chi tiết",
+      "status": "Trạng thái"
+    },
+    "viewDetails": "Xem chi tiết",
+    "detailsTitle": "Chi tiết hoạt động",
+    "user": "Người dùng:",
+    "action": "Hành động:",
+    "timestamp": "Thời gian:",
+    "status": "Trạng thái:",
+    "detail": "Chi tiết:",
+    "notRecorded": "Chưa ghi nhận",
+    "unknown": "Không rõ",
+    "createdQuestion": "Đã tạo câu hỏi",
+    "createdQuestionSource": "Đã tạo câu hỏi ({{source}})",
+    "uploadedMaterial": "Đã tải lên tài liệu học tập",
+    "questionId": "ID câu hỏi: {{id}}",
+    "materialId": "ID tài liệu: {{id}}",
+    "success": "Thành công"
+  }
+}

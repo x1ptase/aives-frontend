@@ -1,0 +1,14 @@
+{
+  "language": "Language",
+  "retry": "Retry",
+  "close": "Close",
+  "closeWindow": "Close window",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "understood": "Got it",
+  "roles": {
+    "admin": "Admin",
+    "lecturer": "Lecturer",
+    "student": "Student"
+  }
+}

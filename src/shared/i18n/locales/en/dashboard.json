@@ -1,0 +1,69 @@
+{
+  "welcome": "Welcome",
+  "welcomeName": "Welcome, {{name}}",
+  "lecturer": {
+    "subtitle": "Your teaching workspace.",
+    "examsGrading": "Exams & Grading",
+    "examsUnavailable": "Exams are unavailable",
+    "loadExamsFailed": "Could not load exams.",
+    "noExams": "No exams yet.",
+    "examCount": "{{count}} exam session(s). Open My Exams to manage sessions and student schedules."
+  },
+  "student": {
+    "subtitle": "Your account and exam overview.",
+    "examsReturned": "Exams returned by server",
+    "myAccount": "My Account",
+    "profileUnavailable": "Profile unavailable",
+    "loadProfileFailed": "Could not load your profile.",
+    "loadExamsFailed": "Could not load your exams.",
+    "fullName": "Full name",
+    "username": "Username",
+    "email": "Email",
+    "role": "Role",
+    "memberSince": "Member since",
+    "myExams": "My Exams",
+    "examsUnavailable": "Exams are unavailable",
+    "noExams": "You have no exams yet.",
+    "examCount": "{{count}} exam assignment(s). Open My Exams to view your schedule."
+  },
+  "stats": {
+    "failed": "Failed to load statistics.",
+    "retryLater": "Please try again later.",
+    "totalUsers": "Total Users",
+    "totalUsersSub": "Registered accounts",
+    "lecturers": "Lecturers",
+    "lecturersSub": "Accounts with Lecturer role",
+    "students": "Students",
+    "studentsSub": "Accounts with Student role",
+    "subjects": "Subjects",
+    "subjectsSub": "Defined in the system"
+  },
+  "activity": {
+    "title": "Recent Activities",
+    "subtitle": "Latest important activities across AIVES",
+    "failed": "Failed to load recent activities.",
+    "empty": "No recent activities",
+    "cols": {
+      "timestamp": "Timestamp",
+      "user": "User",
+      "action": "Action",
+      "detail": "Detail",
+      "status": "Status"
+    },
+    "viewDetails": "View details",
+    "detailsTitle": "Activity Details",
+    "user": "User:",
+    "action": "Action:",
+    "timestamp": "Timestamp:",
+    "status": "Status:",
+    "detail": "Detail:",
+    "notRecorded": "Not recorded",
+    "unknown": "Unknown",
+    "createdQuestion": "Created Question",
+    "createdQuestionSource": "Created Question ({{source}})",
+    "uploadedMaterial": "Uploaded Learning Material",
+    "questionId": "Question ID: {{id}}",
+    "materialId": "Material ID: {{id}}",
+    "success": "Success"
+  }
+}

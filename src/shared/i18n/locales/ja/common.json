@@ -1,0 +1,14 @@
+{
+  "language": "言語",
+  "retry": "再試行",
+  "close": "閉じる",
+  "closeWindow": "ウィンドウを閉じる",
+  "cancel": "キャンセル",
+  "confirm": "確認",
+  "understood": "了解",
+  "roles": {
+    "admin": "管理者",
+    "lecturer": "講師",
+    "student": "学生"
+  }
+}

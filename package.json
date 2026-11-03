@@ -15,9 +15,11 @@
     "@capacitor/core": "^8.6.0",
     "@capacitor/ios": "^8.6.0",
     "axios": "^1.20.0",
+    "i18next": "^26.7.1",
     "lucide-react": "^1.47.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-i18next": "^17.1.11",
     "react-router-dom": "^7.18.4",
     "zustand": "^5.0.15"
   },

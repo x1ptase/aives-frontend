@@ -1,0 +1,117 @@
+{
+  "management": {
+    "title": "Subject Management",
+    "subtitle": "Create and maintain the subjects used by materials and questions.",
+    "searchPlaceholder": "Search code, name or description…",
+    "create": "Create Subject",
+    "loadFailed": "Could not load subjects.",
+    "loadFailedTitle": "Could not load subjects",
+    "noMatch": "No subjects match your search.",
+    "empty": "No subjects yet. Click \"Create Subject\" to add one.",
+    "code": "Code",
+    "name": "Name",
+    "description": "Description",
+    "actions": "Actions",
+    "details": "Details",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "my": {
+    "title": "My Subjects",
+    "subtitle": "Subjects assigned to you by an administrator",
+    "assigned": "{{count}} assigned",
+    "loadFailed": "Could not load your subjects.",
+    "loadFailedTitle": "Could not load your subjects",
+    "empty": "You have not been assigned to any subject yet.",
+    "emptyDesc": "Please contact an administrator.",
+    "learningMaterials": "Learning Materials",
+    "questionBank": "Question Bank"
+  },
+  "form": {
+    "codeLabel": "Subject Code",
+    "nameLabel": "Subject Name",
+    "descLabel": "Description",
+    "optional": "(optional)",
+    "codePlaceholder": "e.g. SWD392",
+    "namePlaceholder": "e.g. Software Architecture and Design",
+    "descPlaceholder": "Brief description of this subject",
+    "codeRequired": "Subject Code is required.",
+    "nameRequired": "Subject Name is required.",
+    "cancel": "Cancel"
+  },
+  "create": {
+    "title": "Create Subject",
+    "submit": "Create Subject",
+    "failed": "Failed to create subject."
+  },
+  "edit": {
+    "title": "Edit Subject",
+    "submit": "Save Changes",
+    "failed": "Failed to update subject."
+  },
+  "detail": {
+    "title": "Subject Details",
+    "loadFailed": "Failed to load subject details.",
+    "loadFailedTitle": "Failed to load subject",
+    "tryAgain": "Try Again",
+    "noDescription": "No description provided.",
+    "id": "Subject ID: {{id}}",
+    "close": "Close",
+    "edit": "Edit Subject"
+  },
+  "delete": {
+    "title": "Delete Subject",
+    "confirm": "Are you sure you want to delete <b>{{name}}</b>?",
+    "warning": "This action cannot be undone. Any linked questions, learning materials, or exam sessions may prevent deletion or be affected.",
+    "failed": "Failed to delete subject.",
+    "linked": "Cannot delete this subject because it is linked to existing questions, learning materials, or exam sessions. Please delete linked items first."
+  },
+  "assignments": {
+    "title": "Subject Assignment",
+    "subtitle": "Assign lecturers to subjects. Only assigned lecturers can generate questions for a subject.",
+    "assignLecturer": "Assign Lecturer",
+    "needLoaded": "Lecturers and subjects must be loaded first",
+    "searchPlaceholder": "Search username, lecturer or subject…",
+    "allLecturers": "All lecturers",
+    "allSubjects": "All subjects",
+    "clearFilters": "Clear filters",
+    "loadFailedTitle": "Could not load assignments",
+    "retry": "Retry",
+    "noMatch": "No assignments match your filters.",
+    "empty": "No assignments yet. Click \"Assign Lecturer\" to create one.",
+    "cols": {
+      "username": "Lecturer Username",
+      "name": "Lecturer Name",
+      "code": "Subject Code",
+      "subject": "Subject Name",
+      "actions": "Actions"
+    },
+    "remove": "Remove",
+    "removeTitle": "Remove assignment?",
+    "removeBody": "<b>{{lecturer}}</b> ({{username}}) will no longer be assigned to <b>{{subject}}</b>.",
+    "removeNote": "No questions, rubrics or materials are deleted. However, the lecturer loses access to all Questions in this subject, including the ones they created.",
+    "cancel": "Cancel",
+    "removing": "Removing…",
+    "loadAssignmentsFailed": "Could not load subject assignments.",
+    "loadLecturersFailed": "Could not load lecturers.",
+    "loadSubjectsFailed": "Could not load subjects.",
+    "removeFailed": "Failed to remove assignment."
+  },
+  "assign": {
+    "title": "Assign Lecturer",
+    "lecturer": "Lecturer",
+    "selectLecturer": "Select a lecturer…",
+    "subjects": "Subjects",
+    "selected": "{{count}} selected",
+    "searchPlaceholder": "Search subject code or name…",
+    "noSubjects": "No subjects available.",
+    "noMatch": "No subjects match your search.",
+    "alreadyAssigned": "Already assigned",
+    "cancel": "Cancel",
+    "submit": "Assign",
+    "submitting": "Assigning…",
+    "pickLecturer": "Please select a lecturer.",
+    "pickSubject": "Please select at least one subject.",
+    "failed": "Failed to assign lecturer."
+  }
+}
