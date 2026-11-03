@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/shared/i18n'
 import { userApi } from '@/modules/users'
 import { subjectApi } from '@/modules/subjects'
 
 export default function TopStatsCards() {
+  const { t } = useTranslation()
   const [stats, setStats] = useState<{ users: number; lecturers: number; students: number; subjects: number } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -23,7 +26,7 @@ export default function TopStatsCards() {
           subjects: subjects.length,
         })
       } catch (err: any) {
-        setError(err?.response?.data?.message || err?.message || 'Please try again later.')
+        setError(err?.response?.data?.message || err?.message || i18n.t('dashboard.stats.retryLater'))
       } finally {
         setLoading(false)
       }
@@ -38,16 +41,16 @@ export default function TopStatsCards() {
   }
 
   if (error || !stats) {
-    return <div className="mb-7 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium">Failed to load statistics. {error}</div>
+    return <div className="mb-7 p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium">{t('dashboard.stats.failed')} {error}</div>
   }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-7">
       {[
         {
-          label: 'Total Users',
+          label: t('dashboard.stats.totalUsers'),
           value: String(stats.users),
-          sub: 'Registered accounts',
+          sub: t('dashboard.stats.totalUsersSub'),
           accent: '#eff6ff',
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-blue-600">
@@ -58,9 +61,9 @@ export default function TopStatsCards() {
           ),
         },
         {
-          label: 'Lecturers',
+          label: t('dashboard.stats.lecturers'),
           value: String(stats.lecturers),
-          sub: 'Accounts with Lecturer role',
+          sub: t('dashboard.stats.lecturersSub'),
           accent: '#f0fdf4',
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-emerald-600">
@@ -70,9 +73,9 @@ export default function TopStatsCards() {
           ),
         },
         {
-          label: 'Students',
+          label: t('dashboard.stats.students'),
           value: String(stats.students),
-          sub: 'Accounts with Student role',
+          sub: t('dashboard.stats.studentsSub'),
           accent: '#faf5ff',
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-purple-600">
@@ -83,9 +86,9 @@ export default function TopStatsCards() {
           ),
         },
         {
-          label: 'Subjects',
+          label: t('dashboard.stats.subjects'),
           value: String(stats.subjects),
-          sub: 'Defined in the system',
+          sub: t('dashboard.stats.subjectsSub'),
           accent: '#fff7ed',
           icon: (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-orange-600">

@@ -1,3 +1,4 @@
+import { Trans } from 'react-i18next'
 import { ChevronLeft, ChevronRight } from '@/shared/components/common/Icons'
 
 interface PaginationProps {
@@ -16,7 +17,11 @@ export default function Pagination({ page, totalPages, totalItems, pageSize, onP
   return (
     <div className="flex items-center justify-between gap-3 flex-wrap px-4 sm:px-6 lg:px-8 py-3.5 border-t border-slate-100 bg-[#f8fafc]">
       <div className="text-xs text-slate-400">
-        Showing <strong className="text-slate-600">{startItem}</strong>–<strong className="text-slate-600">{endItem}</strong> of <strong className="text-slate-600">{totalItems}</strong> users
+        <Trans
+          i18nKey="users.pagination.showing"
+          values={{ start: startItem, end: endItem, total: totalItems }}
+          components={{ b: <strong className="text-slate-600" /> }}
+        />
       </div>
       <div className="flex items-center gap-1">
         <button

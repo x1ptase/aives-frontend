@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/shared/i18n'
+import { formatDate, normalizeName } from '@/shared/i18n/format'
 import { userApi } from '../api'
 import { useAuthStore } from '@/modules/auth'
 
@@ -11,16 +14,17 @@ interface ProfileData {
   createdAt: string
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  ADMIN: 'Administrator',
-  LECTURER: 'Lecturer',
-  STUDENT: 'Student',
-  Admin: 'Administrator',
-  Lecturer: 'Lecturer',
-  Student: 'Student',
-  admin: 'Administrator',
-  instructor: 'Lecturer',
-  student: 'Student',
+// Khóa i18n của nhãn vai trò (users.profile.roleNames.*).
+const ROLE_LABEL_KEYS: Record<string, string> = {
+  ADMIN: 'admin',
+  LECTURER: 'lecturer',
+  STUDENT: 'student',
+  Admin: 'admin',
+  Lecturer: 'lecturer',
+  Student: 'student',
+  admin: 'admin',
+  instructor: 'lecturer',
+  student: 'student',
 }
 
 const ROLE_COLORS: Record<string, { bg: string; text: string; ring: string; gradient: string }> = {
@@ -41,6 +45,7 @@ function getInitials(name: string): string {
 }
 
 export default function Profile() {
+  const { t } = useTranslation()
   const authUser = useAuthStore((state) => state.user)
   const setUser = useAuthStore((state) => state.setUser)
   const token = useAuthStore((state) => state.token)
@@ -82,10 +87,10 @@ export default function Profile() {
         if (res.data?.result) {
           setProfile(res.data.result)
         } else {
-          setFetchError('Could not load profile data.')
+          setFetchError(i18n.t('users.profile.loadEmpty'))
         }
       } catch {
-        setFetchError('Could not load profile. Please try again later.')
+        setFetchError(i18n.t('users.profile.loadFailed'))
       } finally {
         setLoading(false)
       }
@@ -117,11 +122,11 @@ export default function Profile() {
     setSaveSuccess('')
 
     if (!editFullName.trim()) {
-      setSaveError('Full name is required.')
+      setSaveError(t('users.profile.fullNameRequired'))
       return
     }
     if (!editEmail.trim() || !validateEmail(editEmail)) {
-      setSaveError('Please enter a valid email address.')
+      setSaveError(t('users.profile.invalidEmail'))
       return
     }
     if (!profile) return
@@ -157,10 +162,10 @@ export default function Profile() {
         )
       }
 
-      setSaveSuccess('Profile updated successfully.')
+      setSaveSuccess(t('users.profile.updated'))
       setIsEditing(false)
     } catch (err: unknown) {
-      let msg = 'Failed to update profile.'
+      let msg = t('users.profile.updateFailed')
       if (typeof err === 'object' && err !== null && 'response' in err) {
         const res = (err as { response?: { data?: { message?: string; result?: { message?: string } } } }).response
         msg = res?.data?.message || res?.data?.result?.message || msg
@@ -168,7 +173,7 @@ export default function Profile() {
         msg = err.message
       }
       if (msg.includes('EMAIL_EXISTED') || msg.toLowerCase().includes('email already')) {
-        setSaveError('This email is already in use. Please use a different email.')
+        setSaveError(t('users.profile.emailInUse'))
       } else {
         setSaveError(msg)
       }
@@ -178,33 +183,34 @@ export default function Profile() {
   }
 
   const roleStyle = profile ? (ROLE_COLORS[profile.role] || DEFAULT_ROLE_STYLE) : DEFAULT_ROLE_STYLE
-  const roleLabel = profile ? (ROLE_LABELS[profile.role] || profile.role) : ''
+  const roleKey = profile ? ROLE_LABEL_KEYS[profile.role] : undefined
+  const roleLabel = profile ? (roleKey ? t(`users.profile.roleNames.${roleKey}`) : profile.role) : ''
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
     setCpError('')
     setCpSuccess('')
     if (!cpCurrent) {
-      setCpError('Current password is required.')
+      setCpError(t('users.profile.currentRequired'))
       return
     }
     if (!cpNew) {
-      setCpError('New password is required.')
+      setCpError(t('users.profile.newRequired'))
       return
     }
     if (cpNew.length < 6) {
-      setCpError('New password must be at least 6 characters.')
+      setCpError(t('users.profile.newTooShort'))
       return
     }
     if (cpNew !== cpConfirm) {
-      setCpError('New passwords do not match.')
+      setCpError(t('users.profile.passwordMismatch'))
       return
     }
 
     setCpSaving(true)
     try {
       await userApi.changePassword({ currentPassword: cpCurrent, newPassword: cpNew })
-      setCpSuccess('Password changed successfully.')
+      setCpSuccess(t('users.profile.passwordChanged'))
       setIsChangingPassword(false)
       setCpCurrent('')
       setCpNew('')
@@ -213,7 +219,7 @@ export default function Profile() {
       if (err instanceof Error) {
         setCpError(err.message)
       } else {
-        setCpError('Failed to change password. Endpoint may be missing.')
+        setCpError(t('users.profile.changeFailed'))
       }
     } finally {
       setCpSaving(false)
@@ -226,7 +232,7 @@ export default function Profile() {
     try {
       await userApi.googleLink('dummy_token')
     } catch (err: any) {
-      setGoogleLinkError(err.message || 'Google linking is unavailable.')
+      setGoogleLinkError(err.message || t('users.profile.googleUnavailable'))
     } finally {
       setIsGoogleLinking(false)
     }
@@ -235,7 +241,7 @@ export default function Profile() {
   const formattedCreatedAt = profile?.createdAt
     ? (() => {
         const d = new Date(profile.createdAt)
-        return isNaN(d.getTime()) ? profile.createdAt : d.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
+        return isNaN(d.getTime()) ? profile.createdAt : formatDate(d, { year: 'numeric', month: 'long', day: 'numeric' })
       })()
     : '—'
 
@@ -246,9 +252,9 @@ export default function Profile() {
         {/* Page Title */}
         <div>
           <h1 className="text-2xl font-bold text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-            My Profile
+            {t('users.profile.title')}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">View and manage your personal account information.</p>
+          <p className="text-sm text-slate-500 mt-1">{t('users.profile.subtitle')}</p>
         </div>
 
         {/* Loading */}
@@ -259,7 +265,7 @@ export default function Profile() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
-              <span className="text-slate-500 text-sm">Loading profile…</span>
+              <span className="text-slate-500 text-sm">{t('users.profile.loading')}</span>
             </div>
           </div>
         )}
@@ -272,7 +278,7 @@ export default function Profile() {
               onClick={() => window.location.reload()}
               className="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors"
             >
-              Retry
+              {t('users.profile.retry')}
             </button>
           </div>
         )}
@@ -287,13 +293,13 @@ export default function Profile() {
                   className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl font-bold text-white shadow-lg"
                   style={{ background: roleStyle.gradient, fontFamily: 'DM Sans, sans-serif' }}
                 >
-                  {getInitials(profile.fullName || profile.username)}
+                  {getInitials(normalizeName(profile.fullName || profile.username))}
                 </div>
 
                 <div className="min-w-0">
-                  <div className="text-xs font-medium text-slate-400">{roleLabel} profile</div>
+                  <div className="text-xs font-medium text-slate-400">{t('users.profile.roleProfile', { role: roleLabel })}</div>
                   <h2 className="mt-0.5 text-xl sm:text-2xl font-bold text-slate-800 leading-tight break-words" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                    {profile.fullName || profile.username}
+                    {normalizeName(profile.fullName || profile.username)}
                   </h2>
                   <div className="mt-2.5 flex items-center gap-x-3 gap-y-2 flex-wrap">
                     <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600">
@@ -326,7 +332,7 @@ export default function Profile() {
                       <path d="M16 3v4M8 3v4M3 11h18" />
                     </svg>
                     <span className="text-sm text-slate-700 truncate">
-                      <span className="text-slate-400">Member since </span>
+                      <span className="text-slate-400">{t('users.profile.memberSince')}</span>
                       {formattedCreatedAt}
                     </span>
                   </div>
@@ -345,7 +351,7 @@ export default function Profile() {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                  Account Information
+                  {t('users.profile.accountInfo')}
                 </h3>
                 {!isEditing && (
                   <button
@@ -356,7 +362,7 @@ export default function Profile() {
                       <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
                       <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                     </svg>
-                    Edit Profile
+                    {t('users.profile.editProfile')}
                   </button>
                 )}
               </div>
@@ -366,25 +372,25 @@ export default function Profile() {
                 <div className="p-6 space-y-5">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Full Name</div>
-                      <div className="text-sm font-semibold text-slate-800">{profile.fullName || '—'}</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">{t('users.profile.fullName')}</div>
+                      <div className="text-sm font-semibold text-slate-800">{normalizeName(profile.fullName) || '—'}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Username</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">{t('users.profile.username')}</div>
                       <div className="text-sm font-medium text-slate-600 font-mono">{profile.username || '—'}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Username cannot be changed</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">{t('users.profile.usernameLocked')}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Email Address</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">{t('users.profile.email')}</div>
                       <div className="text-sm font-medium text-slate-700">{profile.email || '—'}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Role</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">{t('users.profile.role')}</div>
                       <div className="text-sm font-medium text-slate-700">{roleLabel}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Role cannot be changed</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">{t('users.profile.roleLocked')}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Member Since</div>
+                      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">{t('users.profile.memberSinceLabel')}</div>
                       <div className="text-sm font-medium text-slate-700">{formattedCreatedAt}</div>
                     </div>
                   </div>
@@ -404,7 +410,7 @@ export default function Profile() {
                     {/* Full Name */}
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                        Full Name <span className="text-red-500">*</span>
+                        {t('users.profile.fullName')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -413,14 +419,14 @@ export default function Profile() {
                         value={editFullName}
                         onChange={e => setEditFullName(e.target.value)}
                         className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50 transition-all"
-                        placeholder="Your full name"
+                        placeholder={t('users.profile.fullNamePlaceholder')}
                       />
                     </div>
 
                     {/* Username (read-only) */}
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                        Username
+                        {t('users.profile.username')}
                       </label>
                       <input
                         type="text"
@@ -428,13 +434,13 @@ export default function Profile() {
                         value={profile.username}
                         className="w-full px-3 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-500 text-sm cursor-not-allowed font-mono"
                       />
-                      <p className="text-[10px] text-slate-400 mt-1">Username cannot be changed</p>
+                      <p className="text-[10px] text-slate-400 mt-1">{t('users.profile.usernameLocked')}</p>
                     </div>
 
                     {/* Email */}
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                        Email Address <span className="text-red-500">*</span>
+                        {t('users.profile.email')} <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="email"
@@ -443,14 +449,14 @@ export default function Profile() {
                         value={editEmail}
                         onChange={e => setEditEmail(e.target.value)}
                         className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50 transition-all"
-                        placeholder="your@email.com"
+                        placeholder={t('users.profile.emailPlaceholder')}
                       />
                     </div>
 
                     {/* Role (read-only) */}
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                        Role
+                        {t('users.profile.role')}
                       </label>
                       <input
                         type="text"
@@ -458,7 +464,7 @@ export default function Profile() {
                         value={roleLabel}
                         className="w-full px-3 py-2.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-500 text-sm cursor-not-allowed"
                       />
-                      <p className="text-[10px] text-slate-400 mt-1">Role cannot be changed</p>
+                      <p className="text-[10px] text-slate-400 mt-1">{t('users.profile.roleLocked')}</p>
                     </div>
                   </div>
                   {/* Actions */}
@@ -469,7 +475,7 @@ export default function Profile() {
                       disabled={saving}
                       className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
                     >
-                      Cancel
+                      {t('users.profile.cancel')}
                     </button>
                     <button
                       type="submit"
@@ -482,7 +488,7 @@ export default function Profile() {
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
                       )}
-                      {saving ? 'Saving…' : 'Save Changes'}
+                      {saving ? t('users.profile.saving') : t('users.profile.save')}
                     </button>
                   </div>
                 </form>
@@ -493,7 +499,7 @@ export default function Profile() {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                  Password Management
+                  {t('users.profile.passwordMgmt')}
                 </h3>
                 {!isChangingPassword && (
                   <button
@@ -507,7 +513,7 @@ export default function Profile() {
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors"
                   >
-                    Change Password
+                    {t('users.profile.changePassword')}
                   </button>
                 )}
               </div>
@@ -529,7 +535,7 @@ export default function Profile() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                        Current Password <span className="text-red-500">*</span>
+                        {t('users.profile.currentPassword')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <input
@@ -539,7 +545,7 @@ export default function Profile() {
                           value={cpCurrent}
                           onChange={e => setCpCurrent(e.target.value)}
                           className="w-full pl-3 pr-10 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-slate-50"
-                          placeholder="Enter current password"
+                          placeholder={t('users.profile.currentPasswordPlaceholder')}
                         />
                         <button
                           type="button"
@@ -557,7 +563,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                        New Password <span className="text-red-500">*</span>
+                        {t('users.profile.newPassword')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <input
@@ -567,7 +573,7 @@ export default function Profile() {
                           value={cpNew}
                           onChange={e => setCpNew(e.target.value)}
                           className="w-full pl-3 pr-10 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-slate-50"
-                          placeholder="New password"
+                          placeholder={t('users.profile.newPasswordPlaceholder')}
                         />
                         <button
                           type="button"
@@ -585,7 +591,7 @@ export default function Profile() {
 
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                        Confirm New Password <span className="text-red-500">*</span>
+                        {t('users.profile.confirmNewPassword')} <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <input
@@ -595,7 +601,7 @@ export default function Profile() {
                           value={cpConfirm}
                           onChange={e => setCpConfirm(e.target.value)}
                           className="w-full pl-3 pr-10 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm disabled:bg-slate-50"
-                          placeholder="Confirm new password"
+                          placeholder={t('users.profile.confirmNewPasswordPlaceholder')}
                         />
                         <button
                           type="button"
@@ -619,7 +625,7 @@ export default function Profile() {
                       disabled={cpSaving}
                       className="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
                     >
-                      Cancel
+                      {t('users.profile.cancel')}
                     </button>
                     <button
                       type="submit"
@@ -632,7 +638,7 @@ export default function Profile() {
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
                       )}
-                      {cpSaving ? 'Saving…' : 'Change Password'}
+                      {cpSaving ? t('users.profile.saving') : t('users.profile.changePassword')}
                     </button>
                   </div>
                 </form>
@@ -642,7 +648,7 @@ export default function Profile() {
             {/* Security info */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
               <h3 className="text-base font-bold text-slate-800 mb-4" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                Security &amp; Privacy
+                {t('users.profile.security')}
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
@@ -652,10 +658,10 @@ export default function Profile() {
                     </svg>
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-slate-700">Account Protected</div>
-                    <div className="text-xs text-slate-400">Your account is secured with a password.</div>
+                    <div className="text-sm font-semibold text-slate-700">{t('users.profile.accountProtected')}</div>
+                    <div className="text-xs text-slate-400">{t('users.profile.accountProtectedDesc')}</div>
                   </div>
-                  <span className="ml-auto text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Active</span>
+                  <span className="ml-auto text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{t('users.profile.active')}</span>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
                   <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
@@ -665,8 +671,8 @@ export default function Profile() {
                     </svg>
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-slate-700">Role Assignment</div>
-                    <div className="text-xs text-slate-400">Your role is managed by the system administrator.</div>
+                    <div className="text-sm font-semibold text-slate-700">{t('users.profile.roleAssignment')}</div>
+                    <div className="text-xs text-slate-400">{t('users.profile.roleAssignmentDesc')}</div>
                   </div>
                 </div>
 
@@ -681,8 +687,8 @@ export default function Profile() {
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-semibold text-slate-700">Google Account</div>
-                    <div className="text-xs text-slate-400 mb-2.5">Connect your Google account to sign in quickly.</div>
+                    <div className="text-sm font-semibold text-slate-700">{t('users.profile.googleAccount')}</div>
+                    <div className="text-xs text-slate-400 mb-2.5">{t('users.profile.googleAccountDesc')}</div>
                     {googleLinkError && (
                       <div className="text-xs text-red-600 mb-2 font-medium bg-red-50 p-2 rounded border border-red-100">{googleLinkError}</div>
                     )}
@@ -698,7 +704,7 @@ export default function Profile() {
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
                       )}
-                      {isGoogleLinking ? 'Connecting...' : 'Connect Google'}
+                      {isGoogleLinking ? t('users.profile.connecting') : t('users.profile.connectGoogle')}
                     </button>
                   </div>
                 </div>

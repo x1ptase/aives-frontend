@@ -1,5 +1,6 @@
+import { useTranslation } from 'react-i18next'
 import { User } from '@/shared/types'
-// No icon import
+import { formatDate } from '@/shared/i18n/format'
 
 interface UserDetailModalProps {
   user: User
@@ -10,12 +11,13 @@ interface UserDetailModalProps {
 }
 
 export default function UserDetailModal({ user, avatarColor, initials, onClose, onEdit }: UserDetailModalProps) {
+  const { t } = useTranslation()
   // Safe parsing for date
-  let formattedDate = 'N/A'
+  let formattedDate = t('users.detail.notAvailable')
   if (user.createdAt) {
     const d = new Date(user.createdAt)
     if (!isNaN(d.getTime())) {
-      formattedDate = d.toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' })
+      formattedDate = formatDate(d, { year: 'numeric', month: 'long', day: 'numeric' })
     }
   }
 
@@ -45,24 +47,24 @@ export default function UserDetailModal({ user, avatarColor, initials, onClose, 
             {user.name}
           </h2>
           <span className="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-semibold rounded-full uppercase tracking-widest">
-            {user.role}
+            {t(`common.roles.${user.role.toLowerCase()}`)}
           </span>
         </div>
 
         {/* Content */}
         <div className="px-8 py-6 space-y-5">
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Username</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t('users.detail.username')}</div>
             <div className="text-sm font-medium text-slate-800">{user.username || '—'}</div>
           </div>
           
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Email</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t('users.detail.email')}</div>
             <div className="text-sm font-medium text-slate-800">{user.email || '—'}</div>
           </div>
           
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Created At</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{t('users.detail.createdAt')}</div>
             <div className="text-sm font-medium text-slate-800">{formattedDate}</div>
           </div>
         </div>
@@ -77,14 +79,14 @@ export default function UserDetailModal({ user, avatarColor, initials, onClose, 
               }}
               className="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-semibold rounded-xl transition-colors"
             >
-              Edit User
+              {t('users.detail.edit')}
             </button>
           )}
           <button
             onClick={onClose}
             className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl shadow-md transition-colors"
           >
-            Done
+            {t('users.detail.done')}
           </button>
         </div>
       </div>

@@ -1,38 +1,40 @@
 import { ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitcher from '@/shared/components/common/LanguageSwitcher'
 import { IconBell, IconGrid, IconUsers, IconCpu, IconShield, IconFile, IconBook, IconClipboard } from '@/shared/components/common/Icons'
 import UserMenu from './UserMenu'
 
-type NavItem = { id: string; label: string; icon: ReactNode; path: string; badge?: string }
+type NavItem = { id: string; labelKey: string; icon: ReactNode; path: string; badge?: string }
 
 const ADMIN_NAV: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/admin' },
-  { id: 'users', label: 'User Management', icon: <IconUsers />, path: '/admin/users' },
-  { id: 'subjects', label: 'Subject Management', icon: <IconBook />, path: '/admin/subjects' },
-  { id: 'subject-assignments', label: 'Subject Assignment', icon: <IconShield />, path: '/admin/subject-assignments' },
-  { id: 'learning-materials', label: 'Learning Materials', icon: <IconBook />, path: '/admin/learning-materials' },
-  { id: 'question-bank', label: 'Question Bank', icon: <IconFile />, path: '/admin/question-bank' },
-  { id: 'ai-config', label: 'AI & API Configuration', icon: <IconCpu />, path: '/admin/ai-config' },
+  { id: 'dashboard', labelKey: 'layout.nav.dashboard', icon: <IconGrid />, path: '/admin' },
+  { id: 'users', labelKey: 'layout.nav.users', icon: <IconUsers />, path: '/admin/users' },
+  { id: 'subjects', labelKey: 'layout.nav.subjects', icon: <IconBook />, path: '/admin/subjects' },
+  { id: 'subject-assignments', labelKey: 'layout.nav.subjectAssignments', icon: <IconShield />, path: '/admin/subject-assignments' },
+  { id: 'learning-materials', labelKey: 'layout.nav.learningMaterials', icon: <IconBook />, path: '/admin/learning-materials' },
+  { id: 'question-bank', labelKey: 'layout.nav.questionBank', icon: <IconFile />, path: '/admin/question-bank' },
+  { id: 'ai-config', labelKey: 'layout.nav.aiConfig', icon: <IconCpu />, path: '/admin/ai-config' },
 ]
 
 const LECTURER_NAV: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/lecturer' },
-  { id: 'learning-materials', label: 'Learning Materials', icon: <IconBook />, path: '/lecturer/learning-materials' },
-  { id: 'rubrics', label: 'Rubrics', icon: <IconClipboard />, path: '/lecturer/rubrics' },
-  { id: 'question-bank', label: 'Question Bank', icon: <IconFile />, path: '/lecturer/question-bank' },
-  { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/lecturer/exams' },
+  { id: 'dashboard', labelKey: 'layout.nav.dashboard', icon: <IconGrid />, path: '/lecturer' },
+  { id: 'learning-materials', labelKey: 'layout.nav.learningMaterials', icon: <IconBook />, path: '/lecturer/learning-materials' },
+  { id: 'rubrics', labelKey: 'layout.nav.rubrics', icon: <IconClipboard />, path: '/lecturer/rubrics' },
+  { id: 'question-bank', labelKey: 'layout.nav.questionBank', icon: <IconFile />, path: '/lecturer/question-bank' },
+  { id: 'exams', labelKey: 'layout.nav.myExams', icon: <IconClipboard />, path: '/lecturer/exams' },
 ]
 
 const STUDENT_NAV: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: <IconGrid />, path: '/student' },
-  { id: 'exams', label: 'My Exams', icon: <IconClipboard />, path: '/student/exams' },
-  { id: 'history', label: 'Exam History', icon: <IconFile />, path: '/student/history' },
+  { id: 'dashboard', labelKey: 'layout.nav.dashboard', icon: <IconGrid />, path: '/student' },
+  { id: 'exams', labelKey: 'layout.nav.myExams', icon: <IconClipboard />, path: '/student/exams' },
+  { id: 'history', labelKey: 'layout.nav.examHistory', icon: <IconFile />, path: '/student/history' },
 ]
 
-const PORTAL_LABEL = {
-  admin: 'Admin Portal',
-  lecturer: 'Lecturer Portal',
-  student: 'Student Portal',
+const PORTAL_LABEL_KEY = {
+  admin: 'layout.portal.admin',
+  lecturer: 'layout.portal.lecturer',
+  student: 'layout.portal.student',
 }
 
 interface TopHeaderProps {
@@ -41,6 +43,7 @@ interface TopHeaderProps {
 }
 
 export default function TopHeader({ role, onMenuClick }: TopHeaderProps) {
+  const { t } = useTranslation()
   const location = useLocation()
   const navItems = role === 'admin' ? ADMIN_NAV : role === 'student' ? STUDENT_NAV : LECTURER_NAV
   const activeId = navItems.reduce<string>((found, item) => {
@@ -57,8 +60,8 @@ export default function TopHeader({ role, onMenuClick }: TopHeaderProps) {
         {onMenuClick && (
           <button
             onClick={onMenuClick}
-            aria-label="Toggle sidebar"
-            title="Toggle sidebar"
+            aria-label={t('layout.toggleSidebar')}
+            title={t('layout.toggleSidebar')}
             className="-ml-1 mr-1 p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" className="w-5 h-5">
@@ -66,17 +69,18 @@ export default function TopHeader({ role, onMenuClick }: TopHeaderProps) {
             </svg>
           </button>
         )}
-        <span className="hidden sm:inline">{PORTAL_LABEL[role]}</span>
+        <span className="hidden sm:inline">{t(PORTAL_LABEL_KEY[role])}</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 hidden sm:block">
           <polyline points="9 18 15 12 9 6" />
         </svg>
         <span className="text-slate-700 font-medium truncate">
-          {navItems.find(n => n.id === activeId)?.label}
+          {(() => { const item = navItems.find(n => n.id === activeId); return item ? t(item.labelKey) : null })()}
         </span>
       </div>
 
       {/* Right actions */}
       <div className="flex items-center gap-3">
+        <LanguageSwitcher />
         {/* Notification bell */}
         <button className="relative p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors">
           <IconBell />

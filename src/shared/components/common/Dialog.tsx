@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 /** Dialog dùng chung, giữ giao diện hiện có và quản lý focus/Escape bằng phần tử dialog. */
 export default function Dialog({ title, subtitle, busy, onClose, children, compact = false, descriptionId }: {
@@ -10,6 +11,7 @@ export default function Dialog({ title, subtitle, busy, onClose, children, compa
   /** Popup thông báo/xác nhận nhỏ; form hiện có giữ kích thước cũ. */ compact?: boolean
   /** ID nội dung popup để trình đọc màn hình đọc cùng tiêu đề. */ descriptionId?: string
 }) {
+  const { t } = useTranslation()
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const subtitleId = useId()
@@ -29,7 +31,7 @@ export default function Dialog({ title, subtitle, busy, onClose, children, compa
       <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-4">
         <div><h2 id={titleId} className="text-lg font-bold">{title}</h2>
           {subtitle && <p id={subtitleId} className="mt-1 text-xs text-slate-500">{subtitle}</p>}</div>
-        <button type="button" aria-label="Đóng cửa sổ" disabled={busy} onClick={onClose}
+        <button type="button" aria-label={t('common.closeWindow')} disabled={busy} onClick={onClose}
           className="rounded px-3 py-1 text-xl text-slate-500 hover:bg-slate-100 disabled:opacity-50">×</button>
       </div>
       {children}
