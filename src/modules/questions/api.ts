@@ -10,7 +10,7 @@ export interface QuestionGeneratePayload {
   bloomLevel?: BloomLevel | null
   count?: number
   materialIds?: (number | string)[]
-  language?: 'AUTO' | 'vi' | 'en'
+  language?: 'AUTO' | 'vi' | 'en' | 'ja'
 }
 
 export interface RubricCriterion {
@@ -78,7 +78,7 @@ export interface QuestionSummary {
   contentPreview?: string
   topics?: string[]
   bloomLevel?: BloomLevel | null
-  language?: 'vi' | 'en'
+  language?: 'vi' | 'en' | 'ja'
   sourceType?: QuestionSourceType | null
   status?: QuestionStatus | null
   createdById?: number | string
@@ -92,7 +92,7 @@ export interface QuestionSearchParams {
   subjectId?: number | string
   topic?: string
   bloomLevel?: BloomLevel
-  language?: 'vi' | 'en' | ''
+  language?: 'vi' | 'en' | 'ja' | ''
   status?: QuestionStatus
   sourceType?: QuestionSourceType
   keyword?: string
@@ -111,7 +111,7 @@ export interface QuestionItem {
   referenceAnswer?: string
   topics?: string[]
   bloomLevel?: BloomLevel
-  language?: 'vi' | 'en'
+  language?: 'vi' | 'en' | 'ja'
   answerTimeLimitSeconds?: number
   sourceType?: QuestionSourceType | null
   status?: QuestionStatus | null
@@ -134,7 +134,7 @@ export interface QuestionUpsertPayload {
   referenceAnswer?: string | null
   topics?: string[]
   bloomLevel?: BloomLevel | null
-  language?: 'vi' | 'en'
+  language?: 'vi' | 'en' | 'ja'
   answerTimeLimitSeconds?: number | null
 }
 

@@ -36,7 +36,7 @@ export default function AdminQuestionBank() {
   const [search, setSearch] = useState('')
   const [subjectFilter, setSubjectFilter] = useState('')
   const [bloomFilter, setBloomFilter] = useState<BloomLevel | ''>('')
-  const [languageFilter, setLanguageFilter] = useState<'vi' | 'en' | ''>('')
+  const [languageFilter, setLanguageFilter] = useState<'vi' | 'en' | 'ja' | ''>('')
   const [statusFilter, setStatusFilter] = useState<QuestionStatus | ''>('')
   const [tab, setTab] = useState<QuestionTab>('DRAFT')
   const effectiveStatus = tabStatus(tab, statusFilter)
@@ -203,10 +203,11 @@ export default function AdminQuestionBank() {
             <option value="">{t('questions.admin.allBloom')}</option>
             {BLOOM_LEVELS.map(b => <option key={b} value={b}>{t(`questions.bloom.${b}`)}</option>)}
           </select>
-          <select value={languageFilter} onChange={e => { setLanguageFilter(e.target.value as 'vi' | 'en' | ''); reset() }} className={selectCls}>
+          <select value={languageFilter} onChange={e => { setLanguageFilter(e.target.value as 'vi' | 'en' | 'ja' | ''); reset() }} className={selectCls}>
             <option value="">All languages</option>
-            <option value="vi">🇻🇳 Tiếng Việt</option>
-            <option value="en">🇬🇧 English</option>
+            <option value="vi">Tiếng Việt</option>
+            <option value="en">English</option>
+            <option value="ja">Tiếng Nhật (日本語)</option>
           </select>
           {tab === 'ALL' && (
             <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as QuestionStatus | ''); reset() }} className={selectCls}>
@@ -270,9 +271,11 @@ export default function AdminQuestionBank() {
                           <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
                             q.language === 'en'
                               ? 'bg-sky-50 text-sky-700 border-sky-200'
+                              : q.language === 'ja'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
                               : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           }`}>
-                            {q.language === 'en' ? '🇬🇧 EN' : '🇻🇳 VI'}
+                            {q.language.toUpperCase()}
                           </span>
                         ) : (
                           <span className="text-xs text-slate-400">—</span>
