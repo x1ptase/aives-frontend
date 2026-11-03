@@ -10,5 +10,11 @@
     "admin": "Admin",
     "lecturer": "Lecturer",
     "student": "Student"
+  },
+  "contentLanguage": {
+    "vi": "Tiếng Việt",
+    "en": "English",
+    "all": "All languages",
+    "auto": "Auto (follows learning material)"
   }
 }

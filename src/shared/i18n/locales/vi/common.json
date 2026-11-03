@@ -10,5 +10,11 @@
     "admin": "Quản trị viên",
     "lecturer": "Giảng viên",
     "student": "Sinh viên"
+  },
+  "contentLanguage": {
+    "vi": "Tiếng Việt",
+    "en": "English",
+    "all": "Tất cả ngôn ngữ",
+    "auto": "Tự động theo tài liệu"
   }
 }

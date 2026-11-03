@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import FlagIcon from '@/shared/components/common/FlagIcon'
+import { useTranslation } from 'react-i18next'
+import i18n from '@/shared/i18n'
 import { getMySubjects, SubjectResponse } from '@/modules/subjects'
 import { questionApi, BloomLevel, QuestionItem, QuestionSourceType, QuestionStatus, QuestionSummary, QuestionUpsertPayload } from '../api'
 import GenerateQuestionsModal from '../components/GenerateQuestionsModal'
@@ -15,6 +18,7 @@ type Subject = SubjectResponse
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const LevelBadge = ({ level }: { level?: string | null }) => {
+    const { t } = useTranslation()
     if (!level) return <span className="text-slate-400 text-xs">—</span>
     const style = level === 'REMEMBER' || level === 'UNDERSTAND'
         ? 'bg-blue-50 text-blue-700 border-blue-200'
@@ -24,7 +28,7 @@ const LevelBadge = ({ level }: { level?: string | null }) => {
 
     return (
         <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${style}`}>
-            {level}
+            {t(`questions.bloom.${level}`, { defaultValue: level })}
         </span>
     )
 }
@@ -43,6 +47,7 @@ export function CreateQuestionModal({
     onClose: () => void
     onCreated: () => void
 }) {
+    const { t } = useTranslation()
     const isEdit = !!question
     const [content, setContent] = useState(question?.content ?? '')
     const [referenceAnswer, setReferenceAnswer] = useState(question?.referenceAnswer ?? '')
@@ -58,10 +63,10 @@ export function CreateQuestionModal({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
-        if (!content.trim()) return setError('Question content is required.')
+        if (!content.trim()) return setError(t('questions.create.contentRequired'))
         const limit = timeLimit.trim() ? Number(timeLimit) : undefined
         if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0)) {
-            return setError('Answer time limit must be a positive whole number of seconds.')
+            return setError(t('questions.create.timeLimitInvalid'))
         }
         const topicList = topics.split(',').map(t => t.trim()).filter(Boolean)
 
@@ -84,7 +89,7 @@ export function CreateQuestionModal({
             }
             onCreated()
         } catch (err: any) {
-            setError(questionErrorMessage(err, `Failed to ${isEdit ? 'update' : 'create'} question.`))
+            setError(questionErrorMessage(err, isEdit ? t('questions.create.updateFailed') : t('questions.create.createFailed')))
         } finally {
             setLoading(false)
         }
@@ -95,7 +100,7 @@ export function CreateQuestionModal({
             <div className="m-auto bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h2 className="font-bold text-lg text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                        {isEdit ? 'Edit Question' : 'Create Question'}
+                        {isEdit ? t('questions.create.titleEdit') : t('questions.create.titleCreate')}
                     </h2>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -112,12 +117,12 @@ export function CreateQuestionModal({
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                Question Content <span className="text-red-500">*</span>
+                                {t('questions.create.content')} <span className="text-red-500">*</span>
                             </label>
                             <textarea
                                 value={content}
                                 onChange={e => setContent(e.target.value)}
-                                placeholder="Enter question content..."
+                                placeholder={t('questions.create.contentPlaceholder')}
                                 rows={4}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm resize-none"
                                 required
@@ -125,7 +130,7 @@ export function CreateQuestionModal({
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                Reference Answer <span className="text-slate-400 font-normal">(optional)</span>
+                                {t('questions.create.referenceAnswer')} <span className="text-slate-400 font-normal">{t('questions.create.optional')}</span>
                             </label>
                             <textarea
                                 value={referenceAnswer}
@@ -136,41 +141,41 @@ export function CreateQuestionModal({
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                                Topics <span className="text-slate-400 font-normal">(optional, comma-separated)</span>
+                                {t('questions.create.topics')} <span className="text-slate-400 font-normal">{t('questions.create.topicsOptional')}</span>
                             </label>
                             <input
                                 type="text"
                                 value={topics}
                                 onChange={e => setTopics(e.target.value)}
-                                placeholder="e.g. Microservices, Kafka"
+                                placeholder={t('questions.create.topicsPlaceholder')}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                             />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Bloom Level</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{t('questions.create.bloom')}</label>
                                 <select
                                     value={bloomLevel}
                                     onChange={e => setBloomLevel(e.target.value as BloomLevel | '')}
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                                 >
-                                    <option value="">Not set</option>
-                                    {BLOOM_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
+                                    <option value="">{t('questions.create.notSet')}</option>
+                                    {BLOOM_OPTIONS.map(b => <option key={b} value={b}>{t(`questions.bloom.${b}`)}</option>)}
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Language</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{t('common.language')}</label>
                                 <select
                                     value={language}
                                     onChange={e => setLanguage(e.target.value as 'vi' | 'en')}
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm bg-white"
                                 >
-                                    <option value="vi">🇻🇳 Tiếng Việt</option>
-                                    <option value="en">🇬🇧 English</option>
+                                    <option value="vi">{t('common.contentLanguage.vi')}</option>
+                                    <option value="en">{t('common.contentLanguage.en')}</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Time limit (sec)</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1.5">{t('questions.create.timeLimit')}</label>
                                 <input
                                     type="number"
                                     min={1}
@@ -188,7 +193,7 @@ export function CreateQuestionModal({
                             disabled={loading}
                             className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors"
                         >
-                            Cancel
+                            {t('common.cancel')}
                         </button>
                         <button
                             type="submit"
@@ -201,7 +206,7 @@ export function CreateQuestionModal({
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
                             )}
-                            {isEdit ? 'Save Changes' : 'Create Question'}
+                            {isEdit ? t('questions.create.saveChanges') : t('questions.create.createBtn')}
                         </button>
                     </div>
                 </form>
@@ -215,6 +220,7 @@ const PAGE_SIZE = 20
 const SOURCE_OPTIONS: QuestionSourceType[] = ['MANUAL', 'IMPORT', 'AI']
 
 export default function QuestionBank() {
+    const { t } = useTranslation()
     // Read once so later URL changes don't re-trigger subject selection
     const [searchParams] = useSearchParams()
     const [initialSubjectId] = useState(() => searchParams.get('subject'))
@@ -317,7 +323,7 @@ export default function QuestionBank() {
                 const data = err?.response?.data
                 setQuestionsErrorMsg(
                     data?.code === 1101 || err?.response?.status === 403
-                        ? (data?.message || 'You are not assigned to this subject, so its questions are not available to you.')
+                        ? (data?.message || i18n.t('questions.bank.notAssigned'))
                         : (data?.message || '')
                 )
                 setQuestionsError(true)
@@ -341,7 +347,7 @@ export default function QuestionBank() {
     const handleQuestionsGenerated = (generated: QuestionItem[]) => {
         setShowGenerateQuestions(false)
         refreshQuestions()
-        setAiSuccessBanner(`Successfully generated ${generated.length} question(s) with rubrics via AI! They are saved as DRAFT.`)
+        setAiSuccessBanner(t('questions.bank.generatedBanner', { count: generated.length }))
         setTimeout(() => setAiSuccessBanner(''), 10000)
         if (generated.length > 0) {
             setDetailQuestion(generated[0])
@@ -355,7 +361,7 @@ export default function QuestionBank() {
             const res = await questionApi.getById(q.id)
             setDetailQuestion(res.data.result)
         } catch (err: any) {
-            setActionError(questionErrorMessage(err, 'Could not load question details.'))
+            setActionError(questionErrorMessage(err, t('questions.admin.detailFailed')))
         }
     }
 
@@ -366,7 +372,7 @@ export default function QuestionBank() {
             const res = await questionApi.getById(q.id)
             setEditQuestion(res.data.result)
         } catch (err: any) {
-            setActionError(questionErrorMessage(err, 'Could not load the question for editing.'))
+            setActionError(questionErrorMessage(err, t('questions.bank.editLoadFailed')))
         }
     }
 
@@ -374,11 +380,11 @@ export default function QuestionBank() {
         setActionError('')
         try {
             await questionApi.approve(id)
-            setAiSuccessBanner('Question approved successfully! It is now part of the official question bank.')
+            setAiSuccessBanner(t('questions.bank.approvedBanner'))
             setTimeout(() => setAiSuccessBanner(''), 6000)
             refreshQuestions()
         } catch (err: any) {
-            setActionError(questionErrorMessage(err, 'Failed to approve question.'))
+            setActionError(questionErrorMessage(err, t('questions.admin.approveFailed')))
         }
     }
 
@@ -390,7 +396,7 @@ export default function QuestionBank() {
             setConfirmDeleteId(null)
             refreshQuestions()
         } catch (err: any) {
-            setDeleteError(questionErrorMessage(err, 'Failed to delete question.'))
+            setDeleteError(questionErrorMessage(err, t('questions.admin.deleteFailed')))
         } finally {
             setDeleteLoading(false)
         }
@@ -404,25 +410,25 @@ export default function QuestionBank() {
             {/* Header */}
             <div className="mb-6">
                 <h1 className="text-xl font-bold text-slate-800" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                    Question Bank
+                    {t('questions.bank.title')}
                 </h1>
-                <p className="text-xs text-slate-500 mt-1">Manage questions organised by subject</p>
+                <p className="text-xs text-slate-500 mt-1">{t('questions.bank.subtitle')}</p>
             </div>
 
             {/* ── Subject selector bar ────────────────────────────────────── */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm px-6 py-5 mb-5">
                 <div className="flex items-center gap-4 flex-wrap">
-                    <span className="text-sm font-semibold text-slate-700 shrink-0">Subject</span>
+                    <span className="text-sm font-semibold text-slate-700 shrink-0">{t('questions.bank.subject')}</span>
 
                     {subjectsLoading ? (
                         <div className="h-9 w-72 bg-slate-100 animate-pulse rounded-lg" />
                     ) : subjectsError ? (
                         <div className="text-sm text-red-500 flex items-center gap-2">
-                            Failed to load subjects.
-                            <button onClick={fetchSubjects} className="text-blue-600 hover:underline font-semibold">Retry</button>
+                            {t('questions.bank.subjectsFailed')}
+                            <button onClick={fetchSubjects} className="text-blue-600 hover:underline font-semibold">{t('common.retry')}</button>
                         </div>
                     ) : subjects.length === 0 ? (
-                        <span className="text-sm text-slate-400">You have not been assigned to any subject yet. Please contact an administrator.</span>
+                        <span className="text-sm text-slate-400">{t('questions.bank.noAssignment')}</span>
                     ) : (
                         <select
                             value={selectedSubject?.id ?? ''}
@@ -432,6 +438,7 @@ export default function QuestionBank() {
                                 setSearch('')
                                 setDebouncedSearch('')
                                 setBloomFilter('')
+                                setLanguageFilter('')
                                 setStatusFilter('')
                                 setSourceFilter('')
                                 setPage(0)
@@ -480,7 +487,7 @@ export default function QuestionBank() {
                 <div className="px-4 sm:px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-3 sm:gap-4 flex-wrap">
                     <div className="flex items-center gap-3 flex-1 flex-wrap min-w-0">
                         <h2 className="font-semibold text-slate-800 text-sm shrink-0" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                            Questions
+                            {t('questions.bank.questions')}
                             {selectedSubject && (
                                 <span className="ml-2 text-slate-400 font-normal text-xs">
                                     ({selectedSubject.code})
@@ -492,7 +499,7 @@ export default function QuestionBank() {
                                 type="text"
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
-                                placeholder="Search questions..."
+                                placeholder={t('questions.bank.searchPlaceholder')}
                                 className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-full sm:w-64"
                             />
                         )}
@@ -503,8 +510,8 @@ export default function QuestionBank() {
                                     onChange={e => { setBloomFilter(e.target.value as BloomLevel | ''); setPage(0) }}
                                     className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none"
                                 >
-                                    <option value="">All Bloom levels</option>
-                                    {BLOOM_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                                    <option value="">{t('questions.admin.allBloom')}</option>
+                                    {BLOOM_OPTIONS.map(o => <option key={o} value={o}>{t(`questions.bloom.${o}`)}</option>)}
                                 </select>
                                 {tab === 'ALL' && (
                                     <select
@@ -512,8 +519,8 @@ export default function QuestionBank() {
                                         onChange={e => { setStatusFilter(e.target.value as QuestionStatus | ''); setPage(0) }}
                                         className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none"
                                     >
-                                        <option value="">All statuses</option>
-                                        {QUESTION_STATUSES.map(o => <option key={o} value={o}>{o}</option>)}
+                                        <option value="">{t('questions.admin.allStatuses')}</option>
+                                        {QUESTION_STATUSES.map(o => <option key={o} value={o}>{t(`questions.status.${o}`)}</option>)}
                                     </select>
                                 )}
                                 <select
@@ -521,17 +528,17 @@ export default function QuestionBank() {
                                     onChange={e => { setSourceFilter(e.target.value as QuestionSourceType | ''); setPage(0) }}
                                     className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none"
                                 >
-                                    <option value="">All sources</option>
-                                    {SOURCE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+                                    <option value="">{t('questions.bank.allSources')}</option>
+                                    {SOURCE_OPTIONS.map(o => <option key={o} value={o}>{t(`questions.source.${o}`)}</option>)}
                                 </select>
                                 <select
                                     value={languageFilter}
                                     onChange={e => { setLanguageFilter(e.target.value as 'vi' | 'en' | ''); setPage(0) }}
                                     className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white focus:outline-none"
                                 >
-                                    <option value="">All languages</option>
-                                    <option value="vi">🇻🇳 Tiếng Việt</option>
-                                    <option value="en">🇬🇧 English</option>
+                                    <option value="">{t('common.contentLanguage.all')}</option>
+                                    <option value="vi">{t('common.contentLanguage.vi')}</option>
+                                    <option value="en">{t('common.contentLanguage.en')}</option>
                                 </select>
                             </>
                         )}
@@ -541,18 +548,18 @@ export default function QuestionBank() {
                             <button
                                 onClick={() => setShowGenerateQuestions(true)}
                                 className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center gap-1.5"
-                                title="Generate Questions & Rubrics from Learning Materials via AI RAG"
+                                title={t('questions.bank.generateTitle')}
                             >
                                 <svg className="w-4 h-4 text-blue-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
                                 </svg>
-                                <span>✨ Generate with AI</span>
+                                <span>{t('questions.bank.generateAi')}</span>
                             </button>
                             <button
                                 onClick={() => setShowCreateQuestion(true)}
                                 className="px-3.5 py-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 text-sm font-semibold rounded-lg transition-colors shadow-sm"
                             >
-                                + Create Manually
+                                {t('questions.bank.createManually')}
                             </button>
                         </div>
                     )}
@@ -563,8 +570,8 @@ export default function QuestionBank() {
                     {!selectedSubject ? (
                         <div className="px-6 py-12 text-center text-slate-500 text-sm">
                             {subjects.length === 0
-                                ? 'You need to be assigned to a subject before you can add questions.'
-                                : 'Select a subject to view its questions.'}
+                                ? t('questions.bank.needAssignment')
+                                : t('questions.bank.selectSubject')}
                         </div>
                     ) : questionsLoading ? (
                         <div className="p-8 space-y-3">
@@ -574,12 +581,12 @@ export default function QuestionBank() {
                         </div>
                     ) : questionsError ? (
                         <div className="px-6 py-12 text-center text-red-500 text-sm">
-                            {questionsErrorMsg || 'Failed to load questions.'}
+                            {questionsErrorMsg || t('questions.bank.loadFailed')}
                             <button
                                 onClick={refreshQuestions}
                                 className="ml-2 text-blue-600 hover:underline font-semibold"
                             >
-                                Retry
+                                {t('common.retry')}
                             </button>
                         </div>
                     ) : (
@@ -588,19 +595,19 @@ export default function QuestionBank() {
                             <thead>
                                 <tr className="bg-slate-50 border-b border-slate-100">
                                     <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider min-w-[300px]">
-                                        Question & Details
+                                        {t('questions.bank.colQuestion')}
                                     </th>
                                     <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider w-64 min-w-[180px] max-w-xs">
-                                        Topic
+                                        {t('questions.bank.colTopic')}
                                     </th>
                                     <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap w-28">
-                                        Bloom / Level
+                                        {t('questions.bank.colBloom')}
                                     </th>
                                     <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap w-28">
-                                        Rubric
+                                        {t('questions.bank.colRubric')}
                                     </th>
                                     <th className="px-6 py-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-right whitespace-nowrap w-56">
-                                        Actions
+                                        {t('questions.bank.colActions')}
                                     </th>
                                 </tr>
                             </thead>
@@ -608,7 +615,7 @@ export default function QuestionBank() {
                                 {questions.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                                            {hasFilters ? 'No questions match your filters.' : emptyTabMessage(tab) ?? 'No questions yet. Click "✨ Generate with AI" or "+ Create Manually" to get started.'}
+                                            {hasFilters ? t('questions.bank.noMatch') : emptyTabMessage(tab) ?? t('questions.bank.empty')}
                                         </td>
                                     </tr>
                                 ) : (
@@ -619,12 +626,12 @@ export default function QuestionBank() {
                                                     <div className="flex items-center gap-1.5 flex-wrap">
                                                         <span className="text-[11px] font-mono text-slate-400">#{q.id}</span>
                                                         {q.language && (
-                                                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                                                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
                                                                 q.language === 'en'
                                                                     ? 'bg-sky-50 text-sky-700 border-sky-200'
                                                                     : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                                                             }`}>
-                                                                {q.language === 'en' ? '🇬🇧 EN' : '🇻🇳 VI'}
+                                                                <FlagIcon language={q.language} />{q.language === 'en' ? 'EN' : 'VI'}
                                                             </span>
                                                         )}
                                                         {q.sourceType === 'AI' && (
@@ -635,7 +642,7 @@ export default function QuestionBank() {
                                                         <QuestionStatusBadge status={q.status} />
                                                         {q.sourceType && q.sourceType !== 'AI' && (
                                                             <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-50 text-slate-600 border border-slate-200">
-                                                                {q.sourceType}
+                                                                {t(`questions.source.${q.sourceType}`, { defaultValue: q.sourceType })}
                                                             </span>
                                                         )}
                                                     </div>
@@ -666,7 +673,7 @@ export default function QuestionBank() {
                                                             disabled={deleteLoading}
                                                             className="px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md transition-colors disabled:opacity-50"
                                                         >
-                                                            Cancel
+                                                            {t('common.cancel')}
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteQuestion(q.id)}
@@ -679,7 +686,7 @@ export default function QuestionBank() {
                                                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                                                 </svg>
                                                             )}
-                                                            Confirm
+                                                            {t('questions.bank.confirm')}
                                                         </button>
                                                     </div>
                                                 ) : (
@@ -687,21 +694,21 @@ export default function QuestionBank() {
                                                         <button
                                                             onClick={() => handleViewQuestion(q)}
                                                             className="px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors flex items-center gap-1"
-                                                            title="View question details & Rubric"
+                                                            title={t('questions.bank.viewTitle')}
                                                         >
                                                             <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                             </svg>
-                                                            <span>View</span>
+                                                            <span>{t('questions.bank.view')}</span>
                                                         </button>
                                                         {isApprovableStatus(q.status) && (
                                                             <button
                                                                 onClick={() => handleApproveQuestion(q.id)}
                                                                 className="px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-md transition-colors"
-                                                                title="Approve question into official bank"
+                                                                title={t('questions.bank.approveTitle')}
                                                             >
-                                                                Approve
+                                                                {t('questions.bank.approve')}
                                                             </button>
                                                         )}
                                                         {isEditableStatus(q.status) && (
@@ -709,7 +716,7 @@ export default function QuestionBank() {
                                                                 onClick={() => handleEditQuestion(q)}
                                                                 className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md transition-colors"
                                                             >
-                                                                Edit
+                                                                {t('questions.bank.edit')}
                                                             </button>
                                                         )}
                                                         {isDeletableStatus(q.status) && (
@@ -717,7 +724,7 @@ export default function QuestionBank() {
                                                                 onClick={() => { setConfirmDeleteId(q.id); setDeleteError('') }}
                                                                 className="px-2.5 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors"
                                                             >
-                                                                Delete
+                                                                {t('questions.bank.delete')}
                                                             </button>
                                                         )}
                                                     </div>
@@ -732,7 +739,7 @@ export default function QuestionBank() {
                         {totalPages > 1 && (
                             <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-between">
                                 <span className="text-xs text-slate-500">
-                                    Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalElements)} of {totalElements}
+                                    {t('questions.bank.showing', { from: page * PAGE_SIZE + 1, to: Math.min((page + 1) * PAGE_SIZE, totalElements), total: totalElements })}
                                 </span>
                                 <div className="flex items-center gap-1">
                                     <button
@@ -740,7 +747,7 @@ export default function QuestionBank() {
                                         disabled={page === 0}
                                         className="px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
-                                        ← Prev
+                                        {t('questions.bank.prev')}
                                     </button>
                                     {Array.from({ length: totalPages }, (_, i) => i).slice(
                                         Math.max(0, page - 2),
@@ -763,7 +770,7 @@ export default function QuestionBank() {
                                         disabled={page >= totalPages - 1}
                                         className="px-2.5 py-1.5 text-xs font-semibold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                     >
-                                        Next →
+                                        {t('questions.bank.next')}
                                     </button>
                                 </div>
                             </div>
