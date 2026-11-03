@@ -5,6 +5,9 @@ import { oralApi, isLocalOralDemo, type OralAction, type OralCommand, type OralD
 import { oralError, oralErrorCode, oralTerminal, uncertainOralWrite } from '../components/oralExamHelpers'
 import { loadOralClient, loadOralPending, newOralId, oralSessionKey, saveOralPending } from '../components/oralExamSession'
 import { loadAudioDraft, saveAudioDraft, type OralAudioDraft } from '../components/oralAudioDraft'
+import { useOralProgressEvents } from './useOralProgressEvents'
+import type { OralProgressEvent } from '../components/oralProgressEvents'
+import { OralStreamingConnection, readSpeechStream } from '../components/oralStreamingTransport'
 
 /** Nối tiến trình thật: chỉ BE quyết định chuyển bước, trình duyệt giữ receipt để retry an toàn. */
 export function useOralExam(examId: number, userId: string) {
@@ -33,6 +36,8 @@ export function useOralExam(examId: number, userId: string) {
   const queuedWrite = useRef(false)
   const controllers = useRef(new Set<AbortController>())
   const leaseInFlight = useRef(false), lastWriteFailure = useRef<number | undefined>(undefined), lastWriteMessage = useRef('')
+  const eventRefresh = useRef(false), eventRefreshRunning = useRef(false)
+  const liveConnection = useRef<OralStreamingConnection | null>(null)
 
   /** Nhận state chỉ từ response đã được parse, không suy diễn sau một thao tác ghi. */
   const apply = useCallback((next: OralState) => {
@@ -40,6 +45,7 @@ export function useOralExam(examId: number, userId: string) {
     if (current.current && next.revision === current.current.revision && next.submissionId === current.current.submissionId && current.current.audioReceived && !next.audioReceived) return
     if (current.current && Date.parse(current.current.leaseUntil) > Date.parse(next.leaseUntil)) next = { ...next, leaseUntil: current.current.leaseUntil }
     current.current = next
+    if (!['TRANSCRIBING', 'DECIDING'].includes(next.phase)) { liveConnection.current?.close(); liveConnection.current = null }
     lastReceived.current = performance.now()
     if (alive.current) {
       setState(next); setReceivedAt(performance.now())
@@ -69,6 +75,24 @@ export function useOralExam(examId: number, userId: string) {
       }
     } finally { controllers.current.delete(controller); inFlight.current = false; if (alive.current) setLoading(false) }
   }, [examId, apply, remember])
+
+  /** Gom sự kiện và chờ request ghi đang chạy; không mất tín hiệu đến giữa SUBMIT/upload/GET. */
+  const progressChanged = useCallback(async (event: OralProgressEvent) => {
+    if (!alive.current || current.current && oralTerminal(current.current)) return
+    if (event.type !== 'ready' && current.current && event.revision <= current.current.revision) return
+    eventRefresh.current = true
+    if (eventRefreshRunning.current) return
+    eventRefreshRunning.current = true
+    try {
+      while (alive.current && eventRefresh.current) {
+        while (alive.current && (inFlight.current || queuedWrite.current)) await new Promise(resolve => window.setTimeout(resolve, 20))
+        if (!alive.current || current.current && oralTerminal(current.current)) break
+        eventRefresh.current = false
+        await refresh()
+      }
+    } finally { eventRefreshRunning.current = false }
+  }, [refresh])
+  const eventsConnected = useOralProgressEvents(examId, !!state && !oralTerminal(state), progressChanged)
 
   /** Một yêu cầu ghi tại một thời điểm, cùng payload được giữ cả khi response không tới. */
   const send = useCallback(async (command: OralCommand, quiet = false, scenario?: { value: OralDemoScenario; runtime: OralRuntime }) => {
@@ -174,14 +198,14 @@ export function useOralExam(examId: number, userId: string) {
       .catch(cause => { if (!controller.signal.aborted) setIssue(oralError(cause)) })
     queueMicrotask(() => { if (alive.current) void refresh() })
     const leaseTimer = window.setInterval(() => void heartbeat(), 10000)
-    return () => { alive.current = false; aborters.forEach(item => item.abort()); aborters.clear(); window.clearInterval(leaseTimer) }
+    return () => { alive.current = false; liveConnection.current?.close(); liveConnection.current = null; aborters.forEach(item => item.abort()); aborters.clear(); window.clearInterval(leaseTimer) }
   }, [identity.id, refresh, heartbeat])
 
-  /** Vào bước xử lý thì lập lịch đọc nhanh ngay, không chờ hết timer 3 giây từ bước trả lời. */
+  /** SSE khỏe chỉ đọc đối soát mỗi 15s; mất SSE tự quay về nhịp polling cũ. */
   useEffect(() => {
     const phase = state?.phase
     if (phase === 'COMPLETED' || phase === 'EXPIRED') return
-    const delay = phase && ['TRANSCRIBING', 'DECIDING', 'PREPARING'].includes(phase) ? 800 : 3000
+    const delay = eventsConnected ? 15000 : phase && ['TRANSCRIBING', 'DECIDING', 'PREPARING'].includes(phase) ? 800 : 3000
     let disposed = false, poll: ReturnType<typeof setTimeout>
     const tick = async () => {
       await refresh()
@@ -190,7 +214,17 @@ export function useOralExam(examId: number, userId: string) {
     }
     poll = window.setTimeout(tick, delay)
     return () => { disposed = true; window.clearTimeout(poll) }
-  }, [state?.phase, refresh])
+  }, [state?.phase, eventsConnected, refresh])
+
+  /** Hết ngân sách câu/slot vẫn hỏi BE đúng mốc, không phải đợi lượt đối soát SSE 15 giây. */
+  useEffect(() => {
+    if (!state || oralTerminal(state)) return
+    const slotMs = Date.parse(state.deadline) - Date.parse(state.serverTime)
+    const limit = state.phase === 'ANSWERING' && state.answerRemainingMs != null ? Math.min(slotMs, state.answerRemainingMs) : slotMs
+    const timer = window.setTimeout(() => void progressChanged({ type: 'ready', revision: state.revision }),
+      Math.max(0, limit - (performance.now() - receivedAt)) + 30)
+    return () => window.clearTimeout(timer)
+  }, [state, receivedAt, progressChanged])
 
   /** Tab được nhân bản có thể sao chép sessionStorage; peer đang sống buộc bản sao lấy UUID riêng. */
   useEffect(() => {
@@ -253,6 +287,36 @@ export function useOralExam(examId: number, userId: string) {
     if (!recordingCurrent(turnId)) return
     await reserveDraft()
   }
+  const openRecordingStream = (turnId: string, update: (kind: 'PARTIAL' | 'FINAL', index: number, text: string) => void) => {
+    const next = current.current
+    if (!next || !recordingCurrent(turnId)) throw new Error('Lượt trả lời đã thay đổi.')
+    return new OralStreamingConnection(examId, { clientSessionId: identity.id, turnId, expectedRevision: next.revision }, update,
+      revision => { void progressChanged({ type: 'progress', revision }) })
+  }
+  /** Lưu WAV trước FINISH, cùng requestId dùng được ở REST nếu WS mất sau khi server đã nhận. */
+  const submitStreamingRecording = async (turnId: string, blob: Blob, connection: OralStreamingConnection) => {
+    if (!recordingCurrent(turnId) || pendingRef.current || queuedWrite.current || draftRef.current) throw new Error('Lượt trả lời chưa sẵn sàng.')
+    const next = current.current!
+    const draft: OralAudioDraft = { blob, command: { requestId: newOralId(), clientSessionId: identity.id, expectedRevision: next.revision, turnId, action: 'SUBMIT' } }
+    await saveAudioDraft(draftKey, draft); draftRef.current = draft; if (alive.current) setAudioDraft(draft)
+    if (!recordingCurrent(turnId)) { connection.close(); return }
+    queuedWrite.current = true; if (alive.current) setBusy(true); remember(draft.command)
+    let locked = false, failed = false, keep = false
+    try {
+      while (inFlight.current && alive.current) await new Promise(resolve => window.setTimeout(resolve, 20))
+      if (!alive.current) return
+      inFlight.current = true; locked = true
+      const response = await connection.finish(draft.command)
+      if (response.phase === 'DECIDING') { keep = true; liveConnection.current?.close(); liveConnection.current = connection }
+      apply(response); remember(null)
+      if (response.audioReceived || response.currentTurnId !== turnId || response.phase !== 'TRANSCRIBING') await forgetAudio()
+    } catch { failed = true } // Đọc đối soát trước; không tự tạo transcript hay requestId mới khi chưa rõ kết quả.
+    finally { if (!keep) connection.close(); if (locked) inFlight.current = false; queuedWrite.current = false; if (alive.current) setBusy(false) }
+    if (failed && alive.current) {
+      await refresh()
+      if (draftRef.current && controlledRef.current) await reserveDraft()
+    }
+  }
   /** Reload cùng tab đọc draft, không tự mở micro hoặc gửi câu trả lời trước khi nhận lại quyền. */
   useEffect(() => {
     let cancelled = false
@@ -310,6 +374,12 @@ export function useOralExam(examId: number, userId: string) {
     // BE đã confirmSpeech trước khi trả WAV; phát ngay, GET đồng bộ metadata chạy nền.
     void refresh(); return blob
   }
+  const speechStream = async (turnId: string, signal: AbortSignal, chunk: (pcm: Uint8Array) => void) => {
+    const next = current.current
+    if (!next || !speechCurrent(turnId)) throw new Error('Lượt nghe đã thay đổi.')
+    await readSpeechStream(examId, { clientSessionId: identity.id, turnId, expectedRevision: next.revision }, signal, chunk)
+    void refresh()
+  }
   /** Audio thực sự ended mới tính giờ trả lời; callback trễ không được xác nhận lượt khác. */
   const speechFinished = async (turnId: string) => {
     if (!speechCurrent(turnId)) return
@@ -318,5 +388,5 @@ export function useOralExam(examId: number, userId: string) {
     if (speechCurrent(turnId) && current.current?.phase === 'SPEAKING') await command('PROMPT_FINISHED')
   }
   return { state, runtime, loading, busy, controlled, issue, pending, receivedAt, storageWarning, refresh, open, command, retryPending, pauseBeforeLeave, speech, speechCurrent, speechFinished,
-    recordingCurrent, submitRecording, audioDraft: !!audioDraft, uploading, resumeAudio, discardAudio }
+    recordingCurrent, submitRecording, openRecordingStream, submitStreamingRecording, speechStream, audioDraft: !!audioDraft, uploading, resumeAudio, discardAudio }
 }

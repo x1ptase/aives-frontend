@@ -18,7 +18,7 @@ const messages: Record<number, string> = {
   1807: 'Giọng đọc chưa sẵn sàng. Vui lòng kiểm tra cấu hình hoặc API key TTS ở backend.',
   1808: 'Chưa tạo được giọng đọc. Hãy thử lại lượt hiện tại; bài thi chưa được cộng thêm thời gian.',
   1809: 'Dịch vụ giọng đọc đang bận hoặc đã hết hạn mức. Vui lòng thử lại sau.',
-  1810: 'Nhận dạng giọng nói chưa sẵn sàng. Vui lòng kiểm tra cấu hình Groq ở backend.',
+  1810: 'Nhận dạng giọng nói chưa sẵn sàng. Vui lòng kiểm tra cấu hình dịch vụ STT ở backend.',
   1811: 'Chưa nhận dạng được câu trả lời. Đây là lỗi kỹ thuật; hãy thử lại lượt xử lý.',
   1812: 'Dịch vụ nhận dạng đang bận hoặc đã hết hạn mức. Vui lòng thử lại sau.',
   1813: 'Bản ghi âm chưa hợp lệ. Hãy ghi lại bằng micro của trình duyệt.',
@@ -61,9 +61,10 @@ export function parseOralRuntime(value: unknown): OralRuntime {
   const r = result(value)
   if (!['FOUNDATION', 'LOCAL_DEMO', 'LIVE'].includes(r.mode) || typeof r.providersReady !== 'boolean' || typeof r.message !== 'string' || r.message.length > 1000
     || r.mode === 'FOUNDATION' && r.providersReady) return invalid()
-  if (r.mode === 'LIVE' && (!r.providersReady || r.speechReady !== true || r.transcriptionReady !== true || r.audioStorageReady !== true)) return invalid()
-  if (['speechReady', 'transcriptionReady', 'audioStorageReady'].some(key => r[key] != null && typeof r[key] !== 'boolean')) return invalid()
-  return { mode: r.mode, providersReady: r.providersReady, message: r.message, speechReady: r.speechReady === true, transcriptionReady: r.transcriptionReady === true, audioStorageReady: r.audioStorageReady === true }
+  if (r.mode === 'LIVE' && (!r.providersReady || r.speechReady !== true || r.transcriptionReady !== true && r.streamingSttReady !== true || r.audioStorageReady !== true)) return invalid()
+  if (['speechReady', 'transcriptionReady', 'audioStorageReady', 'streamingSttReady', 'streamingTtsReady'].some(key => r[key] != null && typeof r[key] !== 'boolean')) return invalid()
+  return { mode: r.mode, providersReady: r.providersReady, message: r.message, speechReady: r.speechReady === true, transcriptionReady: r.transcriptionReady === true, audioStorageReady: r.audioStorageReady === true,
+    ...(r.streamingSttReady !== undefined ? { streamingSttReady: r.streamingSttReady } : {}), ...(r.streamingTtsReady !== undefined ? { streamingTtsReady: r.streamingTtsReady } : {}) }
 }
 /** Kiểm tra scope, thứ tự, UUID và đồng hồ trước khi dùng response điều khiển phòng thi. */
 export function parseOralState(value: unknown, expectedId: number): OralState {
