@@ -92,7 +92,7 @@
       "1807": "Text-to-speech is not ready. Please check the TTS configuration or API key on the backend.",
       "1808": "Could not generate the voice. Retry the current turn; no extra time has been added to the exam.",
       "1809": "The text-to-speech service is busy or has reached its quota. Please try again later.",
-      "1810": "Speech recognition is not ready. Please check the Groq configuration on the backend.",
+      "1810": "Speech recognition is not ready. Please check the STT service configuration on the backend.",
       "1811": "Could not recognize the answer. This is a technical error; retry the processing turn.",
       "1812": "The recognition service is busy or has reached its quota. Please try again later.",
       "1813": "The audio recording is invalid. Please record again with the browser microphone.",
@@ -114,7 +114,8 @@
       "revisionInvalid": "Invalid turn revision.",
       "demoLocalOnly": "The simulation tool only works with a local test backend.",
       "scenarioInvalid": "Invalid sample scenario.",
-      "recordingInvalid": "The recording is invalid or exceeds 8 MiB."
+      "recordingInvalid": "The recording is invalid or exceeds 8 MiB.",
+      "questionInvalid": "The question content is invalid."
     },
     "draft": {
       "unsupported": "This browser cannot store pending recordings.",
@@ -152,7 +153,41 @@
       "autoplayBlocked": "The browser blocked autoplay. Press “Play voice” and check the tab volume.",
       "playFailed": "Could not play the audio. Reload the voice; the system has not confirmed you finished listening.",
       "listenStale": "The listening turn or interaction permission has changed. Refresh the progress before listening again.",
-      "storageWarning": "The browser does not allow saving the practice session in this tab. Reloading the page will lose the simulation progress."
+      "storageWarning": "The browser does not allow saving the practice session in this tab. Reloading the page will lose the simulation progress.",
+      "answerChanged": "The answer turn has changed."
+    },
+    "question": {
+      "changed": "The progress has changed. Refresh the state before viewing the question.",
+      "loading": "Loading question…",
+      "hide": "Hide question text",
+      "show": "Show question text",
+      "hint": "Review the question you just heard. Your answer time keeps running.",
+      "label": "Main question {{order}}",
+      "labelFollowUp": "Main question {{order}} · Follow-up {{index}}"
+    },
+    "stream": {
+      "sendFailed": "Could not send the recording.",
+      "channelClosed": "The recognition channel was disconnected. The recording is kept and will be sent when you press “Finish answering”.",
+      "recording": "Microphone is recording · Recognizing as you speak",
+      "permission": "Opening the microphone and recognition channel…",
+      "sending": "Finalizing your answer…",
+      "idle": "Turn on the microphone to start answering",
+      "done": "Finish answering",
+      "start": "Turn on microphone and answer",
+      "partial": "Interim transcript · Read-only · Not submitted",
+      "limit": "Each recording lasts at most 4 minutes 10 seconds and still follows the question and slot deadlines. Pausing or listening again discards an unsubmitted recording.",
+      "speechInterrupted": "The voice playback was interrupted or timed out. Listen again to the current turn.",
+      "loadingVoice": "Preparing the voice…",
+      "playing": "The AI is reading the question…",
+      "listen": "Listen to the question",
+      "micOff": "The microphone is off. Your answer time starts only after the audio finishes playing.",
+      "allowPlay": "Press listen to the question to allow audio playback.",
+      "allowPlayBrowser": "Press listen to the question to let the browser play audio.",
+      "audioInvalid": "The audio is invalid.",
+      "micNotReady": "The microphone is not ready.",
+      "finalAudio": "Could not finalize the last audio.",
+      "noSpeech": "No speech was detected; record again or say “I don’t know”.",
+      "channelNotReady": "The audio channel is not ready."
     }
   },
   "preview": {
@@ -217,7 +252,8 @@
     "cancel": "Cancel",
     "saving": "Saving…",
     "save": "Save Changes",
-    "create": "Create Exam"
+    "create": "Create Exam",
+    "timeNote": "The exam time is counted from the start of the selected minute, in the browser time zone."
   },
   "recordingControls": {
     "recording": "Microphone recording · Only you answer",
@@ -280,8 +316,8 @@
     },
     "desc": {
       "speakingDemo": "The voice is simulated; no real audio is played. Press confirm on the sample listening turn to check the next step.",
-      "speakingReady": "Listen to the question. The AI reads the question number before the content; the question text is not shown directly on screen.",
-      "speakingWait": "Waiting for the text-to-speech service. The question text is not shown directly on screen.",
+      "speakingReady": "Listen to the question. The AI reads the question number first; once it finishes, you can open the question as text.",
+      "speakingWait": "Waiting for the text-to-speech service. You can open the question as text after listening.",
       "answeringDemo": "Simulating the Student's answering turn. No recording; the backend will save a sample transcript to its own Docker database.",
       "answeringLive": "The answering turn is open according to the backend clock. Press “Done answering” to submit your recording before time runs out.",
       "preparing": "The backend is holding the current question turn and preparing the audio playback step.",
@@ -331,7 +367,7 @@
     "scClear": "Clear → move on",
     "scEmpty": "Empty audio → same turn",
     "scTech": "Technical error → retry",
-    "footer": "Only the question count and progress are shown; no questions, answers or rubric. Every step change is confirmed by the backend."
+    "footer": "You can open the text of the current question after listening. Answers and rubrics are kept internal. Every step change is confirmed by the backend."
   },
   "setup": {
     "step": "01 / Setup",

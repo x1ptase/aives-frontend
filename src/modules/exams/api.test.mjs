@@ -176,10 +176,31 @@ test('Legacy missing schedule/duration remains missing in the edit form', () => 
   assert.equal(form.scheduledStartAt, ''); assert.equal(form.scheduledEndAt, ''); assert.equal(form.slotDurationMinutes, '')
   assert.throws(() => helpers.createExamPayload(form))
 })
-test('Zero follow-ups remains zero and ISO time preserves the intended instant', () => {
+test('Zero follow-ups remains zero and a new exam uses the beginning of the selected minute', () => {
   const payload = helpers.createExamPayload(helpers.examForm(original), 0)
   assert.equal(payload.maxFollowUps, 0)
-  assert.equal(Date.parse(payload.scheduledStartAt), Date.parse(original.scheduledStartAt))
+  assert.equal(Date.parse(payload.scheduledStartAt), Math.floor(Date.parse(original.scheduledStartAt) / 60000) * 60000)
+  assert.ok(payload.scheduledStartAt.endsWith(':00.000Z'))
+  assert.ok(payload.scheduledEndAt.endsWith(':00.000Z'))
+})
+
+test('13:10 local starts at second zero even if an old value contains hidden seconds or milliseconds', () => {
+  const form = { ...helpers.examForm(original), scheduledStartAt: '2035-01-15T13:10:47.800', scheduledEndAt: '2035-01-15T14:10:59.999' }
+  const payload = helpers.createExamPayload(form, 0)
+  assert.equal(payload.scheduledStartAt, new Date('2035-01-15T13:10:00.000').toISOString())
+  assert.equal(payload.scheduledEndAt, new Date('2035-01-15T14:10:00.000').toISOString())
+  assert.match(helpers.examForm(original).scheduledStartAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/)
+})
+
+test('Edit normalizes changed time but never resubmits hidden precision of the untouched boundary', () => {
+  const form = { ...helpers.examForm(original), scheduledEndAt: '2035-01-15T15:30:23.394' }
+  const patch = helpers.updateExamPayload(form, original)
+  assert.deepEqual(patch, { scheduledEndAt: new Date('2035-01-15T15:30').toISOString() })
+})
+
+test('Hidden seconds cannot move creation into the future when the selected minute has already started', () => {
+  const form = { ...helpers.examForm(original), scheduledStartAt: '2035-01-15T13:10:59.999', scheduledEndAt: '2035-01-15T14:10' }
+  assert.throws(() => helpers.createExamPayload(form, new Date('2035-01-15T13:10:01').getTime()), /Thời gian bắt đầu phải ở tương lai/)
 })
 
 for (const [field, value] of [['title', ' '], ['title', 'x'.repeat(256)], ['title', 'a\0b'], ['subjectId', '0'],
@@ -249,6 +270,8 @@ test('Create form renders both schedule inputs and does not offer a writable sta
   const html = renderExam(Form, { exam: null,
     subjects: [{ id: 1, code: 'JAVA', name: 'Java' }], onClose() {}, onSaved() {} })
   assert.equal((html.match(/type="datetime-local"/g) ?? []).length, 2)
+  assert.equal((html.match(/type="datetime-local" step="60"/g) ?? []).length, 2)
+  assert.doesNotMatch(html, /step="0\.001"/)
   assert.match(html, /<form[^>]*no[Vv]alidate/i)
   assert.match(html, /Số phút mỗi sinh viên/)
   assert.match(html, /JAVA - Java/)

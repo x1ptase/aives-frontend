@@ -12,6 +12,7 @@ let server, useExam, useSpeech, Provider, client, draft, session, root, host, la
 let createRoot, dom
 const clientId='11111111-1111-4111-8111-111111111111', turnId='22222222-2222-4222-8222-222222222222', job='33333333-3333-4333-8333-333333333333'
 const base='http://localhost:8080', time='2035-01-01T10:00:00Z'
+const previousFetch = globalThis.fetch
 const fixture=() => ({ studentExamId:7,status:'IN_PROGRESS',phase:'ANSWERING',revision:8,serverTime:time,deadline:'2035-01-01T10:20:00Z',leaseUntil:'2035-01-01T10:00:45Z',mainCount:1,currentQuestionOrder:1,currentTurnId:turnId,followUpIndex:0,language:'vi',followUpsUsed:0,maxFollowUps:2,answerRemainingMs:180000,submissionId:null,questions:[{questionOrder:1,status:'ACTIVE',answerRemainingMs:180000,outcomeReason:null}],transcripts:[] })
 const envelope=result => ({ code:1000,result })
 const ready=envelope({mode:'LIVE',providersReady:true,speechReady:true,transcriptionReady:true,audioStorageReady:true,message:'Đã cấu hình.'})
@@ -22,6 +23,7 @@ function Probe() { const value=useExam(7,'student'); useLayoutEffect(()=>{latest
 function SpeechProbe() { const value=useSpeech('turn',false,()=>false,async()=>new Blob(['wav']),()=>{}); useLayoutEffect(()=>{speech=value}); return null }
 
 before(async()=>{
+  globalThis.fetch = async () => { throw new Error('SSE riêng được kiểm thử trong oral-events.test.mjs; không gọi BE thật') }
   dom=new Window({url:'http://localhost:5173/student/exams/7/oral'})
   for(const name of ['window','document','navigator','HTMLElement','Node','localStorage','sessionStorage']) Object.defineProperty(globalThis,name,{configurable:true,value:name==='window'?dom:dom[name]})
   Object.defineProperty(document,'visibilityState',{configurable:true,value:'visible'})
@@ -48,7 +50,7 @@ beforeEach(()=>{
   host=document.createElement('div'); document.body.append(host); root=createRoot(host)
 })
 afterEach(async()=>{await act(async()=>root.unmount()); host.remove()})
-after(async()=>{await server.close(); await dom.happyDOM.abort(); delete globalThis.IS_REACT_ACT_ENVIRONMENT})
+after(async()=>{globalThis.fetch = previousFetch; await server.close(); await dom.happyDOM.abort(); delete globalThis.IS_REACT_ACT_ENVIRONMENT})
 
 test('GET chậm không làm mất heartbeat, không tạo pending nghiệp vụ và không ghi đè lease mới',async()=>{
   const state=fixture(); state.phase='SPEAKING'; let opened=false, held, leaseCount=0, holding=false
@@ -102,6 +104,25 @@ test('heartbeat bị tab khác chiếm quyền vẫn báo lỗi khi backend xác
   assert.equal(latest.state.phase,'SPEAKING')
 })
 
+test('WAV đã được BE xác nhận được phát mà không chờ GET tiến trình tiếp theo',async()=>{
+  const state={...fixture(),phase:'PREPARING'}, wav=new Blob([new Uint8Array(128)],{type:'audio/wav'})
+  let downloaded=false, release, result
+  adapter=async config=>{
+    if(config.url.endsWith('/runtime')) return ready
+    if(config.url.endsWith('/lease')) return envelope({serverTime:time,leaseUntil:state.leaseUntil})
+    if(config.url.endsWith('/speech')) { downloaded=true; return wav }
+    if(config.method==='get' && downloaded) return new Promise(resolve=>{release=()=>resolve(envelope({...state,phase:'SPEAKING',revision:9}))})
+    return envelope({...state})
+  }
+  await act(async()=>root.render(createElement(Provider,null,createElement(Probe))))
+  await wait(()=>latest?.state && latest.runtime); await act(async()=>latest.open())
+  let finished=false
+  await act(async()=>{void latest.speech(turnId,new AbortController().signal).then(value=>{result=value; finished=true})})
+  await wait(()=>!!release)
+  try { assert.equal(finished,true); assert.equal(result,wav) }
+  finally { await act(async()=>{release(); await sleep(5)}) }
+})
+
 test('bản ghi cũ bị 1802 được gửi lại cùng Blob sau xác nhận từ chối, không cần xóa local hoặc ghi lại',async()=>{
   let state=fixture(), actions=[], uploaded=0
   const key=`${session.oralSessionKey('student',7,base)}:${clientId}`
@@ -129,6 +150,47 @@ test('bản ghi cũ bị 1802 được gửi lại cùng Blob sau xác nhận t�
   assert.equal(actions.length,2); assert.equal(actions[0].expectedRevision,2); assert.equal(actions[1].expectedRevision,8)
   assert.notEqual(actions[0].requestId,actions[1].requestId); assert.equal(actions[1].turnId,turnId); assert.equal(uploaded,1)
   assert.equal(await draft.loadAudioDraft(key,clientId),null)
+})
+
+test('WS final giữ draft trước gửi, áp state thật và không upload lại qua Groq khi đã được xác nhận',async()=>{
+  let state={...fixture(),phase:'SPEAKING'}, finishedCommand, uploaded=0
+  const key=`${session.oralSessionKey('student',7,base)}:${clientId}`
+  adapter=async config=>{
+    if(config.url.endsWith('/runtime')) return ready
+    if(config.url.endsWith('/lease')) return envelope({serverTime:time,leaseUntil:state.leaseUntil})
+    if(config.url.endsWith('/audio')) uploaded++
+    return envelope({...state})
+  }
+  await act(async()=>root.render(createElement(Provider,null,createElement(Probe))))
+  await wait(()=>latest?.state && latest.runtime); await act(async()=>latest.open())
+  state={...state,phase:'ANSWERING'};await act(async()=>latest.refresh())
+  const connection={close(){},async finish(command){
+    finishedCommand=command;const stored=await draft.loadAudioDraft(key,clientId);assert.deepEqual(stored.command,command)
+    state={...state,phase:'DECIDING',revision:9,submissionId:job,audioReceived:true,transcripts:[{questionOrder:1,followUpIndex:0,content:'Azure final.',savedAt:time}]}
+    return state
+  }}
+  await act(async()=>latest.submitStreamingRecording(turnId,new Blob([new Uint8Array(256)],{type:'audio/wav'}),connection))
+  assert.equal(finishedCommand.action,'SUBMIT');assert.equal(finishedCommand.turnId,turnId)
+  assert.equal(latest.state.phase,'DECIDING');assert.equal(latest.pending,null);assert.equal(latest.audioDraft,false);assert.equal(uploaded,0)
+  assert.equal(await draft.loadAudioDraft(key,clientId),null)
+})
+
+test('WS mất response sau commit đối soát rồi dùng đúng receipt, không nộp một câu trả lời mới',async()=>{
+  let state={...fixture(),phase:'SPEAKING'}, sent, retried, uploads=0
+  adapter=async config=>{
+    if(config.url.endsWith('/runtime')) return ready
+    if(config.url.endsWith('/lease')) return envelope({serverTime:time,leaseUntil:state.leaseUntil})
+    if(config.url.endsWith('/actions')) {retried=JSON.parse(config.data);return envelope({...state})}
+    if(config.url.endsWith('/audio')) uploads++
+    return envelope({...state})
+  }
+  await act(async()=>root.render(createElement(Provider,null,createElement(Probe))))
+  await wait(()=>latest?.state && latest.runtime);await act(async()=>latest.open())
+  state={...state,phase:'ANSWERING'};await act(async()=>latest.refresh())
+  const connection={close(){},async finish(command){sent=command;state={...state,phase:'DECIDING',revision:9,submissionId:job,audioReceived:true,transcripts:[{questionOrder:1,followUpIndex:0,content:'Persisted.',savedAt:time}]};throw new Error('connection lost')}}
+  await act(async()=>latest.submitStreamingRecording(turnId,new Blob([new Uint8Array(256)],{type:'audio/wav'}),connection))
+  await wait(()=>latest.pending===null&&!latest.audioDraft)
+  assert.deepEqual(retried,sent);assert.equal(latest.state.phase,'DECIDING');assert.equal(uploads,0)
 })
 
 test('control nghe chưa được bật không tự hiện lỗi đỏ mất quyền khi chỉ đang xem tiến trình',async()=>{

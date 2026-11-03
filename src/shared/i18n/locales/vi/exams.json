@@ -92,7 +92,7 @@
       "1807": "Giọng đọc chưa sẵn sàng. Vui lòng kiểm tra cấu hình hoặc API key TTS ở backend.",
       "1808": "Chưa tạo được giọng đọc. Hãy thử lại lượt hiện tại; bài thi chưa được cộng thêm thời gian.",
       "1809": "Dịch vụ giọng đọc đang bận hoặc đã hết hạn mức. Vui lòng thử lại sau.",
-      "1810": "Nhận dạng giọng nói chưa sẵn sàng. Vui lòng kiểm tra cấu hình Groq ở backend.",
+      "1810": "Nhận dạng giọng nói chưa sẵn sàng. Vui lòng kiểm tra cấu hình dịch vụ STT ở backend.",
       "1811": "Chưa nhận dạng được câu trả lời. Đây là lỗi kỹ thuật; hãy thử lại lượt xử lý.",
       "1812": "Dịch vụ nhận dạng đang bận hoặc đã hết hạn mức. Vui lòng thử lại sau.",
       "1813": "Bản ghi âm chưa hợp lệ. Hãy ghi lại bằng micro của trình duyệt.",
@@ -114,7 +114,8 @@
       "revisionInvalid": "Phiên bản lượt hỏi không hợp lệ.",
       "demoLocalOnly": "Công cụ mô phỏng chỉ dùng với backend test cục bộ.",
       "scenarioInvalid": "Tình huống mẫu không hợp lệ.",
-      "recordingInvalid": "Bản ghi âm không hợp lệ hoặc vượt quá 8 MiB."
+      "recordingInvalid": "Bản ghi âm không hợp lệ hoặc vượt quá 8 MiB.",
+      "questionInvalid": "Nội dung câu hỏi chưa hợp lệ."
     },
     "draft": {
       "unsupported": "Trình duyệt chưa cho lưu bản ghi chờ gửi.",
@@ -152,7 +153,41 @@
       "autoplayBlocked": "Trình duyệt chưa cho phát tự động. Bấm “Phát giọng đọc” và kiểm tra âm lượng của tab.",
       "playFailed": "Không phát được âm thanh. Hãy tải lại giọng đọc; hệ thống chưa xác nhận bạn đã nghe xong.",
       "listenStale": "Lượt nghe hoặc quyền tương tác đã thay đổi. Hãy cập nhật tiến trình trước khi nghe tiếp.",
-      "storageWarning": "Trình duyệt không cho lưu bản thử trong tab. Tải lại trang sẽ mất tiến trình mô phỏng."
+      "storageWarning": "Trình duyệt không cho lưu bản thử trong tab. Tải lại trang sẽ mất tiến trình mô phỏng.",
+      "answerChanged": "Lượt trả lời đã thay đổi."
+    },
+    "question": {
+      "changed": "Tiến trình đã thay đổi. Hãy cập nhật trạng thái trước khi xem câu hỏi.",
+      "loading": "Đang tải câu hỏi…",
+      "hide": "Ẩn câu hỏi dạng text",
+      "show": "Hiển thị câu hỏi dạng text",
+      "hint": "Xem lại câu hỏi vừa nghe. Thời gian trả lời vẫn tiếp tục.",
+      "label": "Câu chính {{order}}",
+      "labelFollowUp": "Câu chính {{order}} · Follow-up {{index}}"
+    },
+    "stream": {
+      "sendFailed": "Chưa gửi được bản ghi.",
+      "channelClosed": "Kênh nhận dạng bị ngắt. Bản ghi vẫn được giữ để gửi khi bạn bấm “Trả lời xong”.",
+      "recording": "Micro đang ghi âm · Nhận dạng khi bạn nói",
+      "permission": "Đang mở micro và kênh nhận dạng…",
+      "sending": "Đang chốt câu trả lời…",
+      "idle": "Bật micro để bắt đầu trả lời",
+      "done": "Trả lời xong",
+      "start": "Bật micro và trả lời",
+      "partial": "Transcript tạm · Chỉ đọc · Chưa nộp",
+      "limit": "Mỗi bản ghi tối đa 4 phút 10 giây; vẫn theo thời hạn câu và slot. Tạm dừng hoặc nghe lại sẽ hủy bản chưa nộp.",
+      "speechInterrupted": "Giọng đọc bị ngắt hoặc quá thời gian chờ. Hãy nghe lại đúng lượt hiện tại.",
+      "loadingVoice": "Đang chuẩn bị giọng đọc…",
+      "playing": "AI đang đọc câu hỏi…",
+      "listen": "Nghe câu hỏi",
+      "micOff": "Micro chưa bật. Thời gian trả lời chỉ bắt đầu sau khi audio phát xong.",
+      "allowPlay": "Bấm nghe câu hỏi để cho phép phát âm thanh.",
+      "allowPlayBrowser": "Bấm nghe câu hỏi để cho phép trình duyệt phát âm thanh.",
+      "audioInvalid": "Audio không hợp lệ.",
+      "micNotReady": "Micro chưa sẵn sàng.",
+      "finalAudio": "Chưa chốt được audio cuối.",
+      "noSpeech": "Chưa nhận được giọng nói; hãy ghi lại hoặc nói “Em không biết”.",
+      "channelNotReady": "Kênh âm thanh chưa sẵn sàng."
     }
   },
   "preview": {
@@ -217,7 +252,8 @@
     "cancel": "Hủy",
     "saving": "Đang lưu…",
     "save": "Lưu thay đổi",
-    "create": "Tạo phiên thi"
+    "create": "Tạo phiên thi",
+    "timeNote": "Giờ thi được tính từ đầu phút đã chọn, theo múi giờ trình duyệt."
   },
   "recordingControls": {
     "recording": "Micro đang ghi âm · Chỉ bạn trả lời",
@@ -280,8 +316,8 @@
     },
     "desc": {
       "speakingDemo": "Giọng đọc đang được mô phỏng, chưa phát audio thật. Bấm xác nhận lượt nghe mẫu để kiểm tra bước tiếp theo.",
-      "speakingReady": "Lắng nghe câu hỏi. AI đọc số câu trước nội dung; nội dung đề không hiển thị trực tiếp trên màn hình.",
-      "speakingWait": "Chờ dịch vụ giọng đọc. Nội dung đề không hiển thị trực tiếp trên màn hình.",
+      "speakingReady": "Lắng nghe câu hỏi. AI đọc số câu trước nội dung; sau khi nghe xong, bạn có thể mở câu hỏi dạng text.",
+      "speakingWait": "Chờ dịch vụ giọng đọc. Bạn có thể mở câu hỏi dạng text sau khi nghe xong.",
       "answeringDemo": "Đang mô phỏng lượt Student trả lời. Không ghi âm; backend sẽ lưu transcript mẫu vào database Docker riêng.",
       "answeringLive": "Lượt trả lời đang mở theo đồng hồ backend. Bấm “Trả lời xong” để nộp bản ghi trước khi hết thời gian.",
       "preparing": "Backend đang giữ đúng lượt hỏi hiện tại và chuẩn bị bước phát âm thanh.",
@@ -331,7 +367,7 @@
     "scClear": "Rõ → chuyển câu",
     "scEmpty": "Âm thanh rỗng → cùng lượt",
     "scTech": "Lỗi kỹ thuật → thử lại",
-    "footer": "Chỉ hiển thị số câu và tiến độ; không hiển thị đề, đáp án hoặc rubric. Mọi chuyển bước được backend xác nhận."
+    "footer": "Bạn có thể mở text của câu hỏi hiện tại sau khi nghe xong. Đáp án và rubric được giữ nội bộ. Mọi chuyển bước được backend xác nhận."
   },
   "setup": {
     "step": "01 / Chuẩn bị",

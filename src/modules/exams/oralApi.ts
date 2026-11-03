@@ -10,7 +10,7 @@ export type OralQuestionStatus = 'PENDING' | 'ACTIVE' | 'DEFERRED' | 'ANSWERED' 
 /** Các lệnh Student được backend công bố. */
 export type OralAction = 'PROMPT_FINISHED' | 'REPLAY' | 'DEFER' | 'REVISIT' | 'SUBMIT' | 'PAUSE' | 'RESUME' | 'RETRY' | 'FINISH' | 'HEARTBEAT'
 /** Khả năng lấy từ backend; LOCAL_DEMO chỉ được cung cấp bởi chương trình test riêng. */
-export interface OralRuntime { mode: 'FOUNDATION' | 'LOCAL_DEMO' | 'LIVE'; providersReady: boolean; message: string; speechReady?: boolean; transcriptionReady?: boolean; audioStorageReady?: boolean }
+export interface OralRuntime { mode: 'FOUNDATION' | 'LOCAL_DEMO' | 'LIVE'; providersReady: boolean; message: string; speechReady?: boolean; transcriptionReady?: boolean; audioStorageReady?: boolean; streamingSttReady?: boolean; streamingTtsReady?: boolean }
 /** View tối thiểu, không có nội dung đề/đáp án/rubric. */
 export interface OralState {
   studentExamId: number
@@ -34,6 +34,8 @@ export interface OralState {
   audioReceived?: boolean
   processingErrorCode?: number | null
 }
+/** Chỉ nội dung lượt đang trả lời, tải theo yêu cầu sau khi nghe xong. */
+export interface OralQuestionText { turnId: string; questionOrder: number; followUpIndex: number; language: 'vi' | 'en'; text: string }
 /** Giữ nguyên payload này khi retry một yêu cầu chưa biết kết quả. */
 export interface OralCommand {
   requestId: string
@@ -72,6 +74,15 @@ export function isLocalOralDemo(runtime: OralRuntime | null): boolean {
 
 /** HTTP cùng bearer interceptor hiện có; mọi response được kiểm tra trước khi hiển thị. */
 export const oralApi = {
+  questionText: async (id: number, turnId: string, signal?: AbortSignal): Promise<OralQuestionText> => {
+    const examId = examIdentifier(id); oralUuid(turnId)
+    const envelope = (await axiosInstance.get(`/student-exams/${examId}/oral-examination/turns/${turnId}/question-text`, { signal })).data
+    const r = envelope?.result
+    if (envelope?.code !== 1000 || r?.turnId !== turnId || !Number.isSafeInteger(r?.questionOrder) || r.questionOrder < 1
+      || !Number.isSafeInteger(r?.followUpIndex) || r.followUpIndex < 0 || !['vi', 'en'].includes(r?.language)
+      || typeof r?.text !== 'string' || !r.text.trim() || r.text.length > 10000 || r.text.includes('\0')) throw new Error(i18n.t('exams.oral.api.questionInvalid'))
+    return { turnId: r.turnId, questionOrder: r.questionOrder, followUpIndex: r.followUpIndex, language: r.language, text: r.text }
+  },
   renewLease: async (id: number, clientSessionId: string, signal?: AbortSignal): Promise<{ serverTime: string; leaseUntil: string | null; terminal: boolean }> => {
     oralUuid(clientSessionId)
     const envelope = (await axiosInstance.post(`/student-exams/${examIdentifier(id)}/oral-examination/lease`, { clientSessionId }, { signal })).data

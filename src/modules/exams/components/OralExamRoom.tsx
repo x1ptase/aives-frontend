@@ -6,12 +6,15 @@ import { oralCountdown, oralTerminal, oralProcessingError } from './oralExamHelp
 import { previewTime } from './oralPreviewMachine'
 import OralSpeechControls from './OralSpeechControls'
 import OralRecordingControls from './OralRecordingControls'
+import OralQuestionText from './OralQuestionText'
+import OralStreamingRecordingControls, { type StreamingRecording } from './OralStreamingRecordingControls'
+import OralStreamingSpeechControls, { type SpeechStream } from './OralStreamingSpeechControls'
 
 /** Nhãn giao diện chỉ mô tả kết quả thực hiện, không suy ra điểm (khóa exams.room.q.* và exams.room.phase.*). */
 const oralSecondaryButton = 'rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-40'
 const oralPrimaryButton = 'rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-40'
 
-/** Phòng nối backend thật; không chứa reducer, nội dung câu hỏi hoặc câu trả lời tự sinh ở FE. */
+/** Phòng nối backend thật; câu hỏi hiện tại chỉ tải khi Student chủ động mở text sau khi nghe. */
 export default function OralExamRoom({ state, receivedAt, demo, blocked, onCommand, onFinish, speech, recording }: {
   state: OralState
   receivedAt: number
@@ -19,8 +22,8 @@ export default function OralExamRoom({ state, receivedAt, demo, blocked, onComma
   blocked: boolean
   onCommand: (action: OralAction, target?: number, scenario?: OralDemoScenario) => void
   onFinish: () => void
-  speech?: { ready: boolean; controlled: boolean; valid: (turn: string) => boolean; fetch: (turn: string, signal: AbortSignal) => Promise<Blob>; ended: (turn: string) => void }
-  recording?: { ready: boolean; controlled: boolean; hasDraft: boolean; valid: (turn: string) => boolean; recorded: (turn: string, blob: Blob) => Promise<void> }
+  speech?: { ready: boolean; controlled: boolean; valid: (turn: string) => boolean; fetch: (turn: string, signal: AbortSignal) => Promise<Blob>; ended: (turn: string) => void; stream?: SpeechStream }
+  recording?: { ready: boolean; controlled: boolean; hasDraft: boolean; valid: (turn: string) => boolean; recorded: (turn: string, blob: Blob) => Promise<void>; streaming?: StreamingRecording }
 }) {
   const { t } = useTranslation()
   const [clock, setClock] = useState(() => performance.now())
@@ -63,8 +66,15 @@ export default function OralExamRoom({ state, receivedAt, demo, blocked, onComma
             </p>
           </div>
           {state.phase === 'TECHNICAL_ERROR' && state.processingErrorCode && <p role="status" className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{oralProcessingError(state.processingErrorCode)}</p>}
-          {!demo && speech?.ready && <OralSpeechControls turnId={state.currentTurnId} enabled={speech.controlled && ['PREPARING', 'SPEAKING'].includes(state.phase)} blocked={blocked} valid={speech.valid} fetch={speech.fetch} ended={speech.ended} />}
-          {!demo && recording?.ready && <OralRecordingControls turnId={state.currentTurnId} enabled={recording.controlled && !recording.hasDraft && state.phase === 'ANSWERING'} blocked={blocked} valid={recording.valid} recorded={recording.recorded} />}
+          {!demo && speech?.ready && (speech.stream
+            ? <OralStreamingSpeechControls turnId={state.currentTurnId} enabled={speech.controlled && ['PREPARING', 'SPEAKING'].includes(state.phase)} blocked={blocked} valid={speech.valid} stream={speech.stream} ended={speech.ended} />
+            : <OralSpeechControls turnId={state.currentTurnId} enabled={speech.controlled && ['PREPARING', 'SPEAKING'].includes(state.phase)} blocked={blocked} valid={speech.valid} fetch={speech.fetch} ended={speech.ended} />)}
+          {!demo && recording?.ready && (recording.streaming
+            ? <OralStreamingRecordingControls turnId={state.currentTurnId} enabled={recording.controlled && !recording.hasDraft && state.phase === 'ANSWERING'} blocked={blocked} valid={recording.valid} streaming={recording.streaming} />
+            : <OralRecordingControls turnId={state.currentTurnId} enabled={recording.controlled && !recording.hasDraft && state.phase === 'ANSWERING'} blocked={blocked} valid={recording.valid} recorded={recording.recorded} />)}
+          {state.phase === 'ANSWERING' && state.currentTurnId && state.currentQuestionOrder != null && state.followUpIndex != null && <OralQuestionText
+            key={`${state.studentExamId}:${state.currentTurnId}`} examId={state.studentExamId} turnId={state.currentTurnId}
+            questionOrder={state.currentQuestionOrder} followUpIndex={state.followUpIndex} language={state.language} blocked={disabled} />}
           {!terminal && time.slot === 0 && <p role="status" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{t('exams.room.waitingExpiry')}</p>}
           {!terminal && state.currentQuestionOrder != null && <div className="mb-5 border-t border-slate-100 pt-5">
             <div className="flex justify-between gap-3 text-sm"><span className="text-slate-500">{t('exams.room.answerTimeLeft')}</span><span className="shrink-0 font-mono font-semibold text-slate-800">{time.answer == null ? t('exams.room.bySlot') : previewTime(time.answer)}</span></div>
