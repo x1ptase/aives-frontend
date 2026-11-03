@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import FlagIcon from '@/shared/components/common/FlagIcon'
 import { useTranslation } from 'react-i18next'
 import i18n from '@/shared/i18n'
 import { formatDateTime } from '@/shared/i18n/format'
@@ -204,9 +205,9 @@ export default function AdminQuestionBank() {
             {BLOOM_LEVELS.map(b => <option key={b} value={b}>{t(`questions.bloom.${b}`)}</option>)}
           </select>
           <select value={languageFilter} onChange={e => { setLanguageFilter(e.target.value as 'vi' | 'en' | ''); reset() }} className={selectCls}>
-            <option value="">All languages</option>
-            <option value="vi">🇻🇳 Tiếng Việt</option>
-            <option value="en">🇬🇧 English</option>
+            <option value="">{t('common.contentLanguage.all')}</option>
+            <option value="vi">{t('common.contentLanguage.vi')}</option>
+            <option value="en">{t('common.contentLanguage.en')}</option>
           </select>
           {tab === 'ALL' && (
             <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value as QuestionStatus | ''); reset() }} className={selectCls}>
@@ -250,7 +251,7 @@ export default function AdminQuestionBank() {
                     <th className="px-4 py-3 min-w-[260px]">{t('questions.admin.colQuestion')}</th>
                     <th className="px-4 py-3">{t('questions.admin.colSubject')}</th>
                     <th className="px-4 py-3">{t('questions.admin.colBloom')}</th>
-                    <th className="px-4 py-3">Language</th>
+                    <th className="px-4 py-3">{t('common.language')}</th>
                     <th className="px-4 py-3">{t('questions.admin.colSource')}</th>
                     <th className="px-4 py-3">{t('questions.admin.colStatus')}</th>
                     <th className="px-4 py-3">{t('questions.admin.colRubric')}</th>
@@ -267,12 +268,12 @@ export default function AdminQuestionBank() {
                       <td className="px-4 py-3 text-xs font-semibold">{q.bloomLevel ? t(`questions.bloom.${q.bloomLevel}`, { defaultValue: q.bloomLevel }) : '—'}</td>
                       <td className="px-4 py-3">
                         {q.language ? (
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
                             q.language === 'en'
                               ? 'bg-sky-50 text-sky-700 border-sky-200'
                               : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           }`}>
-                            {q.language === 'en' ? '🇬🇧 EN' : '🇻🇳 VI'}
+                            <FlagIcon language={q.language} />{q.language === 'en' ? 'EN' : 'VI'}
                           </span>
                         ) : (
                           <span className="text-xs text-slate-400">—</span>

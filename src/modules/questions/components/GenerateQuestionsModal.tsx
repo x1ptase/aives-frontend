@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react'
+import FlagIcon from '@/shared/components/common/FlagIcon'
+import { useTranslation, Trans } from 'react-i18next'
+import { formatNumber } from '@/shared/i18n/format'
 import QuestionStatusBadge from './QuestionStatusBadge'
 import { BloomLevel, QuestionItem, questionApi } from '../api'
 import { MaterialResponse, learningMaterialApi } from '@/modules/materials'
@@ -13,20 +16,14 @@ interface GenerateQuestionsModalProps {
   onGenerated: (questions: QuestionItem[]) => void
 }
 
-const BLOOM_LEVELS: { value: BloomLevel; label: string; desc: string }[] = [
-  { value: 'REMEMBER', label: 'REMEMBER (Ghi nhớ)', desc: 'Recall facts and basic concepts' },
-  { value: 'UNDERSTAND', label: 'UNDERSTAND (Thông hiểu)', desc: 'Explain ideas or concepts' },
-  { value: 'APPLY', label: 'APPLY (Vận dụng)', desc: 'Use information in new situations' },
-  { value: 'ANALYZE', label: 'ANALYZE (Phân tích)', desc: 'Draw connections among ideas' },
-  { value: 'EVALUATE', label: 'EVALUATE (Đánh giá)', desc: 'Justify a stand or decision' },
-  { value: 'CREATE', label: 'CREATE (Sáng tạo)', desc: 'Produce new or original work' },
-]
+const BLOOM_LEVELS: BloomLevel[] = ['REMEMBER', 'UNDERSTAND', 'APPLY', 'ANALYZE', 'EVALUATE', 'CREATE']
 
 export default function GenerateQuestionsModal({
   subject,
   onClose,
   onGenerated,
 }: GenerateQuestionsModalProps) {
+  const { t } = useTranslation()
   const [keyword, setKeyword] = useState('')
   const [bloomLevel, setBloomLevel] = useState<BloomLevel | ''>('')
   const [language, setLanguage] = useState<'AUTO' | 'vi' | 'en'>('AUTO')
@@ -62,12 +59,12 @@ export default function GenerateQuestionsModal({
     setError('')
 
     if (!keyword.trim()) {
-      setError('Please enter a topic or keyword.')
+      setError(t('questions.generate.keywordRequired'))
       return
     }
 
     if (count < 1 || count > 10) {
-      setError('Question count must be between 1 and 10.')
+      setError(t('questions.generate.countRange'))
       return
     }
 
@@ -89,13 +86,13 @@ export default function GenerateQuestionsModal({
         : []
 
       if (generated.length === 0) {
-        setError('The server returned no questions. Try a different keyword or Bloom level.')
+        setError(t('questions.generate.noQuestions'))
         return
       }
       setResults(generated)
     } catch (err: unknown) {
       let code: number | undefined
-      let message = 'Failed to generate questions. Please try again.'
+      let message = t('questions.generate.failed')
       let status: number | undefined
 
       if (typeof err === 'object' && err !== null && 'response' in err) {
@@ -108,23 +105,17 @@ export default function GenerateQuestionsModal({
       }
 
       if (code === 1024 || message.includes('NO_RELEVANT_MATERIALS') || message.includes('chưa có tài liệu')) {
-        setError(
-          'No ready learning materials found for this subject. Please upload and prepare subject materials before generating questions with AI.'
-        )
+        setError(t('questions.generate.noMaterials'))
       } else if (code === 1101 || message.includes('SUBJECT_NOT_ASSIGNED') || message.includes('chưa được phân công')) {
-        setError(
-          'You are not assigned to this subject. Only assigned lecturers or administrators can generate questions.'
-        )
+        setError(t('questions.generate.notAssigned'))
       } else if (status === 403) {
-        setError(message || 'You do not have permission to generate questions for this subject.')
+        setError(message || t('questions.generate.forbidden'))
       } else if (status === 401) {
-        setError('Your session has expired. Please sign in again.')
+        setError(t('questions.generate.sessionExpired'))
       } else if (code === 1016 || message.includes('SUBJECT_NOT_FOUND')) {
-        setError('Subject not found. It may have been deleted; please refresh and select another subject.')
+        setError(t('questions.generate.subjectNotFound'))
       } else if (code === 1025 || message.includes('AI_GENERATION_FAILED')) {
-        setError(
-          'AI service error while generating questions. Please check your network and try again.'
-        )
+        setError(t('questions.generate.aiFailed'))
       } else {
         setError(message)
       }
@@ -149,10 +140,10 @@ export default function GenerateQuestionsModal({
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900" style={{ fontFamily: 'DM Sans, sans-serif' }}>
-                Generate Questions & Rubrics (AI RAG)
+                {t('questions.generate.title')}
               </h2>
               <p className="text-xs text-slate-500">
-                Subject: <span className="font-semibold text-blue-700">{subject.code} - {subject.name}</span>
+                {t('questions.generate.subject')} <span className="font-semibold text-blue-700">{subject.code} - {subject.name}</span>
               </p>
             </div>
           </div>
@@ -171,7 +162,7 @@ export default function GenerateQuestionsModal({
         {results ? (
           <div className="p-6 space-y-4">
             <div className="p-3 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg">
-              The server returned {results.length} question{results.length > 1 ? 's' : ''} for {subject.code}. They are stored by the backend and appear in the Question Bank.
+              {t('questions.generate.resultSummary', { count: results.length, code: subject.code })}
             </div>
             <div className="max-h-96 overflow-y-auto space-y-3">
               {results.map((q, i) => (
@@ -179,39 +170,39 @@ export default function GenerateQuestionsModal({
                   <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
                     <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600">#{q.id}</span>
                     {q.language && (
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
                         q.language === 'en'
                           ? 'bg-sky-50 text-sky-700 border-sky-200'
                           : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       }`}>
-                        {q.language === 'en' ? '🇬🇧 EN' : '🇻🇳 VI'}
+                        <FlagIcon language={q.language} />{q.language === 'en' ? 'EN' : 'VI'}
                       </span>
                     )}
-                    {q.bloomLevel && <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">{q.bloomLevel}</span>}
+                    {q.bloomLevel && <span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">{t(`questions.bloom.${q.bloomLevel}`, { defaultValue: q.bloomLevel })}</span>}
                     <QuestionStatusBadge status={q.status} />
-                    {q.answerTimeLimitSeconds != null && <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600">{q.answerTimeLimitSeconds}s</span>}
+                    {q.answerTimeLimitSeconds != null && <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600">{t('questions.seconds', { value: formatNumber(q.answerTimeLimitSeconds) })}</span>}
                   </div>
                   <p className="text-sm font-medium text-slate-800">{q.content}</p>
                   {q.referenceAnswer && (
-                    <p className="text-xs text-slate-600 whitespace-pre-line"><span className="font-semibold">Reference answer: </span>{q.referenceAnswer}</p>
+                    <p className="text-xs text-slate-600 whitespace-pre-line"><span className="font-semibold">{t('questions.generate.referenceAnswer')}</span>{q.referenceAnswer}</p>
                   )}
                   {q.rubric ? (
                     <div className="text-xs text-slate-600">
-                      <p className="font-semibold">Rubric{q.rubric.title ? `: ${q.rubric.title}` : ''}</p>
+                      <p className="font-semibold">{t('questions.generate.rubric')}{q.rubric.title ? `: ${q.rubric.title}` : ''}</p>
                       {q.rubric.criteria?.length > 0 && (
                         <ul className="list-disc pl-4 mt-1 space-y-0.5">
                           {q.rubric.criteria.map((c, j) => (
                             <li key={c.id ?? j}>
                               {c.criterionText}
-                              {c.pointWeight != null && <> — {c.pointWeight} pts</>}
-                              {c.isMandatory && <span className="text-red-600"> (required)</span>}
+                              {c.pointWeight != null && <> — {t('questions.points', { value: formatNumber(Number(c.pointWeight), { maximumFractionDigits: 6 }) })}</>}
+                              {c.isMandatory && <span className="text-red-600"> {t('questions.generate.required')}</span>}
                             </li>
                           ))}
                         </ul>
                       )}
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-400 italic">No rubric returned.</p>
+                    <p className="text-xs text-slate-400 italic">{t('questions.generate.noRubric')}</p>
                   )}
                 </div>
               ))}
@@ -222,7 +213,7 @@ export default function GenerateQuestionsModal({
                 onClick={handleClose}
                 className="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
               >
-                Back to Question Bank
+                {t('questions.generate.back')}
               </button>
             </div>
           </div>
@@ -241,7 +232,7 @@ export default function GenerateQuestionsModal({
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">
-              Topic / Keyword <span className="text-red-500">*</span>
+              {t('questions.generate.keyword')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -249,17 +240,17 @@ export default function GenerateQuestionsModal({
               disabled={loading}
               value={keyword}
               onChange={e => setKeyword(e.target.value)}
-              placeholder="e.g. Kanji JPD316, Microservices Architecture, Database Indexing..."
+              placeholder={t('questions.generate.keywordPlaceholder')}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50 transition-all"
             />
             <p className="mt-1 text-[11px] text-slate-500">
-              AI retrieves the top relevant document chunks via cosine distance to generate contextual oral exam questions.
+              {t('questions.generate.keywordHint')}
             </p>
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">
-              Cognitive Bloom Level
+              {t('questions.generate.bloomLabel')}
             </label>
             <select
               disabled={loading}
@@ -267,10 +258,10 @@ export default function GenerateQuestionsModal({
               onChange={e => setBloomLevel(e.target.value as BloomLevel | '')}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50 bg-white transition-all"
             >
-              <option value="">✨ Auto (AI analyzes topic and assigns the best level)</option>
+              <option value="">{t('questions.generate.bloomAuto')}</option>
               {BLOOM_LEVELS.map(b => (
-                <option key={b.value} value={b.value}>
-                  {b.label} — {b.desc}
+                <option key={b} value={b}>
+                  {t(`questions.bloom.${b}`)} — {t(`questions.generate.bloomDesc.${b}`)}
                 </option>
               ))}
             </select>
@@ -278,7 +269,7 @@ export default function GenerateQuestionsModal({
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-1">
-              Output Language <span className="text-xs font-normal text-slate-400">(AI generated content)</span>
+              {t('questions.generate.languageLabel')} <span className="text-xs font-normal text-slate-400">{t('questions.generate.languageHint')}</span>
             </label>
             <select
               disabled={loading}
@@ -286,19 +277,19 @@ export default function GenerateQuestionsModal({
               onChange={e => setLanguage(e.target.value as 'AUTO' | 'vi' | 'en')}
               className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm disabled:bg-slate-50 bg-white transition-all"
             >
-              <option value="AUTO">🌐 Auto (Follows learning material context)</option>
-              <option value="vi">🇻🇳 Vietnamese (Tiếng Việt)</option>
-              <option value="en">🇬🇧 English</option>
+              <option value="AUTO">🌐 {t('common.contentLanguage.auto')}</option>
+              <option value="vi">{t('common.contentLanguage.vi')}</option>
+              <option value="en">{t('common.contentLanguage.en')}</option>
             </select>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="block text-sm font-semibold text-slate-700">
-                Number of Questions
+                {t('questions.generate.countLabel')}
               </label>
               <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                {count} question{count > 1 ? 's' : ''}
+                {t('questions.generate.countBadge', { count })}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -331,14 +322,14 @@ export default function GenerateQuestionsModal({
                   </button>
                 ))}
               </div>
-              <p className="text-[11px] text-slate-400">1 to 5 questions recommended for fastest generation</p>
+              <p className="text-[11px] text-slate-400">{t('questions.generate.countHint')}</p>
             </div>
           </div>
 
           {materials.length > 0 && (
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">
-                Learning Materials <span className="text-xs font-normal text-slate-400">(optional — none selected uses all ready materials)</span>
+                {t('questions.generate.materials')} <span className="text-xs font-normal text-slate-400">{t('questions.generate.materialsHint')}</span>
               </label>
               <div className="max-h-32 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100">
                 {materials.map(m => (
@@ -349,7 +340,7 @@ export default function GenerateQuestionsModal({
                       checked={materialIds.includes(m.id)}
                       onChange={() => toggleMaterial(m.id)}
                     />
-                    <span className="flex-1 truncate">{m.title || m.fileName || `Material ${m.id}`}</span>
+                    <span className="flex-1 truncate">{m.title || m.fileName || t('materials.fallbackName', { id: m.id })}</span>
                     {m.language && (
                       <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${
                         m.language === 'en'
@@ -359,7 +350,7 @@ export default function GenerateQuestionsModal({
                         {m.language === 'en' ? 'EN' : 'VI'}
                       </span>
                     )}
-                    {m.processingStatus && <span className="text-[10px] text-slate-400">{m.processingStatus}</span>}
+                    {m.processingStatus && <span className="text-[10px] text-slate-400">{t(`materials.status.${m.processingStatus.toUpperCase()}`, { defaultValue: m.processingStatus })}</span>}
                   </label>
                 ))}
               </div>
@@ -368,12 +359,12 @@ export default function GenerateQuestionsModal({
 
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs text-slate-600 space-y-1">
             <div className="font-semibold text-slate-700 flex items-center gap-1.5">
-              <span>📋 Output Specification:</span>
+              <span>{t('questions.generate.specTitle')}</span>
             </div>
             <ul className="list-disc pl-4 space-y-0.5 text-slate-500">
-              <li>Oral questions with reference answer & time limit</li>
-              <li>Rubric with weighted assessment criteria</li>
-              <li>Saved as <strong className="text-slate-700">DRAFT</strong> in your question bank for review</li>
+              <li>{t('questions.generate.spec1')}</li>
+              <li>{t('questions.generate.spec2')}</li>
+              <li><Trans i18nKey="questions.generate.spec3" components={{ b: <strong className="text-slate-700" /> }} /></li>
             </ul>
           </div>
 
@@ -384,8 +375,8 @@ export default function GenerateQuestionsModal({
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               <div className="text-xs text-blue-800">
-                <p className="font-semibold">AI is analyzing learning materials...</p>
-                <p className="text-blue-600">Generating questions and rubrics. This may take 5 - 15 seconds.</p>
+                <p className="font-semibold">{t('questions.generate.loadingTitle')}</p>
+                <p className="text-blue-600">{t('questions.generate.loadingDesc')}</p>
               </div>
             </div>
           )}
@@ -398,7 +389,7 @@ export default function GenerateQuestionsModal({
               disabled={loading}
               className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -411,14 +402,14 @@ export default function GenerateQuestionsModal({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  <span>Generating Questions...</span>
+                  <span>{t('questions.generate.generating')}</span>
                 </>
               ) : (
                 <>
                   <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
                   </svg>
-                  <span>Generate with AI</span>
+                  <span>{t('questions.generate.submit')}</span>
                 </>
               )}
             </button>

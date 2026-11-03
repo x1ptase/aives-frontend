@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import FlagIcon from '@/shared/components/common/FlagIcon'
+import { useTranslation } from 'react-i18next'
+import { formatNumber } from '@/shared/i18n/format'
 import { QuestionItem, questionApi } from '../api'
 import QuestionStatusBadge from './QuestionStatusBadge'
 
@@ -9,6 +12,7 @@ interface QuestionDetailModalProps {
 }
 
 export default function QuestionDetailModal({ question, onClose, onApprove }: QuestionDetailModalProps) {
+  const { t } = useTranslation()
   const [currentQuestion, setCurrentQuestion] = useState<QuestionItem>(question)
   const [approving, setApproving] = useState(false)
   const [approveError, setApproveError] = useState('')
@@ -28,7 +32,7 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
         await onApprove(updated)
       }
     } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || 'Failed to approve question.'
+      const msg = err?.response?.data?.message || err?.message || t('questions.admin.approveFailed')
       setApproveError(msg)
     } finally {
       setApproving(false)
@@ -42,21 +46,21 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50/70">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">
-              Question #{currentQuestion.id}
+              {t('questions.detail.questionId', { id: currentQuestion.id })}
             </span>
             {currentQuestion.language && (
-              <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider border ${
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider border ${
                 currentQuestion.language === 'en'
                   ? 'bg-sky-50 text-sky-700 border-sky-200'
                   : 'bg-emerald-50 text-emerald-700 border-emerald-200'
               }`}>
-                {currentQuestion.language === 'en' ? '🇬🇧 English' : '🇻🇳 Tiếng Việt'}
+                <FlagIcon language={currentQuestion.language} />{t(`common.contentLanguage.${currentQuestion.language}`)}
               </span>
             )}
             <QuestionStatusBadge status={currentQuestion.status} />
             {currentQuestion.sourceType && (
               <span className="px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-700 flex items-center gap-1">
-                {currentQuestion.sourceType === 'AI' && '✨ '}{currentQuestion.sourceType}
+                {currentQuestion.sourceType === 'AI' && '✨ '}{t(`questions.source.${currentQuestion.sourceType}`, { defaultValue: currentQuestion.sourceType })}
               </span>
             )}
           </div>
@@ -76,22 +80,22 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {currentQuestion.bloomLevel && (
               <div className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 font-medium">
-                Bloom: <strong>{currentQuestion.bloomLevel}</strong>
+                {t('questions.detail.bloom')} <strong>{t(`questions.bloom.${currentQuestion.bloomLevel}`, { defaultValue: currentQuestion.bloomLevel })}</strong>
               </div>
             )}
             {currentQuestion.answerTimeLimitSeconds && (
               <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 font-medium">
-                ⏱️ Time limit: <strong>{currentQuestion.answerTimeLimitSeconds}s</strong>
+                {t('questions.detail.timeLimit')} <strong>{t('questions.seconds', { value: formatNumber(currentQuestion.answerTimeLimitSeconds) })}</strong>
               </div>
             )}
             {currentQuestion.createdByName && (
               <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
-                Created by: <strong>{currentQuestion.createdByName}</strong>
+                {t('questions.detail.createdBy')} <strong>{currentQuestion.createdByName}</strong>
               </div>
             )}
             {currentQuestion.subjectName && (
               <div className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-100">
-                Subject: <strong>{currentQuestion.subjectName}</strong>
+                {t('questions.detail.subject')} <strong>{currentQuestion.subjectName}</strong>
               </div>
             )}
           </div>
@@ -99,7 +103,7 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
           {/* Topics */}
           {currentQuestion.topics && currentQuestion.topics.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-xs text-slate-400 mr-1">Topics:</span>
+              <span className="text-xs text-slate-400 mr-1">{t('questions.detail.topics')}</span>
               {currentQuestion.topics.map((t, idx) => (
                 <span key={idx} className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-xs font-medium">
                   #{t}
@@ -111,7 +115,7 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
           {/* Question Content */}
           <div>
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-              Oral Exam Question
+              {t('questions.detail.oralQuestion')}
             </h3>
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium leading-relaxed">
               {currentQuestion.content}
@@ -122,7 +126,7 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
           {currentQuestion.referenceAnswer && (
             <div>
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                <span>Reference Answer & Key Outline</span>
+                <span>{t('questions.detail.referenceAnswer')}</span>
               </h3>
               <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl text-slate-700 text-sm leading-relaxed whitespace-pre-line">
                 {currentQuestion.referenceAnswer}
@@ -133,7 +137,7 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
           {/* Rubric Evaluation */}
           {!rubric && (
             <p className="pt-2 border-t border-slate-100 text-xs text-slate-400 italic">
-              No rubric available for this question.
+              {t('questions.detail.noRubric')}
             </p>
           )}
           {rubric && (() => {
@@ -150,7 +154,7 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
               <div className="pt-2 border-t border-slate-100">
                 <div className="mb-2">
                   <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                    Rubric Evaluation
+                    {t('questions.detail.rubricTitle')}
                   </h3>
                   {rubric.title && <p className="text-xs text-slate-500 mt-0.5">{rubric.title}</p>}
                   {rubric.description && (
@@ -164,9 +168,9 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
                       <thead className="bg-slate-100 text-slate-600 border-b border-slate-200 font-semibold">
                         <tr>
                           <th className="py-2.5 px-3 w-12 text-center">#</th>
-                          <th className="py-2.5 px-3">Assessment Criterion</th>
-                          <th className="py-2.5 px-3 w-28 text-center">Weight</th>
-                          <th className="py-2.5 px-3 w-24 text-center">Mandatory</th>
+                          <th className="py-2.5 px-3">{t('questions.detail.colCriterion')}</th>
+                          <th className="py-2.5 px-3 w-28 text-center">{t('questions.detail.colWeight')}</th>
+                          <th className="py-2.5 px-3 w-24 text-center">{t('questions.detail.colMandatory')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
@@ -181,7 +185,7 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
                             <td className="py-2.5 px-3 text-center">
                               {hasWeight(c.pointWeight) ? (
                                 <span className="px-2 py-0.5 rounded font-bold text-blue-700 bg-blue-50 border border-blue-100">
-                                  {c.pointWeight} pts
+                                  {t('questions.points', { value: formatNumber(Number(c.pointWeight), { maximumFractionDigits: 6 }) })}
                                 </span>
                               ) : (
                                 <span className="text-slate-400">—</span>
@@ -190,10 +194,10 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
                             <td className="py-2.5 px-3 text-center">
                               {c.isMandatory === true ? (
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold text-red-700 bg-red-50">
-                                  Required
+                                  {t('questions.detail.required')}
                                 </span>
                               ) : c.isMandatory === false ? (
-                                <span className="text-slate-500 text-[11px]">Optional</span>
+                                <span className="text-slate-500 text-[11px]">{t('questions.detail.optional')}</span>
                               ) : (
                                 <span className="text-slate-400 text-[11px]">—</span>
                               )}
@@ -204,10 +208,10 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
                       <tfoot className="bg-slate-50 font-semibold text-slate-800 border-t border-slate-200">
                         <tr>
                           <td colSpan={2} className="py-2.5 px-3 text-right">
-                            Total{missingWeight ? ' (some weights not provided)' : ''}:
+                            {missingWeight ? t('questions.detail.totalPartial') : t('questions.detail.total')}
                           </td>
                           <td className="py-2.5 px-3 text-center font-bold text-blue-700">
-                            {total} pts
+                            {t('questions.points', { value: formatNumber(total, { maximumFractionDigits: 6 }) })}
                           </td>
                           <td></td>
                         </tr>
@@ -215,7 +219,7 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
                     </table>
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400 italic">No detailed criteria provided.</p>
+                  <p className="text-xs text-slate-400 italic">{t('questions.detail.noCriteria')}</p>
                 )}
               </div>
             )
@@ -226,7 +230,7 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
         <div className="px-6 py-3.5 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             {approveError && <span className="text-xs text-red-600 font-medium">{approveError}</span>}
-            {approveSuccess && <span className="text-xs text-emerald-600 font-medium">✓ Question approved successfully!</span>}
+            {approveSuccess && <span className="text-xs text-emerald-600 font-medium">{t('questions.detail.approveSuccess')}</span>}
           </div>
           <div className="flex items-center gap-2">
             {currentQuestion.status !== 'APPROVED' && (
@@ -235,14 +239,14 @@ export default function QuestionDetailModal({ question, onClose, onApprove }: Qu
                 disabled={approving}
                 className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
               >
-                {approving ? 'Approving...' : '✓ Approve Question'}
+                {approving ? t('questions.detail.approving') : t('questions.detail.approve')}
               </button>
             )}
             <button
               onClick={onClose}
               className="px-4 py-2 text-sm font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors shadow-sm"
             >
-              Close
+              {t('common.close')}
             </button>
           </div>
         </div>
