@@ -53,7 +53,9 @@ export function CreateQuestionModal({
     const [referenceAnswer, setReferenceAnswer] = useState(question?.referenceAnswer ?? '')
     const [topics, setTopics] = useState((question?.topics ?? []).join(', '))
     const [bloomLevel, setBloomLevel] = useState<BloomLevel | ''>(question?.bloomLevel ?? '')
-    const [language, setLanguage] = useState<'vi' | 'en'>(question?.language === 'en' ? 'en' : 'vi')
+    const [language, setLanguage] = useState<'vi' | 'en'>(
+        question?.language === 'en' ? 'en' : 'vi'
+    )
     const [timeLimit, setTimeLimit] = useState(
         question?.answerTimeLimitSeconds != null ? String(question.answerTimeLimitSeconds) : ''
     )
