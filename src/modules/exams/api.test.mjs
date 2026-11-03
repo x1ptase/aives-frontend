@@ -380,7 +380,7 @@ test('Attempt dialog shows immutable questions and Finish but does not offer fak
   const html = renderExam(Modal, { exam: startedFixture.result, title: 'Phiên thi thử', onClose() {}, onFinished() {} })
   assert.match(html, /Phân tích thiết kế phần mềm/)
   assert.match(html, /Hoàn thành bài thi/)
-  assert.match(html, /Feature 3/)
+  assert.match(html, /lưu từ phòng thi vấn đáp/)
   assert.doesNotMatch(html, /<textarea|<input|referenceAnswer|rubricSnapshot|finalScore|PRIVATE_REFERENCE/)
 })
 

@@ -64,6 +64,14 @@
     "uploadedMaterial": "Đã tải lên tài liệu học tập",
     "questionId": "ID câu hỏi: {{id}}",
     "materialId": "ID tài liệu: {{id}}",
-    "success": "Thành công"
+    "success": "Thành công",
+    "statusValues": {
+      "success": "Thành công",
+      "completed": "Hoàn thành",
+      "active": "Đang hoạt động",
+      "failed": "Thất bại",
+      "pending": "Đang chờ",
+      "error": "Lỗi"
+    }
   }
 }

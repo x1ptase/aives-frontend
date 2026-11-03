@@ -16,7 +16,7 @@ function StatusBadge({ status }: { status: string }) {
       isSuccess ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-50 text-slate-700 border border-slate-100'
     }`}>
       <span className={`w-1.5 h-1.5 rounded-full ${isSuccess ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-      {status ? status.charAt(0).toUpperCase() + status.slice(1) : t('dashboard.activity.success')}
+      {status ? t(`dashboard.activity.statusValues.${status.toLowerCase()}`, { defaultValue: status.charAt(0).toUpperCase() + status.slice(1) }) : t('dashboard.activity.success')}
     </span>
   )
 }

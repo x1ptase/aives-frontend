@@ -64,6 +64,14 @@
     "uploadedMaterial": "学習資料をアップロード",
     "questionId": "問題ID：{{id}}",
     "materialId": "資料ID：{{id}}",
-    "success": "成功"
+    "success": "成功",
+    "statusValues": {
+      "success": "成功",
+      "completed": "完了",
+      "active": "有効",
+      "failed": "失敗",
+      "pending": "保留中",
+      "error": "エラー"
+    }
   }
 }
