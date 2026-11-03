@@ -43,9 +43,10 @@ export function parseOralRuntime(value: unknown): OralRuntime {
   const r = result(value)
   if (!['FOUNDATION', 'LOCAL_DEMO', 'LIVE'].includes(r.mode) || typeof r.providersReady !== 'boolean' || typeof r.message !== 'string' || r.message.length > 1000
     || r.mode === 'FOUNDATION' && r.providersReady) return invalid()
-  if (r.mode === 'LIVE' && (!r.providersReady || r.speechReady !== true || r.transcriptionReady !== true || r.audioStorageReady !== true)) return invalid()
-  if (['speechReady', 'transcriptionReady', 'audioStorageReady'].some(key => r[key] != null && typeof r[key] !== 'boolean')) return invalid()
-  return { mode: r.mode, providersReady: r.providersReady, message: r.message, speechReady: r.speechReady === true, transcriptionReady: r.transcriptionReady === true, audioStorageReady: r.audioStorageReady === true }
+  if (r.mode === 'LIVE' && (!r.providersReady || r.speechReady !== true || r.transcriptionReady !== true && r.streamingSttReady !== true || r.audioStorageReady !== true)) return invalid()
+  if (['speechReady', 'transcriptionReady', 'audioStorageReady', 'streamingSttReady', 'streamingTtsReady'].some(key => r[key] != null && typeof r[key] !== 'boolean')) return invalid()
+  return { mode: r.mode, providersReady: r.providersReady, message: r.message, speechReady: r.speechReady === true, transcriptionReady: r.transcriptionReady === true, audioStorageReady: r.audioStorageReady === true,
+    ...(r.streamingSttReady !== undefined ? { streamingSttReady: r.streamingSttReady } : {}), ...(r.streamingTtsReady !== undefined ? { streamingTtsReady: r.streamingTtsReady } : {}) }
 }
 /** Kiểm tra scope, thứ tự, UUID và đồng hồ trước khi dùng response điều khiển phòng thi. */
 export function parseOralState(value: unknown, expectedId: number): OralState {

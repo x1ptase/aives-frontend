@@ -56,12 +56,13 @@ export default function ExamSessionModal({ exam, subjects, onClose, onSaved }: {
       <p className="text-xs text-slate-500">{t('exams.session.status', { status: t(`exams.sessionStatus.${exam?.status ?? 'UPCOMING'}`) })}</p>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-semibold">{t('exams.session.start')}
-          <input required type="datetime-local" step="0.001" disabled={busy} className={`${inputStyle} mt-1.5`}
+          <input required type="datetime-local" step="60" disabled={busy} className={`${inputStyle} mt-1.5`}
             value={form.scheduledStartAt} onChange={event => setForm({ ...form, scheduledStartAt: event.target.value })} /></label>
         <label className="block text-sm font-semibold">{t('exams.session.end')}
-          <input required type="datetime-local" step="0.001" disabled={busy} className={`${inputStyle} mt-1.5`}
+          <input required type="datetime-local" step="60" disabled={busy} className={`${inputStyle} mt-1.5`}
             value={form.scheduledEndAt} onChange={event => setForm({ ...form, scheduledEndAt: event.target.value })} /></label>
       </div>
+      <p className="text-xs text-slate-500">{t('exams.session.timeNote')}</p>
       <div className="grid gap-4 sm:grid-cols-3">
         {([{ key: 'slotDurationMinutes', label: t('exams.session.minutesPerStudent'), min: 1 },
           { key: 'maxMainQuestions', label: t('exams.session.mainQuestions'), min: 1 },

@@ -33,13 +33,13 @@ export function formatExamTime(value: string | null | undefined): string {
   return Number.isNaN(date.getTime()) ? i18n.t('exams.time.invalid') : formatDateTime(date)
 }
 
-/** Chuyển ISO có offset thành datetime-local, giữ tới mili giây và không đổi instant nguồn. */
+/** Form chỉ hiển thị tới phút; PATCH bỏ qua ô không đổi để giữ nguyên độ chính xác lịch cũ. */
 export function toLocalExamTime(value: string | null): string {
   if (!value) return ''
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
-  const pad = (n: number, length = 2) => String(n).padStart(length, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}.${pad(date.getMilliseconds(), 3)}`
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
 /** Form mới dùng cùng mặc định với backend; không tự sinh lịch hoặc quyền sở hữu. */
@@ -68,7 +68,7 @@ function integer(value: string, label: string, min: number): number {
   return number
 }
 
-/** Chuẩn hóa giờ local thành UTC có offset; chặn ngày sai và giờ không tồn tại khi đổi DST. */
+/** Chuẩn hóa lịch được chọn thành đầu phút UTC; chặn ngày sai và giờ không tồn tại khi đổi DST. */
 function utcTime(value: string): string {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?$/.test(value)) throw new ExamUiError(i18n.t('exams.validation.dateIncomplete'))
   const date = new Date(value)
@@ -76,15 +76,23 @@ function utcTime(value: string): string {
   if (Number.isNaN(date.getTime()) || date.getFullYear() !== parts[0] || date.getMonth() + 1 !== parts[1]
     || date.getDate() !== parts[2] || date.getHours() !== parts[3] || date.getMinutes() !== parts[4])
     throw new ExamUiError(i18n.t('exams.validation.dateInvalid'))
+  date.setSeconds(0, 0)
   return date.toISOString()
 }
 
 /** Tạo payload whitelist và kiểm tra phiên đủ một slot; không gửi status hoặc lecturerId. */
 export function createExamPayload(form: ExamSessionForm, now = Date.now()): ExamSessionPayload {
+  return validatedExamPayload(form, now)
+}
+
+/** Lịch mới/được đổi chỉ có phút; các ô không đổi khi Edit dùng lại timestamp nguồn để kiểm tra đúng thời lượng. */
+function validatedExamPayload(form: ExamSessionForm, now: number, original?: ExamSession): ExamSessionPayload {
   const title = form.title.trim()
   if (!title || title.length > 255 || title.includes('\0')) throw new ExamUiError(i18n.t('exams.validation.titleInvalid'))
-  const scheduledStartAt = utcTime(form.scheduledStartAt)
-  const scheduledEndAt = utcTime(form.scheduledEndAt)
+  const scheduledStartAt = original?.scheduledStartAt && form.scheduledStartAt === toLocalExamTime(original.scheduledStartAt)
+    ? original.scheduledStartAt : utcTime(form.scheduledStartAt)
+  const scheduledEndAt = original?.scheduledEndAt && form.scheduledEndAt === toLocalExamTime(original.scheduledEndAt)
+    ? original.scheduledEndAt : utcTime(form.scheduledEndAt)
   if (Date.parse(scheduledStartAt) <= now) throw new ExamUiError(i18n.t('exams.validation.startFuture'))
   if (Date.parse(scheduledEndAt) <= Date.parse(scheduledStartAt)) throw new ExamUiError(i18n.t('exams.validation.endAfterStart'))
   const slotDurationMinutes = integer(form.slotDurationMinutes, i18n.t('exams.validation.slotDurationLabel'), 1)
@@ -135,7 +143,7 @@ export async function createExamWithRubricCheck(payload: ExamSessionPayload) {
 
 /** Chỉ gửi giá trị thay đổi, tránh làm tròn lịch nguồn hoặc ghi đè lịch đã khóa khi sửa tiêu đề. */
 export function updateExamPayload(form: ExamSessionForm, original: ExamSession): ExamSessionPatch {
-  const next = createExamPayload(form)
+  const next = validatedExamPayload(form, Date.now(), original)
   const patch: ExamSessionPatch = {}
   if (next.title !== original.title) patch.title = next.title
   if (form.scheduledStartAt !== toLocalExamTime(original.scheduledStartAt)) patch.scheduledStartAt = next.scheduledStartAt

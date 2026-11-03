@@ -24,6 +24,7 @@ function OralExamContent({ examId, userId }: { examId: number; userId: string })
   const [accepted, setAccepted] = useState(false)
   const navigate = useNavigate(); const location = useLocation(); const feedback = useFeedback()
   const demo = isLocalOralDemo(oral.runtime)
+  const streaming = !demo && import.meta.env.VITE_ORAL_STREAMING_ENABLED !== 'false' && typeof AudioContext !== 'undefined' && typeof AudioWorkletNode !== 'undefined'
   const title = typeof location.state?.title === 'string' ? location.state.title : t('exams.oralPage.defaultTitle', { id: examId })
   /** Rời phòng không gọi Finish; pause được gửi nếu còn quyền và đang ở bước nghe/trả lời. */
   const leave = async () => {
@@ -63,8 +64,10 @@ function OralExamContent({ examId, userId }: { examId: number; userId: string })
         {!oral.controlled && !oralTerminal(oral.state) && <section className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-blue-100 bg-white p-4"><p className="text-sm leading-6 text-slate-600">{t('exams.oralPage.viewing')}</p><button type="button" disabled={oral.busy || !!oral.pending && oral.pending.action !== 'SUBMIT'} onClick={() => void oral.open()} className={oralPrimaryButton}>{t('exams.oralPage.regain')}</button></section>}
         {!demo && !oral.runtime?.providersReady && <p className="mb-4 rounded-lg bg-slate-100 p-4 text-sm leading-6 text-slate-600">{t('exams.oralPage.providersNotReady')}</p>}
         <OralExamRoom state={oral.state} receivedAt={oral.receivedAt} demo={demo} blocked={oral.busy || !oral.controlled || !!oral.pending}
-          speech={{ ready: !!oral.runtime?.speechReady, controlled: oral.controlled, valid: oral.speechCurrent, fetch: oral.speech, ended: turn => void oral.speechFinished(turn) }}
-          recording={{ ready: !!oral.runtime?.transcriptionReady && !!oral.runtime.audioStorageReady, controlled: oral.controlled, hasDraft: oral.audioDraft, valid: oral.recordingCurrent, recorded: oral.submitRecording }}
+          speech={{ ready: !!oral.runtime?.speechReady, controlled: oral.controlled, valid: oral.speechCurrent, fetch: oral.speech, ended: turn => void oral.speechFinished(turn),
+            stream: streaming && oral.runtime?.streamingTtsReady ? oral.speechStream : undefined }}
+          recording={{ ready: (!!oral.runtime?.transcriptionReady || streaming && !!oral.runtime?.streamingSttReady) && !!oral.runtime?.audioStorageReady, controlled: oral.controlled, hasDraft: oral.audioDraft, valid: oral.recordingCurrent, recorded: oral.submitRecording,
+            streaming: streaming && oral.runtime?.streamingSttReady ? { open: oral.openRecordingStream, submit: oral.submitStreamingRecording } : undefined }}
           onCommand={(action, target, scenario) => void oral.command(action, target, scenario)} onFinish={finish} />
       </>}
     </div>
