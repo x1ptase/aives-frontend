@@ -8,7 +8,7 @@ import { initTestI18n } from '../../test-utils/i18n.mjs'
 
 /** HTTP/SSE giả, hook React thật; không gọi backend, Supabase, TTS hoặc mic. */
 let dom, server, readEvents, useExam, Provider, client, root, host, createRoot, latest, adapter, fetchCalls, streams, gets, timers
-const previousFetch = globalThis.fetch, encode = text => new TextEncoder().encode(text)
+const previousFetch = globalThis.fetch, previousWebSocket=globalThis.WebSocket, encode = text => new TextEncoder().encode(text)
 const turn = '22222222-2222-4222-8222-222222222222', job = '33333333-3333-4333-8333-333333333333'
 const fixture = (extra = {}) => ({ studentExamId: 7, status: 'IN_PROGRESS', phase: 'TRANSCRIBING', revision: 8,
   serverTime: '2035-01-01T10:00:00Z', deadline: '2035-01-01T10:20:00Z', leaseUntil: '2035-01-01T10:00:45Z', mainCount: 1,
@@ -54,7 +54,7 @@ beforeEach(() => {
   }
   host = document.createElement('div'); document.body.append(host); root = createRoot(host)
 })
-afterEach(async () => { await act(async () => root.unmount()); host.remove() })
+afterEach(async () => { await act(async () => root.unmount()); host.remove(); globalThis.WebSocket=previousWebSocket })
 after(async () => { globalThis.fetch = previousFetch; await server.close(); await dom.happyDOM.abort(); delete globalThis.IS_REACT_ACT_ENVIRONMENT })
 
 test('Parser nhận frame bị chia nhỏ/CRLF, bỏ heartbeat, chỉ công bố revision và dùng bearer header', async () => {
@@ -127,4 +127,32 @@ test('Frame sai/hỏng hoặc quá lớn bị từ chối, không suy diễn th�
     streams[index].controller.enqueue(encode(`event:progress\ndata:${data}\n\n`))
     await assert.rejects(reading)
   }
+})
+
+test('WS state sau commit đến trước RESULT vẫn được áp dụng, bỏ GET trùng từ SSE và không làm lùi revision', async () => {
+  class Socket {
+    static OPEN=1
+    readyState=1; bufferedAmount=0; sent=[]
+    constructor(){Socket.last=this;queueMicrotask(()=>this.onopen?.())}
+    send(raw){const value=JSON.parse(raw);this.sent.push(value);if(value.type==='AUTH')queueMicrotask(()=>this.emit({type:'AUTHENTICATED'}));if(value.type==='START')queueMicrotask(()=>this.emit({type:'READY',sampleRate:16000,statePush:true}))}
+    emit(value){this.onmessage?.({data:JSON.stringify(value)})}
+    close(){this.readyState=3;this.onclose?.()}
+  }
+  globalThis.WebSocket=Socket
+  adapter=async()=>fixture({phase:'ANSWERING',submissionId:null})
+  await mount(); await act(async()=>latest.open()); await wait(()=>latest.controlled)
+  const connection=latest.openRecordingStream(turn,()=>{}); await connection.opened()
+  let submitting
+  await act(async()=>{submitting=latest.submitStreamingRecording(turn,new Blob([new Uint8Array(100)],{type:'audio/wav'}),connection)})
+  await wait(()=>Socket.last.sent.some(value=>value.type==='FINISH'))
+  const before=gets
+  await emit(0,'progress',10); assert.equal(gets,before)
+  const nextTurn='44444444-4444-4444-8444-444444444444'
+  await act(async()=>{
+    Socket.last.emit({type:'PROGRESS',revision:10,state:fixture({phase:'PREPARING',revision:10,currentTurnId:nextTurn,submissionId:null})})
+    Socket.last.emit({type:'RESULT',state:fixture({phase:'DECIDING',revision:9,audioReceived:true})})
+    await submitting
+  })
+  await wait(()=>latest.state.revision===10)
+  assert.equal(latest.state.currentTurnId,nextTurn); assert.equal(gets,before)
 })

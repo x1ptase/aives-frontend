@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { OralPcmPlayer } from './oralPcmPlayer'
 import { oralError } from './oralExamHelpers'
+import { oralLatency } from './oralLatency'
 
 export type SpeechStream = (turn: string, signal: AbortSignal, chunk: (pcm: Uint8Array) => void) => Promise<void>
 export default function OralStreamingSpeechControls({ turnId, enabled, blocked, valid, stream, ended }: {
@@ -23,14 +24,17 @@ export default function OralStreamingSpeechControls({ turnId, enabled, blocked, 
       audio = new OralPcmPlayer(); player.current = audio
       await audio.unlock() // Unlock before issuing a cloud request; blocked autoplay must not waste TTS quota.
       if (!current()) return
+      oralLatency.mark(turnId, 'ttsRequest')
       await callbacks.current.stream(turnId, controller.signal, pcm => {
         if (!current() || controller.signal.aborted) throw new DOMException('Lượt đã thay đổi.', 'AbortError')
-        audio!.push(pcm); setStatus('playing')
+        oralLatency.mark(turnId, 'firstAudio')
+        oralLatency.audioScheduled(turnId, audio!.push(pcm)); setStatus('playing')
       })
       clearTimeout(timeout)
       await audio.complete()
       if (current() && !controller.signal.aborted) { setStatus('idle'); callbacks.current.ended(turnId) }
     } catch (cause: any) {
+      oralLatency.cancel(turnId)
       if (alive.current && serial === generation.current) { setStatus('error'); setError(cause?.name === 'AbortError' ? t('exams.oral.stream.speechInterrupted') : oralError(cause)) }
     } finally { clearTimeout(timeout); audio?.stop() }
   }

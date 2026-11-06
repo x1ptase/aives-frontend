@@ -23,6 +23,7 @@ export class OralPcmPlayer {
     source.onended = () => { source.disconnect(); this.sources.delete(source); if (this.ended && !this.sources.size && !this.stopped) this.resolve?.() }
     this.sources.add(source); const start = Math.max(this.context.currentTime + 0.05, this.next)
     source.start(start); this.next = start + audio.duration
+    return (start - this.context.currentTime) * 1000
   }
   complete(): Promise<void> {
     this.ended = true

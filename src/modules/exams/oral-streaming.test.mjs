@@ -5,7 +5,7 @@ import vm from 'node:vm'
 import { createServer } from 'vite'
 import { initTestI18n } from '../../test-utils/i18n.mjs'
 
-let server, transport, Player, context
+let server, transport, Player, context, latency
 const saved = { WebSocket:globalThis.WebSocket, window:globalThis.window, localStorage:globalThis.localStorage, fetch:globalThis.fetch, AudioContext:globalThis.AudioContext }
 const turn='11111111-1111-4111-8111-111111111111', client='22222222-2222-4222-8222-222222222222'
 const request={clientSessionId:client,turnId:turn,expectedRevision:0}
@@ -16,6 +16,7 @@ before(async()=>{
   await initTestI18n(server)
   transport=await server.ssrLoadModule('/src/modules/exams/components/oralStreamingTransport.ts')
   Player=(await server.ssrLoadModule('/src/modules/exams/components/oralPcmPlayer.ts')).OralPcmPlayer
+  latency=(await server.ssrLoadModule('/src/modules/exams/components/oralLatency.ts')).oralLatency
 })
 after(async()=>{await server.close(); for(const [key,value] of Object.entries(saved)) Object.defineProperty(globalThis,key,{configurable:true,writable:true,value})})
 
@@ -117,4 +118,28 @@ test('PCM playback starts before EOF, schedules chunks without overlap and ends 
 test('cancelling PCM playback never invokes a successful end',async()=>{
   globalThis.AudioContext=AudioContextFixture;const player=new Player();await player.unlock();player.push(new Uint8Array([0,0]))
   const finished=player.complete();player.stop();await assert.rejects(finished,{name:'AbortError'});assert.equal(context.state,'closed')
+})
+
+test('Latency diagnostics correlate submit to next-turn playback and never log transcript, questions or tokens',()=>{
+  const previous=console.info, logs=[]; console.info=(...args)=>logs.push(args)
+  try {
+    latency.begin(turn,7); latency.mark(turn,'finishSent')
+    latency.state({studentExamId:7,phase:'DECIDING',currentTurnId:turn})
+    latency.state({studentExamId:7,phase:'PREPARING',currentTurnId:client,transcripts:[{content:'PRIVATE_STUDENT_ANSWER'}]})
+    latency.mark(client,'ttsRequest'); latency.mark(client,'firstAudio'); latency.audioScheduled(client,50); latency.audioScheduled(client,100)
+    assert.equal(logs.length,1); assert.equal(logs[0][0],'oral-latency')
+    assert.equal(logs[0][1].fromTurn,turn); assert.equal(logs[0][1].nextTurn,client)
+    assert.ok(logs[0][1].submitToPlaybackScheduledMs>=50)
+    assert.ok(!JSON.stringify(logs).includes('PRIVATE_STUDENT_ANSWER'))
+    latency.begin(turn,7); latency.cancel(turn); latency.state({studentExamId:7,phase:'EXPIRED'}); assert.equal(logs.length,1)
+  } finally {console.info=previous}
+})
+
+test('WS rejects a pushed state for a different exam instead of applying it',async()=>{
+  globalThis.WebSocket=Socket
+  const received=[], connection=new transport.OralStreamingConnection(7,request,()=>{},(...args)=>received.push(args));await connection.opened()
+  const pending=connection.finish({...request,requestId:turn,action:'SUBMIT'})
+  await new Promise(resolve=>setTimeout(resolve,0))
+  Socket.last.emit({type:'PROGRESS',revision:3,state:{studentExamId:999,revision:3}})
+  await assert.rejects(pending); assert.equal(received.length,0)
 })

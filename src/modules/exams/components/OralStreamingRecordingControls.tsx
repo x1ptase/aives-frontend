@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { OralPcmRecorder } from './oralPcmRecorder'
 import type { OralStreamingConnection } from './oralStreamingTransport'
 import { oralError } from './oralExamHelpers'
+import { oralLatency } from './oralLatency'
 
 export interface StreamingRecording {
   open: (turn: string, update: (kind: 'PARTIAL' | 'FINAL', index: number, text: string) => void) => OralStreamingConnection
@@ -19,12 +20,14 @@ export default function OralStreamingRecordingControls({ turnId, enabled, blocke
   const finish = async () => {
     if (finishing.current || !recorder.current || !turnId || !bound.current.valid(turnId)) return
     finishing.current = true; const active = recorder.current, serial = generation.current
+    oralLatency.begin(turnId)
     setStatus('sending')
     try {
       const blob = await active.finish()
-      if (!alive.current || serial !== generation.current || !bound.current.valid(turnId)) { active.connection.close(); return }
+      oralLatency.mark(turnId, 'audioFlushed')
+      if (!alive.current || serial !== generation.current || !bound.current.valid(turnId)) { oralLatency.cancel(turnId); active.connection.close(); return }
       await bound.current.streaming.submit(turnId, blob, active.connection)
-    } catch (cause) { active.connection.close(); active.cancel(); if (alive.current && serial === generation.current) setError(cause instanceof Error ? cause.message : t('exams.oral.stream.sendFailed')) }
+    } catch (cause) { oralLatency.cancel(turnId); active.connection.close(); active.cancel(); if (alive.current && serial === generation.current) setError(cause instanceof Error ? cause.message : t('exams.oral.stream.sendFailed')) }
     finally { if (alive.current && serial === generation.current) setStatus('idle'); finishing.current = false }
   }
   const start = async () => {

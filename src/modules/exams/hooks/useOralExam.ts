@@ -9,6 +9,7 @@ import { loadAudioDraft, saveAudioDraft, type OralAudioDraft } from '../componen
 import { useOralProgressEvents } from './useOralProgressEvents'
 import type { OralProgressEvent } from '../components/oralProgressEvents'
 import { OralStreamingConnection, readSpeechStream } from '../components/oralStreamingTransport'
+import { oralLatency } from '../components/oralLatency'
 
 /** Nối tiến trình thật: chỉ BE quyết định chuyển bước, trình duyệt giữ receipt để retry an toàn. */
 export function useOralExam(examId: number, userId: string) {
@@ -46,6 +47,7 @@ export function useOralExam(examId: number, userId: string) {
     if (current.current && next.revision === current.current.revision && next.submissionId === current.current.submissionId && current.current.audioReceived && !next.audioReceived) return
     if (current.current && Date.parse(current.current.leaseUntil) > Date.parse(next.leaseUntil)) next = { ...next, leaseUntil: current.current.leaseUntil }
     current.current = next
+    oralLatency.state(next)
     if (!['TRANSCRIBING', 'DECIDING'].includes(next.phase)) { liveConnection.current?.close(); liveConnection.current = null }
     lastReceived.current = performance.now()
     if (alive.current) {
@@ -78,8 +80,9 @@ export function useOralExam(examId: number, userId: string) {
   }, [examId, apply, remember])
 
   /** Gom sự kiện và chờ request ghi đang chạy; không mất tín hiệu đến giữa SUBMIT/upload/GET. */
-  const progressChanged = useCallback(async (event: OralProgressEvent) => {
+  const progressChanged = useCallback(async (event: OralProgressEvent, viaSocket = false) => {
     if (!alive.current || current.current && oralTerminal(current.current)) return
+    if (!viaSocket && liveConnection.current?.pushesState) return
     if (event.type !== 'ready' && current.current && event.revision <= current.current.revision) return
     eventRefresh.current = true
     if (eventRefreshRunning.current) return
@@ -291,15 +294,26 @@ export function useOralExam(examId: number, userId: string) {
   const openRecordingStream = (turnId: string, update: (kind: 'PARTIAL' | 'FINAL', index: number, text: string) => void) => {
     const next = current.current
     if (!next || !recordingCurrent(turnId)) throw new Error(i18n.t('exams.oral.hook.answerChanged'))
-    return new OralStreamingConnection(examId, { clientSessionId: identity.id, turnId, expectedRevision: next.revision }, update,
-      revision => { void progressChanged({ type: 'progress', revision }) })
+    const connection = new OralStreamingConnection(examId, { clientSessionId: identity.id, turnId, expectedRevision: next.revision }, update,
+      (revision, pushed) => {
+        if (!pushed) { void progressChanged({ type: 'progress', revision }, true); return }
+        void (async () => {
+          while (alive.current && (inFlight.current || queuedWrite.current)) await new Promise(resolve => window.setTimeout(resolve, 20))
+          if (alive.current) apply(pushed)
+        })()
+      }, () => {
+        if (liveConnection.current === connection) { liveConnection.current = null; void progressChanged({ type: 'ready', revision: 0 }, true) }
+      })
+    return connection
   }
   /** Lưu WAV trước FINISH, cùng requestId dùng được ở REST nếu WS mất sau khi server đã nhận. */
   const submitStreamingRecording = async (turnId: string, blob: Blob, connection: OralStreamingConnection) => {
     if (!recordingCurrent(turnId) || pendingRef.current || queuedWrite.current || draftRef.current) throw new Error(i18n.t('exams.oral.hook.turnNotReady'))
     const next = current.current!
+    oralLatency.begin(turnId, examId)
     const draft: OralAudioDraft = { blob, command: { requestId: newOralId(), clientSessionId: identity.id, expectedRevision: next.revision, turnId, action: 'SUBMIT' } }
     await saveAudioDraft(draftKey, draft); draftRef.current = draft; if (alive.current) setAudioDraft(draft)
+    oralLatency.mark(turnId, 'draftSaved')
     if (!recordingCurrent(turnId)) { connection.close(); return }
     queuedWrite.current = true; if (alive.current) setBusy(true); remember(draft.command)
     let locked = false, failed = false, keep = false
@@ -307,8 +321,11 @@ export function useOralExam(examId: number, userId: string) {
       while (inFlight.current && alive.current) await new Promise(resolve => window.setTimeout(resolve, 20))
       if (!alive.current) return
       inFlight.current = true; locked = true
+      liveConnection.current?.close(); liveConnection.current = connection
+      oralLatency.mark(turnId, 'finishSent')
       const response = await connection.finish(draft.command)
-      if (response.phase === 'DECIDING') { keep = true; liveConnection.current?.close(); liveConnection.current = connection }
+      oralLatency.mark(turnId, 'wsResult')
+      if (response.phase === 'DECIDING') keep = true
       apply(response); remember(null)
       if (response.audioReceived || response.currentTurnId !== turnId || response.phase !== 'TRANSCRIBING') await forgetAudio()
     } catch { failed = true } // Đọc đối soát trước; không tự tạo transcript hay requestId mới khi chưa rõ kết quả.

@@ -21,8 +21,13 @@ export class OralStreamingConnection {
   private ready: Promise<void>
   private timer?: ReturnType<typeof setTimeout>
   private finished = false
+  private statePush = false
+  private submitting = false
+  private locallyClosed = false
+  get pushesState() { return this.statePush && this.submitting && !this.failure && this.socket?.readyState === WebSocket.OPEN }
   constructor(private examId: number, request: Pick<OralCommand, 'clientSessionId' | 'turnId' | 'expectedRevision'>,
-    private update: (kind: 'PARTIAL' | 'FINAL', index: number, text: string) => void, private changed: (revision: number) => void = () => {}) {
+    private update: (kind: 'PARTIAL' | 'FINAL', index: number, text: string) => void, private changed: (revision: number, state?: OralState) => void = () => {},
+    private lost: () => void = () => {}) {
     examIdentifier(examId); oralUuid(request.clientSessionId); oralUuid(request.turnId)
     const url = new URL(`${apiBase()}/student-exams/${examId}/oral-examination/stream`, window.location.href)
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -35,14 +40,14 @@ export class OralStreamingConnection {
       this.timer = setTimeout(() => this.fail(streamError(1811)), 15000)
       this.socket.onopen = () => { if (!this.failure) this.socket.send(JSON.stringify({ type: 'AUTH', token: localStorage.getItem('access_token') || '' })) }
       this.socket.onerror = () => this.fail(streamError(1811))
-      this.socket.onclose = () => { if (!this.finished) this.fail(streamError(1811)) }
+      this.socket.onclose = () => { if (!this.finished) this.fail(streamError(1811)); if (!this.locallyClosed && this.submitting) this.lost() }
       this.socket.onmessage = event => {
         if (this.failure) return
         try {
           if (typeof event.data !== 'string' || event.data.length > 256000) throw streamError(1811)
           const value = JSON.parse(event.data)
           if (value.type === 'AUTHENTICATED') this.socket.send(JSON.stringify({ type: 'START', request }))
-          else if (value.type === 'READY' && value.sampleRate === 16000) { clearTimeout(this.timer); this.readyResolve() }
+          else if (value.type === 'READY' && value.sampleRate === 16000) { this.statePush = value.statePush === true; clearTimeout(this.timer); this.readyResolve() }
           else if (['PARTIAL', 'FINAL'].includes(value.type) && Number.isSafeInteger(value.segmentIndex) && value.segmentIndex > 0
             && typeof value.text === 'string' && value.text.length <= 20000 && !value.text.includes('\0')) this.update(value.type, value.segmentIndex, value.text)
           else if (value.type === 'RESULT' && this.resultResolve) {
@@ -50,7 +55,9 @@ export class OralStreamingConnection {
             this.finished = true; clearTimeout(this.timer); this.resultResolve(state)
             if (state.phase !== 'DECIDING') this.socket.close()
           } else if (value.type === 'PROGRESS' && Number.isSafeInteger(value.revision) && value.revision >= 0) {
-            this.changed(value.revision)
+            const state = value.state === undefined ? undefined : parseOralState({ code: 1000, result: value.state }, this.examId)
+            if (state && state.revision !== value.revision) throw streamError(1811)
+            this.changed(value.revision, state)
           } else if (value.type === 'ERROR' && Number.isInteger(value.code)) this.fail(streamError(value.code))
           else throw streamError(1811)
         } catch (cause) { this.fail(cause instanceof Error ? cause : streamError(1811)) }
@@ -66,6 +73,7 @@ export class OralStreamingConnection {
   async finish(command: OralCommand): Promise<OralState> {
     await this.opened(); if (this.failure) throw this.failure
     if (this.resultResolve) throw streamError(1811)
+    this.submitting = true
     return new Promise((resolve, reject) => {
       this.resultResolve = resolve; this.resultReject = reject
       this.timer = setTimeout(() => this.fail(streamError(1811)), 30000)
@@ -76,7 +84,7 @@ export class OralStreamingConnection {
     if (this.failure) return
     this.failure = cause; clearTimeout(this.timer); this.readyReject(cause); this.resultReject?.(cause); this.socket?.close()
   }
-  close() { this.fail(new DOMException('Đã dừng kênh âm thanh.', 'AbortError')); clearTimeout(this.timer); this.socket?.close() }
+  close() { this.locallyClosed = true; this.fail(new DOMException('Đã dừng kênh âm thanh.', 'AbortError')); clearTimeout(this.timer); this.socket?.close() }
 }
 
 /** Audio-only NDJSON, end bắt buộc; không coi EOF/error thành đã nghe xong. */
